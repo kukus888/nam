@@ -1,0 +1,5 @@
+connectors:
+  sqlite:
+    databasePath: ./sqlite.db
+  mongo:
+    connectionString: mongodb+srv://jskora696:ScEJH14SpICgPMnk@cluster0.6udbq.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0

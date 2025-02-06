@@ -1,0 +1,10 @@
+# Rundeck node configuration file
+testnode01:
+  nodename: testnode01
+  hostname: rundeck-cluster-openssh-server-1:2222
+  description: test server
+  username: admin
+  osFamily: unix
+  node-executor: jsch-ssh
+  file-copier: jsch-scp
+  ssh-password-storage-path: keys/project/NASE/password

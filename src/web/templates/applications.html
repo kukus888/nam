@@ -1,0 +1,31 @@
+{{ define "pages/applications" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/tailwindcss.js"></script>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/htmx.js"></script>
+</head>
+
+<body>
+    {{ template "templates/navbar" }}
+    <h1 class="text-3xl font-bold underline mx-3 my-2"> App view </h1>
+    <div class="flex flex-col gap-1 m-3">
+        {{ range .topology.Applications }}
+        <div class="flex justify-start flex-row">
+            {{ $appname := .Name }}
+            <h2 class="text-2xl font-bold self-center p-2"> {{ .Name }} </h2>
+            {{ range .Servers }}
+               <div hx-get="/api/htmx/health?application={{ $appname }}&server={{ . }}" hx-swap="outerHTML" hx-trigger="load, every 30s"></div>
+            {{ end }}
+        </div>
+        {{ end }}
+    </div>
+    
+</body>
+
+</html>
+{{ end }}

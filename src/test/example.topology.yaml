@@ -1,0 +1,46 @@
+# Example YAML
+servers:
+    testnode01:
+        hostname: rundeck-openssh-server-1
+    testnode02:
+        hostname: rundeck-openssh-server-2
+
+applications:
+    testapp01:
+      servers:
+        - testnode01
+        - testnode02
+      port: 8080 # Ommitable if not healthCheck and no configuration
+      type: spring # spring, jboss, hazelcast
+      healthCheckTemplate: spring
+      # TODO: parse git files in configuration or smth
+    testapp02:
+      servers:
+        - testnode01
+      port: 8080 # Ommitable if not healthCheck and no configuration
+      type: spring # spring, jboss, hazelcast
+      healthCheckTemplate: spring
+      # TODO: parse git files in configuration or smth
+        
+networks:
+    testbalancer01:
+        type: loadbalancer # firewall, proxy, nginx, apache, f5
+        ingress:
+            - 80
+        egress:
+            - testapp01 # have to use abstraction and parse it in file
+
+templates:
+  healthchecks:
+    spring:
+      url: /actuator/health
+      method: GET
+      status: 200
+      timeout: 5s
+      interval: 10s
+    jboss:
+      url: /health
+      method: GET
+      status: 200
+      timeout: 5s
+      interval: 10s
