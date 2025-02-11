@@ -54,7 +54,7 @@ type ApplicationInstance struct {
 
 type Server struct {
 	ID       uint   `gorm:"primaryKey"`
-	Name     string `yaml:"name"`
+	Alias    string `yaml:"name"`
 	Hostname string `yaml:"hostname" gorm:"unique"`
 }
 

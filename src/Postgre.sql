@@ -1,93 +1,59 @@
 CREATE TABLE "TopologyNodes" (
-  "id" integer PRIMARY KEY,
-  "name" string,
-  "type" NetworkElementType
+  "id" SERIAL SERIAL PRIMARY KEY,
+  "name" VARCHAR,
+  "type" VARCHAR
 );
 
 CREATE TABLE "Proxy" (
-  "id" integer PRIMARY KEY,
-  "ingress" integer,
-  "egress" integer
+  "id" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("id"),
+  "ingress" SERIAL REFERENCES "TopologyNodes" ("id"),
+  "egress" SERIAL REFERENCES "TopologyNodes" ("id")
 );
 
 CREATE TABLE "F5" (
-  "id" integer,
-  "ingress" integer,
-  PRIMARY KEY ("id", "ingress")
+  "id" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("id"),
+  "ingress" SERIAL REFERENCES "TopologyNodes" ("id")
 );
 
 CREATE TABLE "F5Egress" (
-  "id" integer,
-  "egress" integer,
-  PRIMARY KEY ("id", "egress")
+  "id" SERIAL PRIMARY KEY REFERENCES "F5" ("id"),
+  "egress" SERIAL REFERENCES "TopologyNodes" ("id")
 );
 
 CREATE TABLE "Nginx" (
-  "id" integer,
-  "ingress" integer,
-  PRIMARY KEY ("id", "ingress")
+  "id" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("id"),
+  "ingress" SERIAL REFERENCES "TopologyNodes" ("id")
 );
 
 CREATE TABLE "NginxEgress" (
-  "id" integer,
-  "egress" integer,
-  PRIMARY KEY ("id", "egress")
+  "id" SERIAL PRIMARY KEY REFERENCES "Nginx" ("id"),
+  "egress" SERIAL REFERENCES "TopologyNodes" ("id")
 );
 
 CREATE TABLE "ApplicationDefinitions" (
-  "id" integer PRIMARY KEY,
-  "name" string,
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR,
   "port" integer,
-  "type" applicationType
-);
-
-CREATE TABLE "ApplicationInstances" (
-  "id" integer PRIMARY KEY,
-  "server" integer,
-  "definition" integer
+  "type" VARCHAR
 );
 
 CREATE TABLE "Servers" (
-  "id" integer PRIMARY KEY,
-  "alias" string,
-  "hostname" string
+  "id" SERIAL PRIMARY KEY,
+  "alias" VARCHAR,
+  "hostname" VARCHAR UNIQUE
+);
+
+CREATE TABLE "ApplicationInstances" (
+  "id" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("id"),
+  "server" SERIAL REFERENCES "Servers" ("id"),
+  "definition" integer REFERENCES "ApplicationDefinitions" ("id")
 );
 
 CREATE TABLE "Healthchecks" (
-  "id" integer PRIMARY KEY,
-  "application" integer,
-  "url" string,
+  "id" SERIAL PRIMARY KEY,
+  "application" SERIAL REFERENCES "ApplicationDefinitions" ("id"),
+  "url" VARCHAR,
   "timeout" time,
   "interval" time,
   "expectedstatus" int
 );
-
-ALTER TABLE "Proxy" ADD FOREIGN KEY ("id") REFERENCES "TopologyNodes" ("id");
-
-ALTER TABLE "Proxy" ADD FOREIGN KEY ("ingress") REFERENCES "TopologyNodes" ("id");
-
-ALTER TABLE "Proxy" ADD FOREIGN KEY ("egress") REFERENCES "TopologyNodes" ("id");
-
-ALTER TABLE "TopologyNodes" ADD FOREIGN KEY ("id") REFERENCES "F5" ("id");
-
-ALTER TABLE "TopologyNodes" ADD FOREIGN KEY ("id") REFERENCES "F5" ("ingress");
-
-ALTER TABLE "F5Egress" ADD FOREIGN KEY ("id") REFERENCES "F5" ("id");
-
-ALTER TABLE "F5Egress" ADD FOREIGN KEY ("egress") REFERENCES "TopologyNodes" ("id");
-
-ALTER TABLE "Nginx" ADD FOREIGN KEY ("id") REFERENCES "TopologyNodes" ("id");
-
-ALTER TABLE "Nginx" ADD FOREIGN KEY ("ingress") REFERENCES "TopologyNodes" ("id");
-
-ALTER TABLE "NginxEgress" ADD FOREIGN KEY ("id") REFERENCES "Nginx" ("id");
-
-ALTER TABLE "TopologyNodes" ADD FOREIGN KEY ("id") REFERENCES "NginxEgress" ("egress");
-
-ALTER TABLE "ApplicationInstances" ADD FOREIGN KEY ("definition") REFERENCES "ApplicationDefinitions" ("id");
-
-ALTER TABLE "TopologyNodes" ADD FOREIGN KEY ("id") REFERENCES "ApplicationInstances" ("id");
-
-ALTER TABLE "ApplicationInstances" ADD FOREIGN KEY ("server") REFERENCES "Servers" ("id");
-
-ALTER TABLE "ApplicationDefinitions" ADD FOREIGN KEY ("id") REFERENCES "Healthchecks" ("application");
