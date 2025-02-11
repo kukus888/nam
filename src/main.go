@@ -15,7 +15,9 @@ func main() {
 	AppConfiguration = LoadAndParseConfiguration("config.yaml")
 	DB := Database{}
 	DB.Start()
-	s, e := DB.QueryAllServers()
+	//DB.InsertServer(Server{Hostname: "testhostname01", Alias: "Testalias01"})
+	//DB.InsertServer(Server{Hostname: "testhostname02", Alias: "Testalias02"})
+	s, e := DB.QueryServerAll()
 	if e != nil {
 		panic(e)
 	}

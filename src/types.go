@@ -6,40 +6,40 @@ import (
 
 // Topology represents a Topology element in the topology yaml file
 type TopologyNode struct {
-	ID   uint `gorm:"primaryKey"`
+	ID   uint
 	Name string
 	Type string // Type of Topology element, e.g. loadbalancer, firewall, etc. \n The Type corresponds to the table name in the database
 }
 
 type Proxy struct {
-	ID      uint         `gorm:"primaryKey;References:id"`
-	Ingress uint         `gorm:"foreignKey:id;References:id"`
-	Egress  TopologyNode `gorm:"foreignKey:id;References:id"`
+	ID      uint
+	Ingress uint
+	Egress  TopologyNode
 }
 
 type F5 struct {
-	ID      uint         `gorm:"primaryKey;References:id"`
-	Ingress TopologyNode `gorm:"foreignKey:id;References:id"`
+	ID      uint
+	Ingress TopologyNode
 }
 
 type F5Egress struct {
-	ID     uint         `gorm:"primaryKey;References:id"`
-	Egress TopologyNode `gorm:"foreignKey:ID;References:id"`
+	ID     uint
+	Egress TopologyNode
 }
 
 type Nginx struct {
-	ID      uint         `gorm:"primaryKey;References:id"`
-	Ingress TopologyNode `gorm:"foreignKey:id;References:id"`
+	ID      uint
+	Ingress TopologyNode
 }
 
 type NginxEgress struct {
-	ID     uint         `gorm:"primaryKey;References:id"`
-	Egress TopologyNode `gorm:"foreignKey:id;References:id"`
+	ID     uint
+	Egress TopologyNode
 }
 
 // ApplicationDefinition represents the definition of an application and its general properties
 type ApplicationDefinition struct {
-	ID   uint   `yaml:"id" gorm:"primaryKey"`
+	ID   uint   `yaml:"ID"`
 	Name string `yaml:"name"`
 	Port int    `yaml:"port"`
 	Type string `yaml:"type"`
@@ -47,22 +47,22 @@ type ApplicationDefinition struct {
 
 // ApplicationInstance represents an instance of an application
 type ApplicationInstance struct {
-	ID         uint                  `gorm:"primaryKey"`
-	Server     Server                `gorm:"foreignKey:ID"`
-	Definition ApplicationDefinition `gorm:"foreignKey:ID"`
+	ID         uint
+	Server     Server
+	Definition ApplicationDefinition
 }
 
 type Server struct {
-	ID       uint   `gorm:"primaryKey"`
+	ID       uint
 	Alias    string `yaml:"name"`
-	Hostname string `yaml:"hostname" gorm:"unique"`
+	Hostname string `yaml:"hostname"`
 }
 
 // Healthcheck represents a healthcheck element in the topology yaml file
 // This is called when a healthcheck is needed
 type Healthcheck struct {
-	ID             uint                  `gorm:"primaryKey"`
-	Application    ApplicationDefinition `gorm:"foreignKey:ID"`
+	ID             uint
+	Application    ApplicationDefinition
 	Url            string
 	Timeout        time.Duration
 	Interval       time.Duration

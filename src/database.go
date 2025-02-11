@@ -29,8 +29,8 @@ func (Db *Database) InsertServer(s Server) error {
 	}
 	copyCount, err := Db.Pool.CopyFrom(
 		context.Background(),
-		pgx.Identifier{"Servers"},
-		[]string{"alias", "hostname"},
+		pgx.Identifier{"Server"},
+		[]string{"Alias", "Hostname"},
 		pgx.CopyFromSlice(len(rows), func(i int) ([]any, error) {
 			return []any{rows[i].Alias, rows[i].Hostname}, nil
 		}),
@@ -43,17 +43,27 @@ func (Db *Database) InsertServer(s Server) error {
 }
 
 // Gets all Server instances from database
-func (Db *Database) QueryAllServers() ([]Server, error) {
-	rows, err := Db.Pool.Query(context.Background(), `select alias, hostname from "Servers" s`)
+func (Db *Database) QueryServerAll() ([]Server, error) {
+	rows, err := Db.Pool.Query(context.Background(), `select * from "Server"`)
 	if err != nil {
 		return nil, err
 	}
-	strs, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	servers, err := pgx.CollectRows(rows, pgx.RowToStructByName[Server])
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf(strs[0])
-	s := Server{}
-	rows.Scan(s.Hostname, s.Alias)
-	return []Server{s}, nil
+	return servers, nil
+}
+
+// Gets Server instances from database by ID
+func (Db *Database) QueryServerID(ID string) ([]Server, error) {
+	rows, err := Db.Pool.Query(context.Background(), `SELECT * FROM "Server" WHERE "ID" = `+ID)
+	if err != nil {
+		return nil, err
+	}
+	servers, err := pgx.CollectRows(rows, pgx.RowToStructByName[Server])
+	if err != nil {
+		return nil, err
+	}
+	return servers, nil
 }
