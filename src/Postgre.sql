@@ -1,59 +1,65 @@
-CREATE TABLE "TopologyNodes" (
-  "ID" SERIAL SERIAL PRIMARY KEY,
-  "name" VARCHAR,
-  "type" VARCHAR
+CREATE TABLE IF NOT EXISTS topology_node (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR UNIQUE,
+  type VARCHAR
 );
 
-CREATE TABLE "Proxy" (
-  "ID" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("ID"),
-  "ingress" SERIAL REFERENCES "TopologyNodes" ("ID"),
-  "egress" SERIAL REFERENCES "TopologyNodes" ("ID")
+CREATE TABLE IF NOT EXISTS proxy (
+  id SERIAL REFERENCES topology_node (id),
+  ingress SERIAL REFERENCES topology_node (id),
+  egress SERIAL REFERENCES topology_node (id),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE "F5" (
-  "ID" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("ID"),
-  "ingress" SERIAL REFERENCES "TopologyNodes" ("ID")
+CREATE TABLE IF NOT EXISTS f5 (
+  id SERIAL REFERENCES topology_node (id),
+  ingress SERIAL REFERENCES topology_node (id),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE "F5Egress" (
-  "ID" SERIAL PRIMARY KEY REFERENCES "F5" ("ID"),
-  "egress" SERIAL REFERENCES "TopologyNodes" ("ID")
+CREATE TABLE IF NOT EXISTS f5_egress (
+  id SERIAL REFERENCES f5 (id),
+  egress SERIAL REFERENCES topology_node (id)
 );
 
-CREATE TABLE "Nginx" (
-  "ID" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("ID"),
-  "ingress" SERIAL REFERENCES "TopologyNodes" ("ID")
+CREATE TABLE IF NOT EXISTS nginx (
+  id SERIAL REFERENCES topology_node (id),
+  ingress SERIAL REFERENCES topology_node (id),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE "NginxEgress" (
-  "ID" SERIAL PRIMARY KEY REFERENCES "Nginx" ("ID"),
-  "egress" SERIAL REFERENCES "TopologyNodes" ("ID")
+CREATE TABLE IF NOT EXISTS nginx_egress (
+  id SERIAL REFERENCES nginx (id),
+  egress SERIAL REFERENCES topology_node (id),
+  PRIMARY KEY (id)
 );
 
-CREATE TABLE "ApplicationDefinitions" (
-  "ID" SERIAL PRIMARY KEY,
-  "name" VARCHAR,
-  "port" integer,
-  "type" VARCHAR
+CREATE TABLE IF NOT EXISTS healthcheck (
+  id SERIAL PRIMARY KEY,
+  url VARCHAR,
+  timeout interval,
+  check_interval interval,
+  expected_status int
 );
 
-CREATE TABLE "Servers" (
-  "ID" SERIAL PRIMARY KEY,
-  "alias" VARCHAR,
-  "hostname" VARCHAR UNIQUE
+CREATE TABLE IF NOT EXISTS application_definition (
+  id SERIAL PRIMARY KEY,
+  healthcheck_id SERIAL REFERENCES healthcheck (id) NULL,
+  name VARCHAR,
+  port integer,
+  type VARCHAR
 );
 
-CREATE TABLE "ApplicationInstances" (
-  "ID" SERIAL PRIMARY KEY REFERENCES "TopologyNodes" ("ID"),
-  "server" SERIAL REFERENCES "Servers" ("ID"),
-  "definition" integer REFERENCES "ApplicationDefinitions" ("ID")
+CREATE TABLE IF NOT EXISTS server (
+  id SERIAL PRIMARY KEY,
+  alias VARCHAR,
+  hostname VARCHAR UNIQUE
 );
 
-CREATE TABLE "Healthchecks" (
-  "ID" SERIAL PRIMARY KEY,
-  "application" SERIAL REFERENCES "ApplicationDefinitions" ("ID"),
-  "url" VARCHAR,
-  "timeout" time,
-  "interval" time,
-  "expectedstatus" int
+CREATE TABLE IF NOT EXISTS application_instance (
+  id SERIAL REFERENCES topology_node (id),
+  server_id SERIAL REFERENCES server (id),
+  application_definition_id SERIAL REFERENCES application_definition (id)
 );
+
+

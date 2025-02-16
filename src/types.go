@@ -39,10 +39,11 @@ type NginxEgress struct {
 
 // ApplicationDefinition represents the definition of an application and its general properties
 type ApplicationDefinition struct {
-	ID   uint   `yaml:"ID"`
-	Name string `yaml:"name"`
-	Port int    `yaml:"port"`
-	Type string `yaml:"type"`
+	ID            uint
+	Name          string
+	Port          int
+	Type          string
+	HealthcheckId *uint
 }
 
 // ApplicationInstance represents an instance of an application
@@ -52,10 +53,18 @@ type ApplicationInstance struct {
 	Definition ApplicationDefinition
 }
 
+// DTO of ApplicationInstance
+type ApplicationInstanceDTO struct {
+	Id           uint
+	ServerId     uint
+	DefinitionId uint
+	Name         string
+}
+
 type Server struct {
 	ID       uint
-	Alias    string `yaml:"name"`
-	Hostname string `yaml:"hostname"`
+	Alias    string
+	Hostname string
 }
 
 // Healthcheck represents a healthcheck element in the topology yaml file

@@ -12,3 +12,7 @@ This will create a rundeck community cluster, as well as nginx for balancing, an
 `openssh-server` - Server for playing with ssh. Default login is `admin:password`; `ssh admin@127.0.0.1 -p 2222`
 
 [CGO_ENABLE](https://github.com/go101/go101/wiki/CGO-Environment-Setup)
+
+# TODO
+
+Implement DB migration
