@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS healthcheck (
 
 CREATE TABLE IF NOT EXISTS application_definition (
   id SERIAL PRIMARY KEY,
-  healthcheck_id SERIAL REFERENCES healthcheck (id) NULL,
+  healthcheck_id INTEGER REFERENCES healthcheck (id) NULL,
   name VARCHAR,
   port integer,
   type VARCHAR
