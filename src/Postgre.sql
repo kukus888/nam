@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS topology_node (
   id SERIAL PRIMARY KEY,
-  name VARCHAR UNIQUE,
   type VARCHAR
 );
 
@@ -8,12 +7,14 @@ CREATE TABLE IF NOT EXISTS proxy (
   id SERIAL REFERENCES topology_node (id),
   ingress SERIAL REFERENCES topology_node (id),
   egress SERIAL REFERENCES topology_node (id),
+  name VARCHAR UNIQUE,
   PRIMARY KEY (id)
 );
 
 CREATE TABLE IF NOT EXISTS f5 (
   id SERIAL REFERENCES topology_node (id),
   ingress SERIAL REFERENCES topology_node (id),
+  name VARCHAR UNIQUE,
   PRIMARY KEY (id)
 );
 
@@ -24,6 +25,7 @@ CREATE TABLE IF NOT EXISTS f5_egress (
 
 CREATE TABLE IF NOT EXISTS nginx (
   id SERIAL REFERENCES topology_node (id),
+  name VARCHAR UNIQUE,
   ingress SERIAL REFERENCES topology_node (id),
   PRIMARY KEY (id)
 );
@@ -58,6 +60,7 @@ CREATE TABLE IF NOT EXISTS server (
 
 CREATE TABLE IF NOT EXISTS application_instance (
   id SERIAL REFERENCES topology_node (id),
+  name VARCHAR UNIQUE,
   server_id SERIAL REFERENCES server (id),
   application_definition_id SERIAL REFERENCES application_definition (id)
 );

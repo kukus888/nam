@@ -14,6 +14,8 @@ type Database struct {
 	Pool *pgxpool.Pool
 }
 
+// TODO: Impl DB context
+
 // Golang sometimes sucks, or perhaps i should read about functional programming
 var Db Database
 
@@ -31,29 +33,9 @@ func DbQueryTopologyNodeAll() ([]TopologyNode, error) {
 	return DbQueryTypeAll(TopologyNode{})
 }
 
-// Writes the s Server object into database.
-func DbInsertTopologyNode(t TopologyNode) error {
-	tn := []TopologyNode{
-		t,
-	}
-	copyCount, err := Db.Pool.CopyFrom(
-		context.Background(),
-		pgx.Identifier{"topology_node"},
-		[]string{"name", "type"},
-		pgx.CopyFromSlice(len(tn), func(i int) ([]any, error) {
-			return []any{tn[i].Name, tn[i].Type}, nil
-		}),
-	)
-	if err != nil {
-		return err // TODO: Error handling, unique values, etc
-	}
-	fmt.Printf("Inserted %d rows\n", copyCount)
-	return nil
-}
-
 // Returns
 func DbQueryTopologyNode(filter ...DbFilter) ([]TopologyNode, error) {
-	return DbQueryTypeSingleWithParams(TopologyNode{}, filter...)
+	return DbQueryTypeWithParams(TopologyNode{}, filter...)
 }
 
 // Gets all Server instances from database
@@ -61,29 +43,9 @@ func DbQueryServerAll() ([]Server, error) {
 	return DbQueryTypeAll(Server{})
 }
 
-// Writes the s Server object into database.
-func (s Server) DbInsert() error {
-	rows := []Server{
-		s,
-	}
-	copyCount, err := Db.Pool.CopyFrom(
-		context.Background(),
-		pgx.Identifier{"server"},
-		[]string{"alias", "hostname"},
-		pgx.CopyFromSlice(len(rows), func(i int) ([]any, error) {
-			return []any{rows[i].Alias, rows[i].Hostname}, nil
-		}),
-	)
-	if err != nil {
-		return err // TODO: Error handling, unique values, etc
-	}
-	fmt.Printf("Inserted %d rows\n", copyCount)
-	return nil
-}
-
 // Gets Server instances from database by ID
 func DbQueryServerID(ID string) ([]Server, error) {
-	rows, err := Db.Pool.Query(context.Background(), `SELECT * FROM server WHERE id = `+ID)
+	rows, err := Db.Pool.Query(context.Background(), `SELECT * FROM server WHERE id = $1`, ID)
 	if err != nil {
 		return nil, err
 	}
@@ -94,9 +56,9 @@ func DbQueryServerID(ID string) ([]Server, error) {
 	return servers, nil
 }
 
-// A type set of what types are permitted to be used with DB
+// A type set of what types are permitted to be used with DB (used to permit generics)
 type IDatabasable interface {
-	TopologyNode | ApplicationDefinition | ApplicationInstance | Server
+	TopologyNode | ApplicationDefinition | ApplicationInstance | Server | Healthcheck
 }
 
 // Idiotic conversion because postgres doesnt support capital letter in table and column name properly
@@ -138,15 +100,16 @@ type DbOperator string
 
 const (
 	DbOperatorAnd                DbOperator = "AND"
-	DbOperatorOr                            = "OR"
-	DbOperatorEqual                         = "="
-	DbOperatorNotEqual                      = "!="
-	DbOperatorGreaterThan                   = ">"
-	DbOperatorLessThan                      = "<"
-	DbOperatorGreaterThanOrEqual            = ">="
-	DbOperatorLessThanOrEqual               = "<="
+	DbOperatorOr                 DbOperator = "OR"
+	DbOperatorEqual              DbOperator = "="
+	DbOperatorNotEqual           DbOperator = "!="
+	DbOperatorGreaterThan        DbOperator = ">"
+	DbOperatorLessThan           DbOperator = "<"
+	DbOperatorGreaterThanOrEqual DbOperator = ">="
+	DbOperatorLessThanOrEqual    DbOperator = "<="
 )
 
+// Try to implement injection-safe db filters
 type DbFilter struct {
 	Column   string
 	Operator DbOperator
@@ -165,7 +128,7 @@ func (f *DbFilter) CheckInjection() error {
 	}
 }
 
-func DbQueryTypeSingleWithParams[T IDatabasable](typ T, filters ...DbFilter) ([]T, error) {
+func DbQueryTypeWithParams[T IDatabasable](typ T, filters ...DbFilter) ([]T, error) {
 	tableName := StructToTableName(fmt.Sprintf("%T", typ))
 	query := fmt.Sprintf(`SELECT * FROM %s tab`, tableName)
 	if len(filters) > 0 {
@@ -178,7 +141,7 @@ func DbQueryTypeSingleWithParams[T IDatabasable](typ T, filters ...DbFilter) ([]
 			if i > 0 && i < len(filters)-1 {
 				query += " AND"
 			}
-			query += fmt.Sprintf(` tab."%s" %s '%s'`, filter.Column, filter.Operator, filter.Value)
+			query += fmt.Sprintf(` tab."%s" %s %s`, filter.Column, filter.Operator, filter.Value)
 		}
 	}
 	rows, err := Db.Pool.Query(context.Background(), query)
@@ -213,37 +176,17 @@ func (appDef ApplicationDefinition) DbInsert() error {
 	return nil
 }
 
-// Creates new ApplicationInstance in DB, with underlying Nodes
-func (appInt ApplicationInstanceDTO) DbInsert() error {
-	// Create underlying topologyNode
-	t := TopologyNode{
-		Name: appInt.Name,
-		Type: StructToTableName(fmt.Sprintf("%T", appInt)),
-	}
-	err := DbInsertTopologyNode(t)
-	if err != nil {
-		return err
-	}
-	// Get topology ID
-	tn, err := DbQueryTypeSingleWithParams(TopologyNode{}, DbFilter{
-		Column:   "name",
-		Operator: DbOperatorEqual,
-		Value:    t.Name,
-	})
-	if err != nil {
-		return err
-	}
-	// Insert instance into DB
-	appInt.Id = tn[0].ID
-	appInts := []ApplicationInstanceDTO{
-		appInt,
+// Inserts a healthcheck object into DB
+func (hc Healthcheck) DbInsert() error {
+	hcs := []Healthcheck{
+		hc,
 	}
 	copyCount, err := Db.Pool.CopyFrom(
 		context.Background(),
 		pgx.Identifier{"application_instance"},
-		[]string{"id", "server_id", "application_definition_id"},
-		pgx.CopyFromSlice(len(appInts), func(i int) ([]any, error) {
-			return []any{appInts[i].Id, appInts[i].ServerId, appInts[i].DefinitionId}, nil
+		[]string{"url", "timeout", "check_interval", "expected_status"},
+		pgx.CopyFromSlice(len(hcs), func(i int) ([]any, error) {
+			return []any{hcs[i].Url, hcs[i].Timeout, hcs[i].Interval, hcs[i].ExpectedStatus}, nil
 		}),
 	)
 	if err != nil {

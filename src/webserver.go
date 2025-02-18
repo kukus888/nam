@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"math/rand"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 // Initialize and start the web server
@@ -54,7 +56,7 @@ func InitWebServer() {
 			{
 				applicationIdGroup.GET("/", func(c *gin.Context) { // View ApplicationDefinition by ID
 					appId := c.Param("appId")
-					app, err := DbQueryTypeSingleWithParams(ApplicationDefinition{}, DbFilter{
+					app, err := DbQueryTypeWithParams(ApplicationDefinition{}, DbFilter{
 						Column:   "id",
 						Operator: DbOperatorEqual,
 						Value:    appId,
@@ -67,22 +69,26 @@ func InitWebServer() {
 					}
 				})
 				applicationIdGroup.POST("/instances", func(c *gin.Context) { // Create ApplicationInstance
-					var appInsDto ApplicationInstanceDTO
-					if err := c.ShouldBindJSON(&appInsDto); err != nil {
+					var dto ApplicationInstance
+					if err := c.ShouldBindJSON(&dto); err != nil {
 						c.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
 						return
 					}
-					err := appInsDto.DbInsert()
+					if dto.Name == "" {
+						c.JSON(400, gin.H{"error": "Missing ApplicationInstance Name"})
+						return
+					}
+					err := dto.DbInsert()
 					if err != nil {
 						c.JSON(500, gin.H{"error": "Unable to insert application instances", "trace": err})
 						return
 					} else {
-						c.JSON(201, appInsDto)
+						c.JSON(201, dto)
 					}
 				})
 				applicationIdGroup.GET("/instances", func(c *gin.Context) { // View All ApplicationDefinition ApplicationInstance-s
 					appId := c.Param("appId")
-					inst, err := DbQueryTypeSingleWithParams(ApplicationInstance{}, DbFilter{
+					inst, err := DbQueryTypeWithParams(ApplicationInstance{}, DbFilter{
 						Column:   "application_definition_id",
 						Operator: DbOperatorEqual,
 						Value:    appId,
@@ -113,11 +119,24 @@ func InitWebServer() {
 					c.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
 					return
 				}
-				err := server.DbInsert()
+				tx, err := Db.Pool.BeginTx(context.Background(), pgx.TxOptions{})
 				if err != nil {
+					c.JSON(500, gin.H{"error": "Unable to acquire connection from pool", "trace": err})
+					return
+				}
+				err = server.DbInsert(tx)
+				if err != nil {
+					tx.Rollback(context.Background())
 					c.JSON(500, gin.H{"error": "Unable to insert server", "trace": err})
+					return
 				} else {
+					err = tx.Commit(context.Background())
+					if err != nil {
+						c.JSON(500, gin.H{"error": "Unable to commit transaction", "trace": err})
+						return
+					}
 					c.JSON(201, server)
+					return
 				}
 			})
 			serverGroup.GET("/:serverId", func(c *gin.Context) {
@@ -134,7 +153,43 @@ func InitWebServer() {
 				}
 			})
 		}
-
+		healthCheckGroup := restGroup.Group("/healthchecks")
+		{
+			healthCheckGroup.GET("/", func(c *gin.Context) {
+				healthchecks, err := DbQueryTypeAll(Healthcheck{})
+				if err != nil {
+					c.JSON(500, gin.H{"error": "Unable to get Healthcheck list from DB", "trace": err})
+				} else {
+					c.JSON(200, healthchecks)
+				}
+			})
+			healthCheckGroup.POST("/", func(c *gin.Context) {
+				var healthcheck Healthcheck
+				if err := c.ShouldBindJSON(&healthcheck); err != nil {
+					c.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
+					return
+				}
+				err := healthcheck.DbInsert()
+				if err != nil {
+					c.JSON(500, gin.H{"error": "Unable to insert healthcheck", "trace": err})
+				} else {
+					c.JSON(201, healthcheck)
+				}
+			})
+			healthCheckGroup.GET("/:serverId", func(c *gin.Context) {
+				serverId := c.Param("serverId")
+				id, err := strconv.Atoi(serverId)
+				if err != nil {
+					c.JSON(400, gin.H{"error": "Server ID not string"})
+				}
+				def := Server{ID: uint(id)}
+				if err != nil {
+					c.JSON(500, gin.H{"error": "Unable to get application instances", "trace": err})
+				} else {
+					c.JSON(200, def)
+				}
+			})
+		}
 	}
 	htmxGroup := engine.Group("/api/htmx")
 	{
