@@ -2,18 +2,32 @@ package main
 
 import (
 	"fmt"
+	data "kukus/nam/v2/layers/data"
+
+	"github.com/gin-gonic/gin"
 )
 
-var AppConfiguration ApplicationConfiguration
+type Application struct {
+	Engine        *gin.Engine
+	Database      *data.Database
+	Configuration ApplicationConfiguration
+}
+
+var App Application
 
 func main() {
 	// Load the application configuration and start vital components. Failure to start results in a panic.
-	AppConfiguration = LoadAndParseConfiguration("config.yaml")
-	DbStart()
-	//DB.InsertServer(Server{Hostname: "testhostname01", Alias: "Testalias01"})
-	//DB.InsertServer(Server{Hostname: "testhostname02", Alias: "Testalias02"})
+	App.Configuration = LoadAndParseConfiguration("config.yaml")
 
-	InitWebServer()
+	// Initialise pgx database TODO: pgx dsn from yaml
+	db, err := data.NewDatabase("postgres://postgres:heslo123@localhost:5432/postgres")
+	if err != nil {
+		panic("Unable to initialise database connection: " + err.Error())
+	}
+	App.Database = db
+
+	// Init WS
+	InitWebServer(App)
 
 	// Rundeck POC
 	rdckCli := NewRundeckClient("http://localhost", "cN3EWNUG8rT4n5YAQLtwOPSX2gWpSuzQ")

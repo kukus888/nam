@@ -1,8 +1,7 @@
-package main
+package data
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -17,11 +16,10 @@ type TopologyNode struct {
 
 // Inserts TopologyNode into Database. New ID is stored in the referenced TopologyNode
 // Does not roll back transaction, this is merely a facade for an insert statement
-func (tn *TopologyNode) DbInsert(tx pgx.Tx) error {
+func (tn TopologyNode) DbInsert(tx pgx.Tx) (*uint, error) {
 	var id uint
 	err := tx.QueryRow(context.Background(), "INSERT INTO topology_node (type) VALUES ($1) RETURNING id", tn.Type).Scan(&id)
-	tn.ID = id
-	return err
+	return &id, err
 }
 
 type Proxy struct {
@@ -56,7 +54,24 @@ type ApplicationDefinition struct {
 	Name          string
 	Port          int
 	Type          string
-	HealthcheckId *uint
+	HealthcheckId *uint `db:"healthcheck_id"`
+}
+
+// Creates new ApplicationDefinition in DB
+// Returns the inserted ApplicationDefinition object
+func (appDef ApplicationDefinition) DbInsert(tx pgx.Tx) (*uint, error) {
+	var resId uint
+	var err error
+	if appDef.HealthcheckId == nil {
+		err = tx.QueryRow(context.Background(), "INSERT INTO application_definition (name, port, type) VALUES ($1, $2, $3) RETURNING id", appDef.Name, appDef.Port, appDef.Type).Scan(&resId)
+	} else {
+		err = tx.QueryRow(context.Background(), "INSERT INTO application_definition (name, port, type, healthcheck_id) VALUES ($1, $2, $3, $4) RETURNING id", appDef.Name, appDef.Port, appDef.Type, appDef.HealthcheckId).Scan(&resId)
+	}
+	if err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	return &resId, nil
 }
 
 // ApplicationInstance represents an instance of an application
@@ -69,29 +84,24 @@ type ApplicationInstance struct {
 
 // Creates new ApplicationInstance in DB, with underlying TopologyNode struct.
 // Returns the inserted ApplicationInstance object
-func (dto *ApplicationInstance) DbInsert() error {
-	tx, err := Db.Pool.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
+func (dto ApplicationInstance) DbInsert(tx pgx.Tx) (*uint, error) {
 	// Create instance name first
 	// Create underlying topologyNode
-	tn := TopologyNode{Type: StructToTableName(fmt.Sprintf("%T", ApplicationInstance{}))}
-	err = tn.DbInsert(tx)
+	tn := TopologyNode{Type: "application_instance"}
+	tnId, err := tn.DbInsert(tx)
 	if err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
 	// Insert instance into DB
-	dto.ID = tn.ID
+	dto.ID = *tnId
 	var resId uint
 	err = tx.QueryRow(context.Background(), "INSERT INTO application_instance (id, name, server_id, application_definition_id) VALUES ($1, $2, $3, $4) RETURNING id", dto.ID, dto.Name, dto.ServerId, dto.DefinitionId).Scan(&resId)
 	if err != nil {
 		tx.Rollback(context.Background())
-		return err
+		return nil, err
 	}
-	dto.ID = resId
-	return tx.Commit(context.Background())
+	return &resId, nil
 }
 
 type Server struct {
@@ -102,16 +112,15 @@ type Server struct {
 
 // Inserts Server into Database. New ID is stored in the referenced Server struct.
 // Does not roll back transaction, this is merely a facade for an insert statement
-func (s *Server) DbInsert(tx pgx.Tx) error {
+func (s Server) DbInsert(tx pgx.Tx) (*uint, error) {
 	var id uint
 	err := tx.QueryRow(context.Background(), "INSERT INTO server (alias, hostname) VALUES ($1, $2) RETURNING id", s.Alias, s.Hostname).Scan(&id)
-	s.ID = id
-	return err
+	return &id, err
 }
 
-func (s *Server) GetUsingApplicationInstances() ([]ApplicationInstance, error) {
+func (s *Server) GetUsingApplicationInstances(tx pgx.Tx) ([]ApplicationInstance, error) {
 	idstr := strconv.Itoa(int(s.ID))
-	return DbQueryTypeWithParams(ApplicationInstance{}, DbFilter{
+	return DbQueryTypeWithParams(tx, ApplicationInstance{}, DbFilter{
 		Column:   "server_id",
 		Operator: DbOperatorEqual,
 		Value:    idstr,
@@ -128,35 +137,20 @@ type Healthcheck struct {
 	ExpectedStatus int
 }
 
+// Inserts Healthcheck into Database. New ID is stored in the referenced Healthcheck struct.
+// Does not roll back transaction, this is merely a facade for an insert statement
+func (s Healthcheck) DbInsert(tx pgx.Tx) (*uint, error) {
+	var id uint
+	err := tx.QueryRow(context.Background(), "INSERT INTO healthcheck (url, timeout, check_interval, expected_status) VALUES ($1, $2, $3, $4) RETURNING id", s.Url, s.Timeout, s.Interval, s.ExpectedStatus).Scan(&id)
+	return &id, err
+}
+
 // Gets all ApplicationDefinition objects using this healthcheck
-func (hc *Healthcheck) GetUsingApplicationDefinitions() ([]ApplicationDefinition, error) {
+func (hc *Healthcheck) GetUsingApplicationDefinitions(tx pgx.Tx) ([]ApplicationDefinition, error) {
 	idstr := strconv.Itoa(int(hc.ID))
-	return DbQueryTypeWithParams(ApplicationDefinition{}, DbFilter{
+	return DbQueryTypeWithParams(tx, ApplicationDefinition{}, DbFilter{
 		Column:   "healthcheck_id",
 		Operator: DbOperatorEqual,
 		Value:    idstr,
 	})
-}
-
-type ApplicationType string
-
-var applicationTypes = []ApplicationType{
-	"spring",
-	"jboss",
-	"hazelcast",
-}
-
-// ListApplicationTypes returns a list of all possible application types
-func ListApplicationTypes() []ApplicationType {
-	return applicationTypes
-}
-
-// IsValidApplicationType checks if the given application type is valid
-func IsValidApplicationType(appType string) bool {
-	for _, t := range applicationTypes {
-		if string(t) == appType {
-			return true
-		}
-	}
-	return false
 }

@@ -1,4 +1,4 @@
-package main
+package data
 
 import (
 	"context"
@@ -7,11 +7,27 @@ import (
 	"unicode"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type Database struct {
+	Pool *pgxpool.Pool
+}
+
+// TODO: Impl DB context
+
+// Initializes new pgx database connection with provided connection string
+func NewDatabase(dsn string) (*Database, error) {
+	p, err := pgxpool.New(context.Background(), dsn)
+	if err != nil {
+		return nil, err
+	}
+	return &Database{Pool: p}, nil
+}
+
 // A type set of what types are permitted to be used with DB (used to permit generics)
-type IDatabasable interface {
-	DbInsert(pgx.Tx) error
+type IDatabaseQueryable interface {
+	DbInsert(pgx.Tx) (*uint, error) // Inserts object into DB. Returns the object's new ID, or an error
 }
 
 // Idiotic conversion because postgres doesnt support capital letter in table and column name properly
@@ -35,7 +51,7 @@ func StructToTableName(structName string) string {
 }
 
 // Gets all instances of that type from database
-func DbQueryTypeAll[T IDatabasable](tx pgx.Tx, typ T) ([]T, error) {
+func DbQueryTypeAll[T IDatabaseQueryable](tx pgx.Tx, typ T) ([]T, error) {
 	tableName := StructToTableName(fmt.Sprintf("%T", typ))
 	query := fmt.Sprintf(`SELECT * FROM "%s"`, tableName)
 	rows, err := tx.Query(context.Background(), query)
@@ -81,7 +97,7 @@ func (f *DbFilter) CheckInjection() error {
 	}
 }
 
-func DbQueryTypeWithParams[T IDatabasable](tx pgx.Tx, typ T, filters ...DbFilter) ([]T, error) {
+func DbQueryTypeWithParams[T IDatabaseQueryable](tx pgx.Tx, typ T, filters ...DbFilter) ([]T, error) {
 	tableName := StructToTableName(fmt.Sprintf("%T", typ))
 	query := fmt.Sprintf(`SELECT * FROM %s tab`, tableName)
 	if len(filters) > 0 {
