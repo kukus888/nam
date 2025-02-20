@@ -1,16 +1,9 @@
 {{ define "template/application.small" }}
-<div hx-get="/api/htmx/health?application={{ .Application.Name }}&server={{ .Server.Name }}" hx-swap="outerHTML" hx-trigger="every 30s">
-    {{ if .Healthy}}
-    <div class="mx-1 flex max-w-sm items-center gap-x-4 rounded-xl bg-green-200 p-2 shadow-lg outline outline-black/5 hover:outline-black/10 hover:bg-green-300">
-    {{ else }}
-    <div class="mx-1 flex max-w-sm items-center gap-x-4 rounded-xl bg-red-200 p-2 shadow-lg outline outline-black/5 hover:outline-black/10 hover:bg-red-300">
-    {{ end }}
-        <img class="size-12 shrink-0" src="/static/logo.svg" alt="Server logo" />
-        <div>
-            <h2 class="text-xl font-medium text-black">{{ .Server.Name }}</h2>
-            <p class="text-gray-500"> {{ .Server.Name }} </p>
-            <div class="h-8 w-8 bg-blue-600 transition-opacity ease-in duration-700 opacity-100 hover:opacity-0">AAA</div>
-        </div>
+<div class="mx-1 flex max-w-sm items-center gap-x-4 rounded-xl bg-slate-200 p-2 shadow-lg outline outline-black/5 hover:outline-black/10 hover:bg-slate-300">
+    <img class="size-12 shrink-0" src="/static/logo.svg" alt="Server logo" />
+    <div>
+        <h2 class="text-xl font-medium text-black">{{ .ApplicationInstance.Name }}</h2>
+        <p class="text-gray-500"> {{ .ApplicationInstance.Name }} </p>
     </div>
 </div>
 {{ end }}

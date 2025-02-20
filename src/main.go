@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	data "kukus/nam/v2/layers/data"
 
 	"github.com/gin-gonic/gin"
@@ -27,13 +26,14 @@ func main() {
 	App.Database = db
 
 	// Init WS
-	InitWebServer(App)
-
+	InitWebServer(&App)
+	for {
+	}
 	// Rundeck POC
-	rdckCli := NewRundeckClient("http://localhost", "cN3EWNUG8rT4n5YAQLtwOPSX2gWpSuzQ")
+	/*rdckCli := NewRundeckClient("http://localhost", "cN3EWNUG8rT4n5YAQLtwOPSX2gWpSuzQ")
 	info, err := rdckCli.GetSystemInfo()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Rundeck System Info: %+v\n", info)
+	fmt.Printf("Rundeck System Info: %+v\n", info)*/
 }

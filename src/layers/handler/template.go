@@ -11,7 +11,7 @@ import (
 )
 
 // Delete this, for imports only
-var Db = data.ApplicationInstance{}
+var Db = data.ApplicationInstanceDAO{}
 
 func Get(ctx *gin.Context) {
 	ctx.AbortWithStatus(500)
