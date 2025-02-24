@@ -11,6 +11,7 @@ type PageController struct {
 	Database        *data.Database
 	ServerService   services.ServerService
 	TopologyService services.TopologyNodeService
+	ItemService     services.ItemService
 }
 
 func NewPageController(database *data.Database) PageController {
@@ -18,6 +19,7 @@ func NewPageController(database *data.Database) PageController {
 		Database:        database,
 		ServerService:   services.ServerService{Database: database},
 		TopologyService: services.TopologyNodeService{Database: database},
+		ItemService:     services.ItemService{Database: database},
 	}
 }
 
