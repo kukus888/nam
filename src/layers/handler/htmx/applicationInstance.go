@@ -25,7 +25,7 @@ func (aiv ApplicationInstanceView) Init(routeGroup *gin.RouterGroup) {
 }
 
 func (aiv *ApplicationInstanceView) RenderApplicationInstanceSmall(ctx *gin.Context) {
-	id, err := strconv.Atoi(ctx.Param("id"))
+	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
 	if err != nil {
 		ctx.AbortWithStatusJSON(400, err)
 		return

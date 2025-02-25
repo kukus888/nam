@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // ApplicationInstanceDAO represents an instance of an application
@@ -21,6 +22,36 @@ func (s ApplicationInstanceDAO) TableName() string {
 
 func (s ApplicationInstanceDAO) ApiName() string {
 	return "instances"
+}
+
+func GetApplicationInstanceFull(pool *pgxpool.Pool, id uint64) (*ApplicationInstance, error) {
+	tx, err := pool.Begin(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	row, err := tx.Query(context.Background(), `
+		SELECT 
+			ai.id AS ApplicationInstanceID, ai.name AS ApplicationInstanceName, ai.server_id AS ServerId, ai.application_definition_id AS ApplicationDefinitionID,
+			s.alias AS ServerAlias, s.hostname AS ServerHostname,
+			ad.id AS ApplicationDefinitionId, ad.name AS ApplicationDefinitionName, ad.port AS ApplicationDefinitionPort, ad.port AS ApplicationDefinitionType, ad.healthcheck_id AS HealthcheckID,
+			h.url AS HealthcheckUrl, h.timeout AS HealthcheckTimeout, h.check_interval AS HealthcheckCheckInterval, h.expected_status AS HealthcheckExpectedStatus
+		FROM application_instance ai
+		LEFT JOIN "server" s ON ai.server_id = s.id
+		LEFT JOIN application_definition ad ON ai.application_definition_id = ad.id
+		LEFT JOIN healthcheck h ON ad.healthcheck_id = h.id
+		WHERE ai.id = $1`, id)
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback(context.Background())
+
+	appInstance, err := pgx.CollectOneRow(row, pgx.RowToStructByNameLax[ApplicationInstance])
+	if err != nil {
+		return nil, err
+	}
+
+	return &appInstance, nil
 }
 
 // Creates new ApplicationInstance in DB, with underlying TopologyNode struct.

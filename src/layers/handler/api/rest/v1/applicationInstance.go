@@ -58,7 +58,7 @@ func (aic *ApplicationInstanceController) CreateInstance(ctx *gin.Context) {
 
 // GetAll ApplicationInstance
 func (aic *ApplicationInstanceController) GetById(ctx *gin.Context) {
-	instanceId, err := strconv.Atoi(ctx.Param("instanceId"))
+	instanceId, err := strconv.ParseUint(ctx.Param("instanceId"), 10, 64)
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of application instance"})
 	}
@@ -86,7 +86,7 @@ func (aic *ApplicationInstanceController) GetAllInstances(ctx *gin.Context) {
 
 // Delete ApplicationInstance
 func (aic *ApplicationInstanceController) DeleteInstance(ctx *gin.Context) {
-	instanceId, err := strconv.Atoi(ctx.Param("instanceId"))
+	instanceId, err := strconv.ParseUint(ctx.Param("instanceId"), 10, 64)
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of application instance"})
 	}

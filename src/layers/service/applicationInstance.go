@@ -54,30 +54,13 @@ func (as *ApplicationInstanceService) GetAllApplicationInstances(applicationInst
 }
 
 // Reads ApplicationInstanceDAO from database
-func (as *ApplicationInstanceService) GetApplicationInstanceById(id int) (*data.ApplicationInstanceDAO, error) {
-	tx, err := as.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	daos, err := data.DbQueryTypeWithParams(tx, data.ApplicationInstanceDAO{}, data.DbFilter{
-		Column:   "id",
-		Operator: data.DbOperatorEqual,
-		Value:    strconv.Itoa(int(id)),
-	})
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
-	} else if len(daos) == 0 {
-		tx.Commit(context.Background())
-		return nil, nil
-	} else {
-		tx.Commit(context.Background())
-		return &daos[0], nil
-	}
+func (as *ApplicationInstanceService) GetApplicationInstanceById(id uint64) (*data.ApplicationInstanceDAO, error) {
+	data.GetApplicationInstanceFull(as.Database.Pool, id)
+	panic("not implemented")
 }
 
 // Removes ApplicationInstanceDAO from database
-func (as *ApplicationInstanceService) RemoveApplicationInstanceById(id int) error {
+func (as *ApplicationInstanceService) RemoveApplicationInstanceById(id uint64) error {
 	instance, err := as.GetApplicationInstanceById(id)
 	if err != nil {
 		return err
