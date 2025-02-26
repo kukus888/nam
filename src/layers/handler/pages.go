@@ -44,4 +44,9 @@ func (pc PageController) Init(routeGroup *gin.RouterGroup) {
 			"Nodes": nodes,
 		})
 	})
+	routeGroup.GET("/items", func(ctx *gin.Context) {
+		ctx.HTML(200, "pages/items", gin.H{
+			"Types": pc.ItemService.GetAllItemTypes(),
+		})
+	})
 }

@@ -2,9 +2,7 @@ package services
 
 import (
 	"context"
-	"errors"
 	"kukus/nam/v2/layers/data"
-	"strconv"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -35,80 +33,19 @@ func (as *ApplicationService) CreateApplication(appDef data.ApplicationDefinitio
 
 // Reads All ApplicationDefinition from database
 func (as *ApplicationService) GetAllApplications() (*[]data.ApplicationDefinitionDAO, error) {
-	// Insert AppDef into Db
-	tx, err := as.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	daos, err := data.DbQueryTypeAll(tx, data.ApplicationDefinitionDAO{})
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
-	} else {
-		tx.Commit(context.Background())
-		return &daos, nil
-	}
+	return data.GetApplicationDefinitions(as.Database.Pool)
 }
 
 // Reads ApplicationDefinition from database
 func (as *ApplicationService) GetApplicationById(id uint) (*data.ApplicationDefinitionDAO, error) {
-	// Insert AppDef into Db
-	tx, err := as.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	daos, err := data.DbQueryTypeWithParams(tx, data.ApplicationDefinitionDAO{}, data.DbFilter{
-		Column:   "id",
-		Operator: data.DbOperatorEqual,
-		Value:    strconv.Itoa(int(id)),
-	})
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
-	} else if len(daos) == 0 {
-		tx.Commit(context.Background())
-		return nil, nil
-	} else {
-		tx.Commit(context.Background())
-		return &daos[0], nil
-	}
+	return data.GetApplicationDefinitionById(as.Database.Pool, uint64(id))
 }
 
 // Removes ApplicationDefinition from database
-func (as *ApplicationService) RemoveApplicationById(id uint) error {
-	tx, err := as.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return err
+func (as *ApplicationService) RemoveApplicationById(id uint64) error {
+	appDef := data.ApplicationDefinitionDAO{
+		ID: uint(id),
 	}
-	// Check for dangling instances!
-	instances, err := data.DbQueryTypeWithParams(tx, data.ApplicationInstanceDAO{}, data.DbFilter{
-		Column:   "application_instance_id",
-		Operator: data.DbOperatorEqual,
-		Value:    strconv.Itoa(int(id)),
-	})
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
-	}
-	if len(instances) > 0 {
-		for _, instance := range instances {
-			_, err = instance.Delete(tx) // TODO: Log
-			if err != nil {
-				tx.Rollback(context.Background())
-				return err
-			}
-		}
-	}
-	app, err := as.GetApplicationById(id)
-	if err != nil {
-		return err
-	} else if app == nil {
-		return errors.New("application with id " + strconv.Itoa(int(id)) + " doesn't exist!")
-	}
-	_, err = app.Delete(tx) // TODO: Log
-	if err != nil {
-		return err
-	} else {
-		return tx.Commit(context.Background())
-	}
+	_, err := appDef.Delete(as.Database.Pool)
+	return err
 }

@@ -56,7 +56,7 @@ func (aic *ApplicationInstanceController) CreateInstance(ctx *gin.Context) {
 	}
 }
 
-// GetAll ApplicationInstance
+// Get ApplicationInstance with Id
 func (aic *ApplicationInstanceController) GetById(ctx *gin.Context) {
 	instanceId, err := strconv.ParseUint(ctx.Param("instanceId"), 10, 64)
 	if err != nil {
@@ -75,8 +75,7 @@ func (aic *ApplicationInstanceController) GetById(ctx *gin.Context) {
 
 // GetAll ApplicationInstance
 func (aic *ApplicationInstanceController) GetAllInstances(ctx *gin.Context) {
-	appId, err := strconv.Atoi(ctx.Param("appId"))
-	dtos, err := aic.Service.GetAllApplicationInstances(appId)
+	dtos, err := aic.Service.GetApplicationInstancesFull()
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
 		return

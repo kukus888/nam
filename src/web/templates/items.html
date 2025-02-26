@@ -1,4 +1,4 @@
-{{ define "pages/nodes" }}
+{{ define "pages/items" }}
 <!doctype html>
 <html>
 
@@ -10,13 +10,17 @@
     <script src="/static/htmx.js"></script>
 </head>
 
-<body>
+<body class="bg-slate-100">
     {{ template "templates/navbar" }}
-    <h1 class="text-3xl font-bold underline">Items</h1>
-    <div class="flex flex-column">
-        {{ range .ItemTypes}}
-        <div class="flex-auto">{{ .Name }}</div>
-        {{ end }}
+    <h1 class="text-3xl font-bold m-2">Items</h1>
+    <div class="flex flex-col m-2">
+        <h2 class="text-xl font-bold text-black my-2">Types</h2>
+        <br>
+        <div class="flex flex-col">
+            {{ range .Types }}
+            <div class="my-1 flex max-w-sm items-center gap-x-4 rounded-l bg-white p-2 shadow-lg outline outline-black/5 hover:outline-black/10 hover:bg-slate-200">{{ . }}</div>
+            {{ end }}
+        </div>
     </div>
 </body>
 

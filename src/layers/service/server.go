@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"kukus/nam/v2/layers/data"
 	"strconv"
 
@@ -74,39 +73,7 @@ func (sc *ServerService) GetServerById(id uint) (*data.ServerDAO, error) {
 
 // Removes Server from database
 func (sc *ServerService) RemoveApplicationById(id uint) error {
-	tx, err := sc.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return err
-	}
-	// Check for dangling instances!
-	instances, err := data.DbQueryTypeWithParams(tx, data.ApplicationInstanceDAO{}, data.DbFilter{
-		Column:   "application_instance_id",
-		Operator: data.DbOperatorEqual,
-		Value:    strconv.Itoa(int(id)),
-	})
-	if err != nil {
-		tx.Rollback(context.Background())
-		return err
-	}
-	if len(instances) > 0 {
-		for _, instance := range instances {
-			_, err = instance.Delete(tx) // TODO: Log
-			if err != nil {
-				tx.Rollback(context.Background())
-				return err
-			}
-		}
-	}
-	server, err := sc.GetServerById(id)
-	if err != nil {
-		return err
-	} else if server == nil {
-		return errors.New("server with id " + strconv.Itoa(int(id)) + " doesn't exist!")
-	}
-	_, err = server.Delete(tx) // TODO: Log
-	if err != nil {
-		return err
-	} else {
-		return tx.Commit(context.Background())
-	}
+	server := data.ServerDAO{ID: id}
+	_, err := server.Delete(sc.Database.Pool) // TODO: Log
+	return err
 }

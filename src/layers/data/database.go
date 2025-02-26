@@ -24,6 +24,7 @@ func NewDatabase(dsn string) (*Database, error) {
 	return &Database{Pool: p}, nil
 }
 
+// TODO: REMOVE
 // A type set of what types are permitted to be used with DB (used to permit generics)
 type IDatabaseQueryable interface {
 	TableName() string

@@ -20,4 +20,12 @@ type ItemBO struct {
 type ItemTypeBO struct {
 }
 
-func (is *ItemService) GetAllItemTypes() {}
+func (is *ItemService) GetAllItemTypes() []string {
+	return []string{
+		"TopologyNode",
+		"ApplicationDefinition",
+		"Server",
+		"ApplicationInstance",
+		"Healthcheck",
+	}
+}

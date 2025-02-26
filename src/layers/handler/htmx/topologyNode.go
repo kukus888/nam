@@ -24,6 +24,7 @@ func NewTopologyNodeController(database *data.Database) TopologyNodeController {
 
 func (tnc TopologyNodeController) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/:id", tnc.RenderTopologyNode)
+	routeGroup.GET("/types", tnc.GetTopologyNodeTypes)
 }
 
 // Fancy endpoint, renders any topology node... almost... hopefully
@@ -51,4 +52,11 @@ func (tnc TopologyNodeController) RenderTopologyNode(ctx *gin.Context) {
 	}
 	ctx.Redirect(301, "/htmx/"+redirect+"/"+id)
 	return
+}
+
+func (tnc TopologyNodeController) GetTopologyNodeTypes(ctx *gin.Context) {
+	types := []string{
+		"application_instance",
+	}
+	ctx.JSON(200, gin.H{"types": types})
 }
