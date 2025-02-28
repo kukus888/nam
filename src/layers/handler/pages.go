@@ -25,14 +25,8 @@ func NewPageController(database *data.Database) PageController {
 
 func (pc PageController) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/", func(ctx *gin.Context) {
-		servers, err := pc.ServerService.GetAllServers()
-		if err != nil {
-			ctx.AbortWithStatus(500)
-			return
-		}
-		ctx.HTML(200, "pages/index", gin.H{
-			"Servers": servers,
-		})
+		// TODO: Health page?
+		ctx.HTML(200, "pages/index", gin.H{})
 	})
 	routeGroup.GET("/nodes", func(ctx *gin.Context) {
 		nodes, err := pc.TopologyService.GetAllTopologyNodes()

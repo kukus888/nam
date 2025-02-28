@@ -8,20 +8,227 @@
     <script src="/static/tailwindcss.js"></script>
     <script src="/static/jquery.js"></script>
     <script src="/static/htmx.js"></script>
+    <!-- Heroicons for the action buttons -->
+    <link href="https://unpkg.com/heroicons@1.0.6/outline.css" rel="stylesheet">
 </head>
 
 <body class="bg-slate-100">
     {{ template "templates/navbar" }}
     <h1 class="text-3xl font-bold m-2">Items</h1>
-    <div class="flex flex-col m-2">
-        <h2 class="text-xl font-bold text-black my-2">Types</h2>
-        <br>
-        <div class="flex flex-col">
-            {{ range .Types }}
-            <div class="my-1 flex max-w-sm items-center gap-x-4 rounded-l bg-white p-2 shadow-lg outline outline-black/5 hover:outline-black/10 hover:bg-slate-200">{{ . }}</div>
-            {{ end }}
+    
+    <div class="flex flex-row m-2">
+        <!-- Left column: Item Types -->
+        <div class="w-1/4 mr-4">
+            <h2 class="text-xl font-bold text-black my-2">Types</h2>
+            <div class="flex flex-col" id="type-list">
+                {{ range .Types }}
+                <div class="flex items-center my-1">
+                    <div 
+                        class="type-item flex-grow flex items-center gap-x-4 outline-2 rounded-l-lg bg-white p-2 shadow-lg outline outline-black/5 hover:outline-black/10 hover:bg-slate-200 cursor-pointer"
+                        data-type="{{ .HtmxEndpoint }}"
+                        onclick="selectType('{{ .HtmxEndpoint }}')"
+                    >
+                        {{ .DisplayName }}
+                    </div>
+                    <a 
+                        href="/items/new/{{ .HtmxEndpoint }}"
+                        class="add-button h-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-r-lg shadow-lg"
+                        title="Add new {{ .DisplayName }}"
+                    >
+                        <span class="text-xl">+</span>
+                    </a>
+                </div>
+                {{ end }}
+            </div>
+        </div>
+        
+        <!-- Right column: Items of selected type -->
+        <div class="w-3/4">
+            <h2 class="text-xl font-bold text-black my-2">Items</h2>
+            
+            <!-- Search input -->
+            <div class="mb-4">
+                <input 
+                    type="text" 
+                    id="search-input" 
+                    placeholder="Search items..." 
+                    class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    oninput="filterItems()"
+                    disabled
+                >
+            </div>
+            
+            <div id="loading-indicator" class="hidden">
+                <div class="flex justify-center my-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                </div>
+            </div>
+            
+            <div id="items-container" class="bg-white rounded-lg p-2 shadow-lg min-h-[400px]">
+                <p class="text-gray-500">Select an item type to view items</p>
+            </div>
         </div>
     </div>
+
+    <script>
+        // Store the current items data
+        let currentItems = [];
+        let selectedType = null;
+        
+        function selectType(type) {
+            // Update visual selection
+            document.querySelectorAll('.type-item').forEach(item => {
+                if (item.dataset.type === type) {
+                    item.classList.add('bg-blue-100', 'outline-blue-500', 'outline-2');
+                } else {
+                    item.classList.remove('bg-blue-100', 'outline-blue-500', 'outline-2');
+                }
+            });
+            
+            selectedType = type;
+            
+            // Show loading indicator
+            document.getElementById('loading-indicator').classList.remove('hidden');
+            
+            // Fetch data from REST API
+            fetch(`/api/rest/v1/${type}`)
+                .then(response => response.json())
+                .then(data => {
+                    currentItems = data;
+                    document.getElementById('search-input').disabled = false;
+                    renderItems(data, type);
+                })
+                .catch(error => {
+                    document.getElementById('items-container').innerHTML = `
+                        <div class="text-red-500">Error loading items: ${error.message}</div>
+                    `;
+                })
+                .finally(() => {
+                    document.getElementById('loading-indicator').classList.add('hidden');
+                });
+        }
+        
+        function renderItems(items, type) {
+            if (!items || items.length === 0) {
+                document.getElementById('items-container').innerHTML = `
+                    <p class="text-gray-500">No items found for this type</p>
+                `;
+                return;
+            }
+            
+            // Determine if the items have an ID field
+            const idField = determineIdField(items[0]);
+            
+            let html = `
+                <div class="mb-2 text-sm text-gray-500">${items.length} items found</div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                ${Object.keys(items[0]).map(key => 
+                                    `<th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">${key}</th>`
+                                ).join('')}
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${items.map(item => `
+                                <tr class="hover:bg-gray-50">
+                                    ${Object.entries(item).map(([key, value]) => 
+                                        `<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${
+                                            typeof value === 'object' ? JSON.stringify(value) : value
+                                        }</td>`
+                                    ).join('')}
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div class="flex space-x-2">
+                                            <a href="/items/update/${type}/${item[idField]}" 
+                                               class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 p-1 rounded">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </a>
+                                            <a href="/items/remove/${type}/${item[idField]}" 
+                                               class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-1 rounded"
+                                               onclick="return confirm('Are you sure you want to delete this item?')">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            document.getElementById('items-container').innerHTML = html;
+        }
+        
+        function determineIdField(item) {
+            // Try to find an ID field with common naming patterns
+            const possibleIdFields = ['id', 'ID', '_id', 'Id', 'uuid', 'UUID'];
+            for (const field of possibleIdFields) {
+                if (item.hasOwnProperty(field)) {
+                    return field;
+                }
+            }
+            // If no obvious ID field, use the first field as fallback
+            return Object.keys(item)[0];
+        }
+        
+        function filterItems() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            
+            if (!searchTerm) {
+                renderItems(currentItems, selectedType);
+                return;
+            }
+            
+            const filteredItems = currentItems.filter(item => {
+                return Object.values(item).some(value => {
+                    const stringValue = typeof value === 'object' ? 
+                        JSON.stringify(value).toLowerCase() : 
+                        String(value).toLowerCase();
+                    return stringValue.includes(searchTerm);
+                });
+            });
+            
+            renderItems(filteredItems, selectedType);
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar for tables */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Prevent text selection on buttons */
+        .add-button {
+            user-select: none;
+        }
+        
+        /* Make the type item and add button the same height */
+        .type-item, .add-button {
+            display: flex;
+            align-items: center;
+        }
+    </style>
 </body>
 
 </html>

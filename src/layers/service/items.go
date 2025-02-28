@@ -17,15 +17,17 @@ type ItemBO struct {
 }
 
 // Represents a type of an item, such as TopologyNode, ApplicationDefinition, ...
-type ItemTypeBO struct {
+type ItemType struct {
+	DisplayName  string // Name to display
+	HtmxEndpoint string // which endpoint will be called at /api/htmx
 }
 
-func (is *ItemService) GetAllItemTypes() []string {
-	return []string{
-		"TopologyNode",
-		"ApplicationDefinition",
-		"Server",
-		"ApplicationInstance",
-		"Healthcheck",
+func (is *ItemService) GetAllItemTypes() []ItemType {
+	return []ItemType{
+		{DisplayName: "Application Instance", HtmxEndpoint: "instances"},
+		{DisplayName: "Application Definition", HtmxEndpoint: "definitions"},
+		{DisplayName: "Server", HtmxEndpoint: "servers"},
+		{DisplayName: "Healthcheck", HtmxEndpoint: "healthchecks"},
+		{DisplayName: "Topology Nodes", HtmxEndpoint: "nodes"},
 	}
 }
