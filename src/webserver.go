@@ -11,7 +11,7 @@ import (
 // Initialize and start the web server
 func InitWebServer(app *Application) {
 	app.Engine = gin.Default()
-	app.Engine.LoadHTMLGlob("./web/templates/*")
+	app.Engine.LoadHTMLGlob("./web/templates/*/*.html")
 	app.Engine.Static("/static", "./web/static")
 	// REST
 	restV1group := App.Engine.Group("/api/rest/v1")

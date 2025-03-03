@@ -20,33 +20,20 @@ func NewItemView(database *data.Database) ItemView {
 }
 
 func (iv ItemView) Init(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/types", iv.GetItemTypes)
-	routeGroup.DELETE("/new/:itemType", iv.NewItemInstance)
-	routeGroup.GET("/container", iv.GetItemContainer)
-}
-
-func (tnc ItemView) GetItemTypes(ctx *gin.Context) {
-	types := []string{
-		"application_instance",
-		"application_definition",
-		"server",
-		"topology_node",
-	}
-	ctx.JSON(200, gin.H{"types": types})
-}
-
-func (tnc ItemView) NewItemInstance(ctx *gin.Context) {
-	types := []string{
-		"application_instance",
-		"application_definition",
-		"server",
-		"topology_node",
-	}
-	ctx.JSON(200, gin.H{"types": types})
+	routeGroup.GET("/view/servers", iv.GetServerView)
 }
 
 func (tnc ItemView) GetItemContainer(ctx *gin.Context) {
 	itemType := ctx.Param("type")
 	itemUrl := "/api/rest/v1/" + itemType
 	ctx.HTML(200, "template/items/itemcontainer", gin.H{"itemUrl": itemUrl})
+}
+
+func (tnc ItemView) GetServerView(ctx *gin.Context) {
+	servers, err := data.GetServerAll(tnc.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err})
+		return
+	}
+	ctx.HTML(200, "template/items/server/view", gin.H{"Servers": servers})
 }

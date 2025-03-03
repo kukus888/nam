@@ -74,3 +74,19 @@ func (s ServerDAO) Delete(pool *pgxpool.Pool) (*int, error) {
 	affectedRows += int(com.RowsAffected())
 	return &affectedRows, nil
 }
+
+func GetServerAll(pool *pgxpool.Pool) (*[]ServerDAO, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	rows, err := tx.Query(context.Background(), `SELECT * FROM Server s`)
+	if err != nil {
+		return nil, err
+	}
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[ServerDAO])
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
