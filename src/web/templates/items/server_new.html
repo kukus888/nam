@@ -1,0 +1,56 @@
+{{ define "template/items/server/create" }}
+
+<div class="flex justify-between items-center mb-6">
+    <h2 class="text-2xl font-bold text-gray-800">Create New Server</h2>
+    <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700 transition-colors"
+        hx-get="/htmx/items/servers/view" hx-target="#items-container">
+        Back to Servers
+    </button>
+</div>
+
+<!-- Error message banner -->
+<div id="error-banner" class="hidden mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+    <div class="flex">
+        <div class="flex-shrink-0">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clip-rule="evenodd" />
+            </svg>
+        </div>
+        <div class="ml-3">
+            <p class="text-sm" id="error-message">Error message will appear here</p>
+        </div>
+    </div>
+</div>
+
+<form id="server-create-form" hx-post="/api/rest/v1/servers" 
+    hx-headers='{"Content-Type": "application/json"}' hx-on::after-request="handleRestApiResponse(event, '/htmx/items/servers/view')" hx-ext="submitjson">
+    <div class="space-y-4">
+        <!-- Server Alias -->
+        <div class="grid grid-cols-3 gap-4 items-center">
+            <label for="alias" class="text-sm font-medium text-gray-700 text-right">Alias</label>
+            <input type="text" id="alias" name="Alias" value=""
+                class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Server Hostname -->
+        <div class="grid grid-cols-3 gap-4 items-center">
+            <label for="hostname" class="text-sm font-medium text-gray-700 text-right">Hostname</label>
+            <input type="text" id="hostname" name="Hostname" value=""
+                class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Add all other Server fields here -->
+        <!-- For example, if Server has fields like Port, Username, etc. -->
+
+        <div class="flex justify-end mt-6">
+            <button type="submit"
+                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
+                Create Server
+            </button>
+        </div>
+    </div>
+</form>
+
+{{ end }}

@@ -8,10 +8,12 @@
     <script src="/static/tailwindcss.js"></script>
     <script src="/static/jquery.js"></script>
     <script src="/static/htmx.js"></script>
+    <script src="/static/htmx-extensions.js"></script>
 </head>
 
 <body class="bg-slate-100" hx-ext="debug">
     {{ template "templates/navbar" }}
+    {{ template "template/components/error-notification" . }}
     <h1 class="text-3xl font-bold m-2">Items</h1>
     
     <div class="flex flex-row m-2">
@@ -24,18 +26,20 @@
                     <div 
                         class="type-item flex-grow flex items-center gap-x-4 outline-2 rounded-l-lg bg-white p-2 shadow-lg outline outline-black/5 hover:outline-black/10 hover:bg-slate-200 cursor-pointer"
                         hx-trigger="click"
-                        hx-get="/htmx/items/view/{{ .HtmxEndpoint }}"
+                        hx-get="/htmx/items/{{ .HtmxEndpoint }}/view"
                         hx-target="#items-container"
                     >
                         {{ .DisplayName }}
                     </div>
-                    <a 
-                        href="/htmx/items/new/{{ .HtmxEndpoint }}"
+                    <div
                         class="add-button h-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-r-lg shadow-lg"
                         title="Add new {{ .DisplayName }}"
+                        hx-trigger="click"
+                        hx-get="/htmx/items/{{ .HtmxEndpoint }}/create"
+                        hx-target="#items-container"
                     >
                         <span class="text-xl">+</span>
-                    </a>
+                </div>
                 </div>
                 {{ end }}
             </div>

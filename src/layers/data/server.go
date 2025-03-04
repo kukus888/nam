@@ -66,13 +66,13 @@ func (s ServerDAO) Delete(pool *pgxpool.Pool) (*int, error) {
 		}
 	}
 	// Remove Server
-	com, err := tx.Exec(context.Background(), "DELETE FROM server WHERE id = $1", s.ID)
+	com, err := tx.Exec(context.Background(), `DELETE FROM "server" s WHERE s.id = $1`, s.ID)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return nil, err
 	}
 	affectedRows += int(com.RowsAffected())
-	return &affectedRows, nil
+	return &affectedRows, tx.Commit(context.Background())
 }
 
 func GetServerAll(pool *pgxpool.Pool) (*[]ServerDAO, error) {
@@ -89,4 +89,34 @@ func GetServerAll(pool *pgxpool.Pool) (*[]ServerDAO, error) {
 		return nil, err
 	}
 	return &res, nil
+}
+
+func GetServerById(pool *pgxpool.Pool, id uint) (*ServerDAO, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	rows, err := tx.Query(context.Background(), `SELECT * FROM Server s WHERE s.id = $1`, id)
+	if err != nil {
+		return nil, err
+	}
+	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[ServerDAO])
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (server *ServerDAO) Update(pool *pgxpool.Pool) error {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	rows, err := tx.Query(context.Background(), `update "server" s set alias = $2, hostname = $3 where s.id = $1 returning *`, server.ID, server.Alias, server.Hostname)
+	if err != nil {
+		tx.Rollback(context.Background())
+		return err
+	}
+	rows.Scan(&server)
+	return tx.Commit(context.Background())
 }

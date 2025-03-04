@@ -22,20 +22,20 @@ func NewServerController(db *data.Database) *ServerController {
 }
 
 // Initializes new Controller on declared RouterGroup, with specified resources
-func (ac *ServerController) Init(routerGroup *gin.RouterGroup) {
-	routerGroup.POST("/", ac.NewServer)
-	routerGroup.GET("/", ac.GetAll)
+func (sc *ServerController) Init(routerGroup *gin.RouterGroup) {
+	routerGroup.POST("/", sc.NewServer)
+	routerGroup.GET("/", sc.GetAll)
 	routerGroup.PATCH("/", handlers.MethodNotAllowed)
 	routerGroup.PUT("/", handlers.MethodNotAllowed)
 	routerGroup.DELETE("/", handlers.MethodNotAllowed)
 	idGroup := routerGroup.Group("/:serverId")
 	{
 		idGroup.POST("/", handlers.MethodNotAllowed)
-		idGroup.GET("/", ac.GetById)
+		idGroup.GET("/", sc.GetById)
 		idGroup.PATCH("/", handlers.MethodNotImplemented)
-		idGroup.PUT("/", handlers.MethodNotImplemented)
-		idGroup.DELETE("/", handlers.MethodNotImplemented)
-		NewApplicationInstanceController(ac.Service.Database).Init(idGroup.Group("/instances"))
+		idGroup.PUT("/", sc.UpdateById)
+		idGroup.DELETE("/", sc.RemoveById)
+		NewApplicationInstanceController(sc.Service.Database).Init(idGroup.Group("/instances"))
 	}
 }
 
@@ -79,4 +79,35 @@ func (sc *ServerController) NewServer(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(201, id)
+}
+
+// Get server with ID
+func (sc *ServerController) RemoveById(ctx *gin.Context) {
+	serverId, err := strconv.Atoi(ctx.Param("serverId"))
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "Must include ID of server"})
+	}
+	dao := data.ServerDAO{ID: uint(serverId)}
+	deletedId, err := dao.Delete(sc.Service.Database.Pool)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Unable to remove server", "trace": err})
+		return
+	} else {
+		ctx.JSON(200, deletedId)
+	}
+}
+
+// Get server with ID
+func (sc *ServerController) UpdateById(ctx *gin.Context) {
+	var server data.ServerDAO
+	if err := ctx.ShouldBindJSON(&server); err != nil {
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
+		return
+	}
+	err := server.Update(sc.Service.Database.Pool)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Unable to update Server", "trace": err})
+		return
+	}
+	ctx.JSON(200, server)
 }
