@@ -1,0 +1,9 @@
+{{ define "templates/healthchecks/select" }}
+<select id="healthcheckId" name="healthcheck_id"
+    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <option value="">Select Health Check</option>
+    {{ range .HealthChecks }}
+    <option value="{{ .ID }}">{{ .Name }}</option>
+    {{ end }}
+</select>
+{{ end }}

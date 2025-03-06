@@ -27,7 +27,11 @@ func (s ServerDAO) ApiName() string {
 func (s ServerDAO) DbInsert(tx pgx.Tx) (*uint, error) {
 	var id uint
 	err := tx.QueryRow(context.Background(), "INSERT INTO server (alias, hostname) VALUES ($1, $2) RETURNING id", s.Alias, s.Hostname).Scan(&id)
-	return &id, err
+	if err != nil {
+		tx.Rollback(context.Background())
+		return nil, err
+	}
+	return &id, tx.Commit(context.Background())
 }
 
 // Deletes specified ServerDAO. Checks for dependent ApplicationInstances
@@ -80,7 +84,7 @@ func GetServerAll(pool *pgxpool.Pool) (*[]ServerDAO, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(context.Background(), `SELECT * FROM Server s`)
+	rows, err := tx.Query(context.Background(), `SELECT * FROM Server s ORDER BY id ASC;`)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +92,7 @@ func GetServerAll(pool *pgxpool.Pool) (*[]ServerDAO, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &res, nil
+	return &res, tx.Commit(context.Background())
 }
 
 func GetServerById(pool *pgxpool.Pool, id uint) (*ServerDAO, error) {

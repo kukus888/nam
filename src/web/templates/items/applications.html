@@ -1,0 +1,427 @@
+{{ define "pages/applications" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Management</title>
+    <!-- Add Inter font for modern typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Add Heroicons -->
+    <script src="https://unpkg.com/heroicons@1.0.6/outline/index.js"></script>
+
+    <script src="/static/tailwindcss.js"></script>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/htmx.js"></script>
+    <script src="/static/htmx-extensions.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .server-row {
+            transition: all 0.3s ease;
+        }
+        
+        .server-row:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .btn-primary {
+            @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out;
+        }
+        
+        .btn-secondary {
+            @apply bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out;
+        }
+        
+        .search-input {
+            @apply transition-all duration-300 ease-in-out;
+        }
+        
+        .search-input:focus {
+            @apply ring-2 ring-indigo-500 ring-offset-2;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0a0a0;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    {{ template "template/components/error-notification" . }}
+    <!-- Modern Navbar -->
+    {{ template "templates/navbar" }}
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="md:flex md:items-center md:justify-between mb-8">
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    Application Management
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Manage and monitor your applications
+                </p>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <a type="button" class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                       href="/applications/create">
+                    <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Application
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+            <!-- Total Servers Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg card">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                            <svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Total Applications
+                                </dt>
+                                <dd class="flex items-baseline">
+                                    <div class="text-2xl font-semibold text-gray-900" id="server-count">
+                                        {{ len .Applications }}
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Online Servers Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg card">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-green-100 rounded-md p-3">
+                            <svg class="h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Online Applications
+                                </dt>
+                                <dd class="flex items-baseline">
+                                    <div class="text-2xl font-semibold text-gray-900">
+                                        {{ len .Applications }}
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CPU Usage Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg card">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-blue-100 rounded-md p-3">
+                            <svg class="h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Total instances
+                                </dt>
+                                <dd class="flex items-baseline">
+                                    <div class="text-2xl font-semibold text-gray-900">Over 9000</div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Memory Usage Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg card">
+                <div class="px-4 py-5 sm:p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                            <svg class="h-6 w-6 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    Avg. Memory Usage
+                                </dt>
+                                <dd class="flex items-baseline">
+                                    <div class="text-2xl font-semibold text-gray-900">
+                                        42%
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications List Section -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg" id="items-container">
+            <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Applications List</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Manage your applications</p>
+                </div>
+                
+                <!-- Search input -->
+                <div class="relative w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="search-input" placeholder="Search applications..."
+                        class="search-input pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:outline-none"
+                        oninput="filterApplicationRows(this.value)">
+                </div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Port</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Health</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="server-table-body">
+                        {{ range .Applications }}
+                        <tr class="hover:bg-gray-50 server-row fade-in" data-id="{{ .ID }}" data-name="{{ .Name }}" data-port="{{ .Port }}" data-type="{{ .Type }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .ID }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-indigo-100 rounded-full">
+                                        <svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ .Name }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .Port }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .Type }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                    Online
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <button hx-get="/htmx/items/applications/update/{{ .ID }}" hx-target="#items-container"
+                                        class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 p-2 rounded-md transition-colors">
+                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+                                    <button hx-delete="/api/rest/v1/applications/{{ .ID }}" 
+                                        hx-confirm="Are you sure you wish to delete this application?"
+                                        hx-on::after-request="handleDeleteResponse(event, this)"
+                                        class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-2 rounded-md transition-colors">
+                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                    <a class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 p-2 rounded-md transition-colors"
+                                    href="/applications/{{ .ID }}/details">
+                                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- No results message (hidden by default) -->
+            <div id="no-results-message" class="hidden py-8 text-center text-gray-500">
+                <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="mt-2 text-lg font-medium">No applications match your search criteria</p>
+                <p class="mt-1 text-sm">Try adjusting your search or add a new server</p>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    // Function to handle delete response
+    function handleDeleteResponse(event, buttonElement) {
+        // Check if the request was successful (status code 2xx)
+        if (event.detail.successful) {
+            // Find the parent row and hide it with animation
+            const row = buttonElement.closest('tr');
+            if (row) {
+                // Add fade-out animation
+                row.style.transition = 'opacity 0.5s ease';
+                row.style.opacity = '0';
+                
+                // After animation completes, hide the row
+                setTimeout(() => {
+                    row.classList.add('hidden');
+                    
+                    // Check if we need to show the "no results" message
+                    updateNoResultsMessage();
+                }, 500);
+            }
+        } else {
+            // Show error notification with the response text
+            try {
+                showErrorMessage(event.detail.xhr.responseText);
+            } catch (e) {
+                // If there's an issue with the response, show a generic error
+                showErrorMessage("Failed to delete the application. Please try again.");
+            }
+        }
+    }
+    
+    // Function to update the "no results" message based on visible rows
+    function updateNoResultsMessage() {
+        const rows = document.querySelectorAll('#server-table-body .server-row:not(.hidden)');
+        const noResultsMessage = document.getElementById('no-results-message');
+        const searchInput = document.getElementById('search-input');
+        
+        if (rows.length === 0 && searchInput && searchInput.value.trim() !== '') {
+            noResultsMessage.classList.remove('hidden');
+        } else if (rows.length === 0 && (!searchInput || searchInput.value.trim() === '')) {
+            // All servers have been deleted
+            noResultsMessage.textContent = 'No applications available';
+            noResultsMessage.classList.remove('hidden');
+        } else {
+            noResultsMessage.classList.add('hidden');
+        }
+    }
+
+    // Store all server rows when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cache the search input element
+        const searchInput = document.getElementById('search-input');
+        
+        // If there's a value in the search input (e.g., after page refresh), filter immediately
+        if (searchInput && searchInput.value) {
+            filterServerRows(searchInput.value);
+        }
+        
+        // Initialize the no results message
+        updateNoResultsMessage();
+    });
+
+    // Function to filter server rows based on search input
+    function filterApplicationRows(searchTerm) {
+        searchTerm = searchTerm.toLowerCase().trim();
+        
+        const rows = document.querySelectorAll('#server-table-body .server-row');
+        let visibleCount = 0;
+        
+        rows.forEach(row => {
+            // Skip already hidden rows (deleted ones)
+            if (row.classList.contains('hidden') && row.style.opacity === '0') {
+                return;
+            }
+            
+            // Get searchable data from data attributes
+            const id = row.getAttribute('data-id').toLowerCase();
+            const name = row.getAttribute('data-name').toLowerCase();
+            const port = row.getAttribute('data-port').toLowerCase();
+            const typ = row.getAttribute('data-type').toLowerCase();
+            
+            // Check if any field contains the search term
+            if (id.includes(searchTerm) || 
+                name.includes(searchTerm) || 
+                port.includes(searchTerm) || 
+                typ.includes(searchTerm)) {
+                row.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                row.classList.add('hidden');
+            }
+        });
+        
+        // Update the "no results" message
+        updateNoResultsMessage();
+    }
+    
+    // Listen for HTMX events to maintain search state after HTMX operations
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        // If the search input has a value, reapply the filter
+        const searchInput = document.getElementById('search-input');
+        if (searchInput && searchInput.value) {
+            filterServerRows(searchInput.value);
+        }
+        
+        // Update the no results message
+        updateNoResultsMessage();
+    });
+</script>
+</html>
+{{end}}

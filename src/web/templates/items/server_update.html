@@ -1,47 +1,49 @@
 {{ define "template/items/server/update" }}
-
-<div class="flex justify-between items-center mb-6">
-    <h2 class="text-2xl font-bold text-gray-800">Update Server</h2>
-    <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700 transition-colors" hx-get="/htmx/items/servers/view"
-        hx-target="#items-container">
-        Back to Servers
-    </button>
-</div>
-
-<form hx-put="/api/rest/v1/servers/{{ .Server.ID }}" hx-on::after-request="handleRestApiResponse(event, '/htmx/items/servers/view')" hx-ext="submitjson">
-    <div class="space-y-4">
-        <!-- Server ID (read-only) -->
-        <div class="grid grid-cols-1 gap-2">
-            <label class="block text-sm font-medium text-gray-700">Server ID</label>
-            <input type="number" value="{{ .Server.ID }}" name="id"
-                class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" readonly>
-            
-        </div>
-
-        <!-- Server Alias -->
-        <div class="grid grid-cols-1 gap-2">
-            <label for="alias" class="block text-sm font-medium text-gray-700">Alias</label>
-            <input type="text" id="alias" name="alias" value="{{ .Server.Alias }}"
-                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Server Hostname -->
-        <div class="grid grid-cols-1 gap-2">
-            <label for="hostname" class="block text-sm font-medium text-gray-700">Hostname</label>
-            <input type="text" id="hostname" name="hostname" value="{{ .Server.Hostname }}"
-                class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-
-        <!-- Add all other Server fields here -->
-        <!-- For example, if Server has fields like Port, Username, etc. -->
-
-        <div class="flex justify-end mt-6">
-            <button type="submit"
-                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
-                Update Server
-            </button>
-        </div>
+<div class="p-4 bg-white rounded-md shadow-md">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Update Server</h2>
+        <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-gray-700 transition-colors"
+            hx-get="/htmx/items/servers/view" hx-target="#items-container">
+            Back to Servers
+        </button>
     </div>
-</form>
 
+    <form hx-put="/api/rest/v1/servers/{{ .Server.ID }}"
+        hx-on::after-request="handleRestApiResponse(event, '/htmx/items/servers/view')" hx-ext="submitjson">
+        <div class="space-y-4">
+            <!-- Server ID (read-only) -->
+            <div class="grid grid-cols-1 gap-2">
+                <label class="block text-sm font-medium text-gray-700">Server ID</label>
+                <input type="number" value="{{ .Server.ID }}" name="id"
+                    class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    readonly>
+
+            </div>
+
+            <!-- Server Alias -->
+            <div class="grid grid-cols-1 gap-2">
+                <label for="alias" class="block text-sm font-medium text-gray-700">Alias</label>
+                <input type="text" id="alias" name="alias" value="{{ .Server.Alias }}"
+                    class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Server Hostname -->
+            <div class="grid grid-cols-1 gap-2">
+                <label for="hostname" class="block text-sm font-medium text-gray-700">Hostname</label>
+                <input type="text" id="hostname" name="hostname" value="{{ .Server.Hostname }}"
+                    class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <!-- Add all other Server fields here -->
+            <!-- For example, if Server has fields like Port, Username, etc. -->
+
+            <div class="flex justify-end mt-6">
+                <button type="submit"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Update Server
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
 {{ end }}

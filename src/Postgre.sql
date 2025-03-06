@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS nginx_egress (
 
 CREATE TABLE IF NOT EXISTS healthcheck (
   id SERIAL PRIMARY KEY,
+  name VARCHAR,
   url VARCHAR,
   timeout interval,
   check_interval interval,

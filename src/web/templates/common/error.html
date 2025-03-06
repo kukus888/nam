@@ -1,6 +1,6 @@
 {{ define "template/components/error-notification" }}
 <div id="error-notification" 
-     class="fixed top-0 left-1/2 transform -translate-x-1/2 -translate-y-full w-full max-w-3xl mx-4 bg-red-100 border-b-4 border-red-600 text-red-800 p-5 rounded-b-lg shadow-2xl transition-transform duration-300 ease-in-out z-50">
+     class="fixed top-0 left-1/2 transform -translate-x-1/2 -translate-y-full w-full max-w-3xl mx-4 bg-red-100 border-b-4 border-red-600 text-red-800 p-5 rounded-b-lg transition-transform duration-300 ease-in-out z-50">
     
     <div class="flex items-start">
         <div class="flex-shrink-0">
@@ -111,6 +111,7 @@
             }
             
             // Show the notification
+            errorNotification.classList.add('shadow-2xl');
             errorNotification.classList.remove('-translate-y-full');
             
             // Make the close button work
@@ -122,6 +123,7 @@
                 
                 newCloseButton.addEventListener('click', function(e) {
                     e.stopPropagation();
+                    errorNotification.classList.remove('shadow-2xl');
                     errorNotification.classList.add('-translate-y-full');
                 });
             }
@@ -147,7 +149,7 @@
                 if (isInteractive) {
                     return;
                 }
-                
+                errorNotification.classList.remove('shadow-2xl');
                 errorNotification.classList.add('-translate-y-full');
             });
         }
@@ -163,6 +165,7 @@
     function hideErrorNotification() {
         const errorNotification = document.getElementById('error-notification');
         if (errorNotification) {
+            errorNotification.classList.remove('shadow-2xl');
             errorNotification.classList.add('-translate-y-full');
         }
     }

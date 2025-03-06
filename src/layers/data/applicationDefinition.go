@@ -134,3 +134,12 @@ func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) 
 	affectedRows += int(com.RowsAffected())
 	return &affectedRows, nil
 }
+
+func (ad ApplicationDefinitionDAO) GetInstances(pool *pgxpool.Pool) ([]ApplicationInstanceDAO, error) {
+	var instances []ApplicationInstanceDAO
+	err := pgxscan.Select(context.Background(), pool, &instances, "select * from application_instance ai where ai.application_definition_id = $1", ad.ID)
+	if err != nil {
+		return nil, err
+	}
+	return instances, nil
+}

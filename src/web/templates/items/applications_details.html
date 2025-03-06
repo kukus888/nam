@@ -1,0 +1,306 @@
+{{ define "pages/applications/details" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/tailwindcss.js"></script>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/htmx.js"></script>
+    <script src="/static/htmx-extensions.js"></script>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+    
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">{{ .Application.Name }}</h1>
+            <div class="flex space-x-3">
+                <a href="/applications/{{ .Application.ID }}/edit" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    Edit
+                </a>
+                <button hx-delete="/api/rest/v1/applications/{{ .Application.ID }}" 
+                        hx-confirm="Are you sure you want to delete this application?" 
+                        hx-target="body"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Application Information Card -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                <h2 class="text-lg leading-6 font-medium text-gray-900">Application Information</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Details about the application configuration.</p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Application ID</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Application.ID }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Port</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Application.Port }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Application.Type }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Health Check ID</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            {{ if not .Application.HealthcheckId }}
+                            <a href="/healthchecks/details/{{ .Application.HealthcheckId }}" class="text-indigo-600 hover:text-indigo-900">
+                                {{ .Application.HealthcheckId }}
+                            </a>
+                            {{ else }}
+                            None
+                            {{ end }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Application Instances -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-indigo-50 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Application Instances</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Servers where this application is deployed.</p>
+                </div>
+                <a href="/applications/{{ .Application.ID }}/instances/create" 
+                   class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Add Instance
+                </a>
+            </div>
+            <div class="border-t border-gray-200">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Server
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Instance Name
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Last Checked
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {{ range .Instances }}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ .Server.Name }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ if .Name }}{{ .Name }}{{ else }}Default{{ end }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div hx-get="/api/htmx/health?application={{ $.Application.Name }}&server={{ .Server.Name }}" 
+                                     hx-swap="outerHTML" 
+                                     hx-trigger="load, every 30s">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        Loading...
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <span hx-get="/api/htmx/last-check?instance={{ .ID }}" 
+                                      hx-swap="innerHTML" 
+                                      hx-trigger="load, every 30s">
+                                    Loading...
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end space-x-2">
+                                    <a href="/applications/{{ $.Application.ID }}/instances/{{ .ID }}" class="text-indigo-600 hover:text-indigo-900">View</a>
+                                    <button hx-delete="/api/instances/{{ .ID }}" 
+                                            hx-confirm="Are you sure you want to remove this instance?" 
+                                            hx-target="closest tr"
+                                            hx-swap="outerHTML swap:1s"
+                                            class="text-red-600 hover:text-red-900">
+                                        Remove
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {{ else }}
+                        <tr>
+                            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                                No instances found. Click "Add Instance" to deploy this application to a server.
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Health Check template -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
+            <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                <h2 class="text-lg leading-6 font-medium text-gray-900">Health check template</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Configuration used to check application health.</p>
+            </div>
+            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                {{ with .Healthcheck }}
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Health Check Name</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Name }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Endpoint</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Url }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Timeout</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Timeout }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Check Interval</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .CheckInterval }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Expected Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .ExpectedStatus }}</dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500">Expected Response</dt>
+                        <dd class="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md font-mono">
+                            {{ if .ExpectedStatus }}{{ .ExpectedStatus }}{{ else }}Any{{ end }}
+                        </dd>
+                    </div>
+                </dl>
+                {{ else }}
+                <p class="text-sm text-gray-500">Health check template not found.</p>
+                {{ end }}
+            </div>
+        </div>
+
+        <!-- Health Check History -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 bg-indigo-50 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Health Check History</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Recent health check results across all instances.</p>
+                </div>
+                <div>
+                    <select id="historyFilter" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                            hx-get="/api/applications/{{ .Application.ID }}/history" 
+                            hx-target="#historyTable" 
+                            hx-trigger="change">
+                        <option value="all">All Instances</option>
+                        {{ range .Instances }}
+                        <option value="{{ .ID }}">{{ .Server.Name }}{{ if .Name }} - {{ .Name }}{{ end }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+            </div>
+            <div class="border-t border-gray-200">
+                <div id="historyTable" class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Instance
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Response Time
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Timestamp
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Details
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" hx-get="/api/applications/{{ .Application.ID }}/history?filter=all" hx-trigger="load">
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                                    Loading history...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for health check details -->
+    <div id="healthCheckModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="px-4 py-5 sm:px-6 bg-indigo-50 flex justify-between items-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Health Check Details</h3>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="px-4 py-5 sm:p-6" id="modalContent">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal functionality
+            const modal = document.getElementById('healthCheckModal');
+            const closeModal = document.getElementById('closeModal');
+            
+            // Close modal when clicking the close button
+            closeModal.addEventListener('click', function() {
+                modal.classList.add('hidden');
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+            
+            // Function to open modal with health check details
+            window.showHealthCheckDetails = function(checkId) {
+                const modalContent = document.getElementById('modalContent');
+                modalContent.innerHTML = '<div class="text-center"><svg class="animate-spin h-8 w-8 mx-auto text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="mt-2 text-sm text-gray-500">Loading details...</p></div>';
+                modal.classList.remove('hidden');
+                
+                // Fetch health check details
+                fetch(`/api/health-checks/${checkId}/details`)
+                    .then(response => response.text())
+                    .then(html => {
+                        modalContent.innerHTML = html;
+                    })
+                    .catch(error => {
+                        modalContent.innerHTML = `<div class="text-center text-red-500">Error loading details: ${error.message}</div>`;
+                    });
+            };
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}
