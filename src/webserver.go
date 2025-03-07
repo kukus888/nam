@@ -23,6 +23,7 @@ func InitWebServer(app *Application) {
 
 	// Pages
 	handlers.NewPageController(App.Database).Init(App.Engine.Group("/"))
+	handlers.NewApplicationView(App.Database).Init(App.Engine.Group("/applications"))
 	app.Engine.Run(":8080")
 	// TODO: debug | prod
 	// TODO: logging

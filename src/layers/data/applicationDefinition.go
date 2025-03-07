@@ -143,3 +143,26 @@ func (ad ApplicationDefinitionDAO) GetInstances(pool *pgxpool.Pool) ([]Applicati
 	}
 	return instances, nil
 }
+
+func (ad ApplicationDefinitionDAO) GetInstancesFull(pool *pgxpool.Pool) ([]ApplicationInstance, error) {
+	instances := []ApplicationInstance{}
+	rows, err := pool.Query(context.Background(), `
+	select 
+		ai.id as ai_id, ai."name" as ai_name, ai.topology_node_id as ai_tn_id, ai.application_definition_id as ai_definition_id,
+		s.id as s_id, s.alias as s_alias, s.hostname as s_hostname
+	from application_instance ai 
+	left join "server" s on s.id = ai.server_id
+	where ai.application_definition_id = $1`, ad.ID)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		instance := ApplicationInstance{}
+		err := rows.Scan(&instance.ID, &instance.Name, &instance.TopologyNodeID, &instance.ApplicationDefinitionID, &instance.Server.ID, &instance.Server.Alias, &instance.Server.Hostname)
+		if err != nil {
+			return nil, err
+		}
+		instances = append(instances, instance)
+	}
+	return instances, nil
+}

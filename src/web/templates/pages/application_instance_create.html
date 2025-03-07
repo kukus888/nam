@@ -1,0 +1,162 @@
+{{ define "pages/applications/instances/create" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/tailwindcss.js"></script>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/htmx.js"></script>
+    <script src="/static/htmx-extensions.js"></script>
+    <title>Create Application Instance - {{ .Application.Name }}</title>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+    
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="md:flex md:items-center md:justify-between mb-6">
+            <div class="flex-1 min-w-0">
+                <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    Add Instance for {{ .Application.Name }}
+                </h1>
+                <p class="mt-1 text-sm text-gray-500">
+                    Deploy this application to a server by creating a new instance.
+                </p>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <a href="/applications/{{ .Application.ID }}/details" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                <h2 class="text-lg leading-6 font-medium text-gray-900">New Instance Details</h2>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                    Select a server and configure the instance properties.
+                </p>
+            </div>
+            
+            <div class="border-t border-gray-200">
+                <form id="createInstanceForm" 
+                      hx-post="/api/rest/v1/applications/{{ .Application.ID }}/instances" 
+                      hx-redirect="/applications/{{ .Application.ID }}/details"
+                      hx-ext="submitjson"
+                      class="px-4 py-5 sm:p-6">
+                    
+                    <!-- Server Selection -->
+                    <div class="mb-6">
+                        <label for="server" class="block text-sm font-medium text-gray-700">Server</label>
+                        <div class="mt-1">
+                            <select id="server" name="server_id" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="" disabled selected>Select a server</option>
+                                {{ range .Servers }}
+                                <option value="{{ .ID }}">{{ .Alias }} ({{ .Hostname }})</option>
+                                {{ end }}
+                            </select>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            Select the server where this application instance will be deployed.
+                        </p>
+                    </div>
+                    
+                    <!-- Instance Name -->
+                    <div class="mb-6">
+                        <label for="name" class="block text-sm font-medium text-gray-700">Instance Name</label>
+                        <div class="mt-1">
+                            <input type="text" name="name" id="name" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                   placeholder="Default">
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            A name to identify this specific instance.
+                        </p>
+                    </div>
+                    
+                    <!-- Hidden field for application definition ID -->
+                    <input type="hidden" name="application_definition_id" value="{{ .Application.ID }}">
+                    
+                    <!-- Application Information Summary -->
+                    <div class="mt-8 mb-6 bg-gray-50 p-4 rounded-md">
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">Application Information</h3>
+                        <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                            <div class="sm:col-span-1">
+                                <dt class="text-xs font-medium text-gray-500">Name</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Application.Name }}</dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-xs font-medium text-gray-500">Port</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Application.Port }}</dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-xs font-medium text-gray-500">Type</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Application.Type }}</dd>
+                            </div>
+                            <div class="sm:col-span-1">
+                                <dt class="text-xs font-medium text-gray-500">Health Check</dt>
+                                <dd class="mt-1 text-sm text-gray-900">
+                                    {{ if .Application.HealthcheckId }}
+                                    <a href="/healthchecks/{{ .Application.HealthcheckId }}/details" class="text-indigo-600 hover:text-indigo-900" target="_blank">
+                                        {{ .Application.HealthcheckId }}
+                                    </a>
+                                    {{ else }}
+                                    None
+                                    {{ end }}
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="pt-5 border-t border-gray-200">
+                        <div class="flex justify-end">
+                            <a href="/applications/{{ .Application.ID }}/details" 
+                               class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Cancel
+                            </a>
+                            <button type="submit"
+                                    class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Create Instance
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('createInstanceForm');
+            
+            form.addEventListener('submit', function(e) {
+                const serverSelect = document.getElementById('server');
+                if (!serverSelect.value) {
+                    e.preventDefault();
+                    alert('Please select a server for this instance.');
+                    return false;
+                }
+                
+                // Show loading state
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating...
+                `;
+            });
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}

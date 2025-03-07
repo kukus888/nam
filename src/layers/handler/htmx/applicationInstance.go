@@ -8,24 +8,27 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ApplicationInstanceView struct {
+type ApplicationView struct {
 	Service *services.ApplicationInstanceService
 }
 
-func NewApplicationInstanceView(database *data.Database) *ApplicationInstanceView {
-	return &ApplicationInstanceView{
+func NewApplicationView(database *data.Database) *ApplicationView {
+	return &ApplicationView{
 		Service: &services.ApplicationInstanceService{
 			Database: database,
 		},
 	}
 }
 
-func (aiv ApplicationInstanceView) Init(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/:id", aiv.RenderApplicationInstanceSmall)
+func (aiv ApplicationView) Init(routeGroup *gin.RouterGroup) {
+	applicationGroup := routeGroup.Group("/:appId")
+	{
+		applicationGroup.GET("/instances/:instanceId/small", aiv.RenderApplicationInstanceSmall)
+	}
 }
 
-func (aiv *ApplicationInstanceView) RenderApplicationInstanceSmall(ctx *gin.Context) {
-	id, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+func (aiv *ApplicationView) RenderApplicationInstanceSmall(ctx *gin.Context) {
+	id, err := strconv.ParseUint(ctx.Param("instanceId"), 10, 64)
 	if err != nil {
 		ctx.AbortWithStatusJSON(400, err)
 		return

@@ -5,7 +5,7 @@ import (
 )
 
 type Server struct {
-	ServerID uint   `json:"server_id" db:"serverid"`
+	ID       uint   `json:"server_id" db:"serverid"`
 	Alias    string `json:"alias" db:"serveralias"`
 	Hostname string `json:"hostname" db:"serverhostname"`
 }
@@ -17,6 +17,15 @@ type Healthcheck struct {
 	Timeout        time.Duration `json:"timeout" db:"timeout"`
 	CheckInterval  time.Duration `json:"check_interval" db:"check_interval"`
 	ExpectedStatus int           `json:"expected_status" db:"expected_status"`
+}
+
+type HealthcheckRecord struct {
+	ID               uint64      `json:"id"`
+	Healthcheck      Healthcheck `json:"healthcheck"`
+	Timestamp        time.Time   `json:"timestamp"`
+	HttpResponseCode uint        `json:"http_response_code"`
+	HttpResponseBody string      `json:"http_response_body"`
+	Healthy          bool        `json:"healthy"`
 }
 
 // ApplicationDefinition represents the definition of an application and its general properties
@@ -34,5 +43,5 @@ type ApplicationInstance struct {
 	Name                    string `json:"name" db:"applicationinstancename"`
 	TopologyNodeID          uint   `json:"topology_node_id" db:"topologynodeid"`
 	ApplicationDefinitionID uint   `json:"application_definition_id"`
-	Server                  `json:"server_id"`
+	Server                  Server `json:"server"`
 }

@@ -105,31 +105,31 @@
                         {{ range .Instances }}
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {{ .Server.Name }}
+                                {{ .Server.Alias }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ if .Name }}{{ .Name }}{{ else }}Default{{ end }}
+                                {{ .Name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div hx-get="/api/htmx/health?application={{ $.Application.Name }}&server={{ .Server.Name }}" 
+                                <div hx-get="/htmx/healthchecks/records/latest?instance_id={{ .ID }}&size=tiny" 
                                      hx-swap="outerHTML" 
-                                     hx-trigger="load, every 30s">
+                                     hx-trigger="load">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                                         Loading...
                                     </span>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span hx-get="/api/htmx/last-check?instance={{ .ID }}" 
+                                <span hx-get="/htmx/healthchecks/records/latest?instance_id={{ .ID }}&size=tiny" 
                                       hx-swap="innerHTML" 
-                                      hx-trigger="load, every 30s">
+                                      hx-trigger="load">
                                     Loading...
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end space-x-2">
                                     <a href="/applications/{{ $.Application.ID }}/instances/{{ .ID }}" class="text-indigo-600 hover:text-indigo-900">View</a>
-                                    <button hx-delete="/api/instances/{{ .ID }}" 
+                                    <button hx-delete="/api/rest/v1/applications/{{ $.Application.ID }}/instances/{{ .ID }}" 
                                             hx-confirm="Are you sure you want to remove this instance?" 
                                             hx-target="closest tr"
                                             hx-swap="outerHTML swap:1s"
@@ -207,7 +207,7 @@
                             hx-trigger="change">
                         <option value="all">All Instances</option>
                         {{ range .Instances }}
-                        <option value="{{ .ID }}">{{ .Server.Name }}{{ if .Name }} - {{ .Name }}{{ end }}</option>
+                        <option value="{{ .ID }}">{{ .Name }} - {{ .Server.Alias }}</option>
                         {{ end }}
                     </select>
                 </div>
