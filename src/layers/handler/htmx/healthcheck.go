@@ -2,7 +2,6 @@ package htmx
 
 import (
 	"kukus/nam/v2/layers/data"
-	"math/rand/v2"
 	"strconv"
 	"time"
 
@@ -39,7 +38,7 @@ func (hcv HealthcheckView) GetHealthCheckTiny(ctx *gin.Context) {
 		Timestamp:        time.Now(),
 		HttpResponseCode: 200,
 		HttpResponseBody: "OK",
-		Healthy:          true,
+		Status:           "healthy",
 	}
 	ctx.HTML(200, "template/healthcheck.tiny", gin.H{
 		"HealthcheckRecord": hc,
@@ -65,7 +64,7 @@ func (hcv HealthcheckView) GetHealthCheckLatest(ctx *gin.Context) {
 		Timestamp:        time.Now(),
 		HttpResponseCode: 200,
 		HttpResponseBody: "OK",
-		Healthy:          rand.IntN(2) == 1,
+		Status:           "healthy",
 	}
 	ctx.HTML(200, "template/healthcheck.latest."+size, gin.H{
 		"HealthcheckRecord": hc,
@@ -92,7 +91,7 @@ func (hcv HealthcheckView) GetHealthCheckById(ctx *gin.Context) {
 		Timestamp:        time.Now(),
 		HttpResponseCode: 200,
 		HttpResponseBody: "OK",
-		Healthy:          rand.IntN(2) == 1,
+		Status:           "healthy",
 	}
 	ctx.HTML(200, "template/healthcheck.latest."+size, gin.H{
 		"HealthcheckRecord": hc,

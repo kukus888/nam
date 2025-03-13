@@ -39,13 +39,28 @@ CREATE TABLE IF NOT EXISTS nginx_egress (
   PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS healthcheck (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR,
-  url VARCHAR,
-  timeout interval,
-  check_interval interval,
-  expected_status int
+-- CREATE TABLE statement for Healthcheck
+CREATE TABLE healthcheck (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    url VARCHAR(2048) NOT NULL,
+    method VARCHAR(10) DEFAULT 'GET',
+    headers JSONB DEFAULT '[]',
+    body TEXT,
+    timeout BIGINT NOT NULL DEFAULT 5000000000, -- 5 seconds in nanoseconds
+    check_interval BIGINT NOT NULL DEFAULT 60000000000, -- 60 seconds in nanoseconds
+    retry_count INTEGER DEFAULT 3,
+    retry_interval BIGINT DEFAULT 10000000000, -- 10 seconds in nanoseconds
+    expected_status INTEGER DEFAULT 200,
+    expected_response_body TEXT,
+    response_validation VARCHAR(20) DEFAULT 'contains',
+    
+    verify_ssl BOOLEAN DEFAULT true,
+    ssl_expiry_alert BOOLEAN DEFAULT false,
+    
+    auth_type VARCHAR(20) DEFAULT 'none',
+    auth_credentials TEXT
 );
 
 CREATE TABLE IF NOT EXISTS application_definition (
