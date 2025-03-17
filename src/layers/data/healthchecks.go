@@ -138,8 +138,7 @@ func (hc *Healthcheck) Update(pool *pgxpool.Pool) error {
             verify_ssl = $14,
             ssl_expiry_alert = $15,
             auth_type = $16,
-            auth_credentials = $17,
-            updated_at = CURRENT_TIMESTAMP
+            auth_credentials = $17
         WHERE id = $18
     `,
 		hc.Name, hc.Description, hc.Url, hc.Method, headersJSON, hc.Body,

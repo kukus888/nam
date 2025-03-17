@@ -1,0 +1,329 @@
+{{ define "pages/healthchecks/edit" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/tailwindcss.js"></script>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/htmx.js"></script>
+    <script src="/static/htmx-extensions.js"></script>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Edit Health Check</h1>
+                <p class="mt-1 text-sm text-gray-500">Update the configuration for this health check</p>
+            </div>
+            <div>
+                <a href="/healthchecks/{{ .Healthcheck.ID }}/details"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    Cancel
+                </a>
+            </div>
+        </div>
+
+        <form hx-put="/api/rest/v1/healthchecks/{{ .Healthcheck.ID }}" hx-ext="submitjson"
+            hx-on::after-request="if(event.detail.successful) { htmx.ajax('GET','/healthchecks/{{ .Healthcheck.ID }}/details', {target:'body'}) } else { showErrorMessage(event.detail.xhr.responseText) }"
+            class="space-y-6">
+            <!-- Basic Information -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Basic Information</h2>
+                    <p class="mt-1 text-sm text-gray-500">General information about the health check.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <input type="number" value="{{ .Healthcheck.ID }}" name="id" hidden>
+                        <div class="sm:col-span-3">
+                            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <div class="mt-1">
+                                <input type="text" name="name" id="name" value="{{ .Healthcheck.Name }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-6">
+                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                            <div class="mt-1">
+                                <textarea id="description" name="description" rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">{{ .Healthcheck.Description }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endpoint Configuration -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Endpoint Configuration</h2>
+                    <p class="mt-1 text-sm text-gray-500">Details about the health check endpoint.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-6">
+                            <label for="url" class="block text-sm font-medium text-gray-700">URL</label>
+                            <div class="mt-1">
+                                <input type="url" name="url" id="url" value="{{ .Healthcheck.Url }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="method" class="block text-sm font-medium text-gray-700">Method</label>
+                            <div class="mt-1">
+                                <select id="method" name="method"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="GET" {{ if eq .Healthcheck.Method "GET" }}selected{{ end }}>GET
+                                    </option>
+                                    <option value="POST" {{ if eq .Healthcheck.Method "POST" }}selected{{ end }}>POST
+                                    </option>
+                                    <option value="PUT" {{ if eq .Healthcheck.Method "PUT" }}selected{{ end }}>PUT
+                                    </option>
+                                    <option value="DELETE" {{ if eq .Healthcheck.Method "DELETE" }}selected{{ end }}>
+                                        DELETE</option>
+                                    <option value="HEAD" {{ if eq .Healthcheck.Method "HEAD" }}selected{{ end }}>HEAD
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="expected_status" class="block text-sm font-medium text-gray-700">Expected
+                                Status</label>
+                            <div class="mt-1">
+                                <input type="number" name="expected_status" id="expected_status"
+                                    value="{{ .Healthcheck.ExpectedStatus }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-6">
+                            <label for="headers" class="block text-sm font-medium text-gray-700">Headers (Key: Value
+                                format, one per line)</label>
+                            <div class="mt-1">
+                                <textarea id="headers" name="headers" rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">{{ range .Healthcheck.Headers }}{{ .Key }}: {{ .Value }}
+{{ end }}</textarea>
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">Example: Content-Type: application/json</p>
+                        </div>
+                        <div class="sm:col-span-6">
+                            <label for="body" class="block text-sm font-medium text-gray-700">Request Body</label>
+                            <div class="mt-1">
+                                <textarea id="body" name="body" rows="4"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">{{ .Healthcheck.Body }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Check Configuration -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Check Configuration</h2>
+                    <p class="mt-1 text-sm text-gray-500">Settings for how the health check is performed.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            <label for="check_interval" class="block text-sm font-medium text-gray-700">Check Interval
+                                (seconds)</label>
+                            <div class="mt-1">
+                                <input type="number" name="check_interval" id="check_interval"
+                                    value="{{ .Healthcheck.CheckInterval.Seconds }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="timeout" class="block text-sm font-medium text-gray-700">Timeout
+                                (seconds)</label>
+                            <div class="mt-1">
+                                <input type="number" name="timeout" id="timeout"
+                                    value="{{ .Healthcheck.Timeout.Seconds }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="retry_count" class="block text-sm font-medium text-gray-700">Retry Count</label>
+                            <div class="mt-1">
+                                <input type="number" name="retry_count" id="retry_count"
+                                    value="{{ .Healthcheck.RetryCount }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="retry_interval" class="block text-sm font-medium text-gray-700">Retry Interval
+                                (seconds)</label>
+                            <div class="mt-1">
+                                <input type="number" name="retry_interval" id="retry_interval"
+                                    value="{{ .Healthcheck.RetryInterval.Seconds }}" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Validation -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Response Validation</h2>
+                    <p class="mt-1 text-sm text-gray-500">Configuration for validating the response.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            <label for="response_validation" class="block text-sm font-medium text-gray-700">Validation
+                                Type</label>
+                            <div class="mt-1">
+                                <select id="response_validation" name="response_validation"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="none" {{ if eq .Healthcheck.ResponseValidation "none" }}selected{{
+                                        end }}>None</option>
+                                    <option value="contains" {{ if eq .Healthcheck.ResponseValidation "contains"
+                                        }}selected{{ end }}>Contains</option>
+                                    <option value="exact" {{ if eq .Healthcheck.ResponseValidation "exact" }}selected{{
+                                        end }}>Exact Match</option>
+                                    <option value="regex" {{ if eq .Healthcheck.ResponseValidation "regex" }}selected{{
+                                        end }}>Regex</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-6">
+                            <label for="expected_response_body" class="block text-sm font-medium text-gray-700">Expected
+                                Response</label>
+                            <div class="mt-1">
+                                <textarea id="expected_response_body" name="expected_response_body" rows="4"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">{{ .Healthcheck.ExpectedResponseBody }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Configuration -->
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                <div class="px-4 py-5 sm:px-6 bg-indigo-50">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">Security Configuration</h2>
+                    <p class="mt-1 text-sm text-gray-500">SSL and authentication settings.</p>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="verify_ssl" name="verify_ssl" type="checkbox" {{ if
+                                        .Healthcheck.VerifySSL }}checked{{ end }}
+                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="verify_ssl" class="font-medium text-gray-700">Verify SSL</label>
+                                    <p class="text-gray-500">Enable SSL certificate verification</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="ssl_expiry_alert" name="ssl_expiry_alert" type="checkbox" {{ if
+                                        .Healthcheck.SSLExpiryAlert }}checked{{ end }}
+                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="ssl_expiry_alert" class="font-medium text-gray-700">SSL Expiry
+                                        Alerts</label>
+                                    <p class="text-gray-500">Enable alerts for SSL certificate expiration</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="auth_type" class="block text-sm font-medium text-gray-700">Authentication
+                                Type</label>
+                            <div class="mt-1">
+                                <select id="auth_type" name="auth_type"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="none" {{ if eq .Healthcheck.AuthType "none" }}selected{{ end }}>None
+                                    </option>
+                                    <option value="basic" {{ if eq .Healthcheck.AuthType "basic" }}selected{{ end }}>
+                                        Basic Auth</option>
+                                    <option value="bearer" {{ if eq .Healthcheck.AuthType "bearer" }}selected{{ end }}>
+                                        Bearer Token</option>
+                                    <option value="custom" {{ if eq .Healthcheck.AuthType "custom" }}selected{{ end }}>
+                                        Custom</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-3 auth-credentials-container" id="auth-credentials-container">
+                            <label for="auth_credentials" class="block text-sm font-medium text-gray-700">Authentication
+                                Credentials</label>
+                            <div class="mt-1">
+                                <input type="password" name="auth_credentials" id="auth_credentials"
+                                    value="{{ .Healthcheck.AuthCredentials }}"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <p class="mt-2 text-sm text-gray-500">
+                                <span id="auth-help-text">Enter credentials based on selected authentication type</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button type="submit"
+                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Show/hide and update auth credentials field based on auth type
+        document.getElementById('auth_type').addEventListener('change', updateAuthCredentialsField);
+
+        function updateAuthCredentialsField() {
+            const authType = document.getElementById('auth_type').value;
+            const container = document.getElementById('auth-credentials-container');
+            const helpText = document.getElementById('auth-help-text');
+
+            if (authType === 'none') {
+                container.style.display = 'none';
+            } else {
+                container.style.display = 'block';
+
+                switch (authType) {
+                    case 'basic':
+                        helpText.textContent = 'Enter as username:password';
+                        break;
+                    case 'bearer':
+                        helpText.textContent = 'Enter the token value only';
+                        break;
+                    case 'custom':
+                        helpText.textContent = 'Enter custom authentication details';
+                        break;
+                }
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            updateAuthCredentialsField();
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}

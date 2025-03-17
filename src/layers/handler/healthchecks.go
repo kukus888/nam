@@ -41,6 +41,7 @@ func (av HealthcheckView) Init(routeGroup *gin.RouterGroup) {
 	idGroup := routeGroup.Group("/:id")
 	{
 		idGroup.GET("/details", av.GetPageHealthcheckDetails)
+		idGroup.GET("/edit", av.GetPageHealthcheckEdit)
 	}
 }
 
@@ -79,5 +80,21 @@ func (av HealthcheckView) GetPageHealthcheckInstanceNew(ctx *gin.Context) {
 	ctx.HTML(200, "pages/applications/instances/create", gin.H{
 		"Application": app,
 		"Servers":     servers,
+	})
+}
+
+func (av HealthcheckView) GetPageHealthcheckEdit(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	hc, err := data.GetHealthCheckById(av.Database.Pool, uint(id))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/healthchecks/edit", gin.H{
+		"Healthcheck": hc,
 	})
 }
