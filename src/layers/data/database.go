@@ -21,6 +21,7 @@ func NewDatabase(dsn string) (*Database, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Database{Pool: p}, nil
 }
 

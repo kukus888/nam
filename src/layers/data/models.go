@@ -29,7 +29,7 @@ type Healthcheck struct {
 
 	// Response validation
 	ExpectedResponseBody string `json:"expected_response_body" db:"expected_response_body"` // Expected response content
-	ResponseValidation   string `json:"response_validation" db:"response_validation"`       // contains, exact, regex
+	ResponseValidation   string `json:"response_validation" db:"response_validation"`       // none, contains, exact, regex
 
 	// SSL/TLS
 	VerifySSL bool `json:"verify_ssl" db:"verify_ssl"`
@@ -98,16 +98,15 @@ func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
 }
 
 type HealthcheckRecord struct {
-	ID               uint64     `json:"id" db:"id"`
-	HealthcheckID    uint       `json:"healthcheck_id" db:"healthcheck_id"`
-	Timestamp        time.Time  `json:"timestamp" db:"timestamp"`
-	Status           string     `json:"status" db:"status"`
-	HttpResponseCode int        `json:"http_response_code" db:"http_response_code"`
-	HttpResponseBody string     `json:"http_response_body" db:"http_response_body"`
-	ResponseTime     int64      `json:"response_time" db:"response_time"` // in milliseconds
-	ErrorMessage     string     `json:"error_message" db:"error_message"`
-	SSLValid         *bool      `json:"ssl_valid" db:"ssl_valid"`
-	SSLExpiry        *time.Time `json:"ssl_expiry" db:"ssl_expiry"`
+	ID            uint64    `json:"id" db:"id"`
+	HealthcheckID uint      `json:"healthcheck_id" db:"healthcheck_id"`
+	IsSuccessful  bool      `json:"is_successful" db:"is_successful"`
+	TimeStart     time.Time `json:"time_start" db:"time_start"`
+	TimeEnd       time.Time `json:"time_end" db:"time_end"`
+	ResStatus     int       `json:"res_status" db:"res_status"`
+	ResBody       string    `json:"res_body" db:"res_body"`
+	ResTime       int       `json:"res_time" db:"res_time"` // in milliseconds
+	ErrorMessage  string    `json:"error_message" db:"error_message"`
 }
 
 // ApplicationDefinition represents the definition of an application and its general properties

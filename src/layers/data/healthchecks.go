@@ -3,6 +3,11 @@ package data
 import (
 	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -171,3 +176,103 @@ func DeleteHealthCheckById(pool *pgxpool.Pool, id uint) error {
 
 	return tx.Commit(context.Background())
 }
+
+type HealthcheckTarget struct {
+}
+
+// GetHealthcheckTargets retrieves all healthcheck targets from the database
+// Joins ApplicationDefinition, Healthcheck and Servers table
+func GetHealthcheckTargets(pool *pgxpool.Pool) (*[]HealthcheckTarget, error) {
+	/*
+	   select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url from healthcheck h
+	   full join application_definition ad  on ad.healthcheck_id = h.id
+	   full join application_instance ai on application_definition_id = ad.id
+	   left join "server" s on s.id = ai.server_id
+	*/
+	return nil, nil
+}
+
+// Performs health check, returns the result
+func (hc *Healthcheck) PerformCheck(url string) (*HealthcheckRecord, error) {
+	httpClient := &http.Client{
+		Timeout: hc.ReqTimeout,
+	}
+	result := &HealthcheckRecord{
+		HealthcheckID: *hc.ID,
+		TimeStart:     time.Now(),
+		IsSuccessful:  false,
+	}
+	req, err := http.NewRequest(hc.ReqMethod, url, nil)
+	if err != nil {
+		return result, err
+	}
+	for key, values := range hc.ReqHttpHeader {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+	resp, err := httpClient.Do(req)
+	result.TimeEnd = time.Now()
+	result.ResTime = int(result.TimeEnd.Sub(result.TimeStart).Milliseconds())
+	if err != nil {
+		result.ErrorMessage = err.Error()
+	} else {
+		result.ResStatus = resp.StatusCode
+		// Read response body
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			result.ErrorMessage = err.Error()
+		} else {
+			result.ResBody = string(bodyBytes)
+		}
+		// Close response body
+		defer resp.Body.Close()
+		// Check if the response status matches the expected status
+		switch expression := hc.ResponseValidation; expression {
+		case "none":
+			if resp.StatusCode == hc.ExpectedStatus {
+				result.IsSuccessful = true
+			} else {
+				result.ErrorMessage = "Unexpected status code: " + resp.Status
+			}
+		case "contains":
+			if resp.StatusCode == hc.ExpectedStatus && hc.ExpectedResponseBody != "" {
+				if !strings.Contains(result.ResBody, hc.ExpectedResponseBody) {
+					result.ErrorMessage = "Response body does not contain expected content"
+				} else {
+					result.IsSuccessful = true
+				}
+			} else {
+				result.ErrorMessage = "Unexpected status code: " + resp.Status
+			}
+		case "exact":
+			if resp.StatusCode == hc.ExpectedStatus && hc.ExpectedResponseBody != "" {
+				if result.ResBody != hc.ExpectedResponseBody {
+					result.ErrorMessage = "Response body does not match expected content"
+				} else {
+					result.IsSuccessful = true
+				}
+			} else {
+				result.ErrorMessage = "Unexpected status code: " + resp.Status
+			}
+		case "regex":
+			if resp.StatusCode == hc.ExpectedStatus && hc.ExpectedResponseBody != "" {
+				matched, err := regexp.MatchString(hc.ExpectedResponseBody, result.ResBody)
+				if err != nil {
+					result.ErrorMessage = "Error matching regex: " + err.Error()
+				} else if !matched {
+					result.ErrorMessage = "Response body does not match expected regex"
+				} else {
+					result.IsSuccessful = true
+				}
+			} else {
+				result.ErrorMessage = "Unexpected status code: " + resp.Status
+			}
+		default:
+			result.ErrorMessage = "Invalid response validation expression: " + expression
+		}
+	}
+	return result, nil
+}
+
+// TODO: Func to clean up old healthcheck records, e.g., older than 30 days or with non existent healthchecks id
