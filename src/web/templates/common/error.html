@@ -36,6 +36,18 @@
 </div>
 
 <script>
+    function handleResponse(event, buttonElement){
+        // Check if the request was successful (status code 2xx)
+        if (!event.detail.successful) {
+            // Show error notification with the response text
+            try {
+                showErrorMessage(event.detail.xhr.responseText);
+            } catch (e) {
+                // If there's an issue with the response, show a generic error
+                showErrorMessage("Error processing request: " + e.message);
+            }
+        }
+    }
     function showErrorMessage(message) {
         const errorNotification = document.getElementById('error-notification');
         const errorMessage = document.getElementById('error-message');

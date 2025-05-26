@@ -41,7 +41,7 @@ func (hc *Healthcheck) DbInsert(pool *pgxpool.Pool) (*uint, error) {
 	defer tx.Rollback(context.Background())
 
 	// Convert headers to JSON
-	headersJSON, err := json.Marshal(hc.Headers)
+	headersJSON, err := json.Marshal(hc.ReqHttpHeader)
 	if err != nil {
 		return nil, err
 	}
@@ -51,28 +51,26 @@ func (hc *Healthcheck) DbInsert(pool *pgxpool.Pool) (*uint, error) {
             name, description, url, method, headers, body, 
             timeout, check_interval, retry_count, retry_interval,
             expected_status, expected_response_body, response_validation,
-            verify_ssl, ssl_expiry_alert,
-            auth_type, auth_credentials
+            verify_ssl, auth_type, auth_credentials
         ) VALUES (
             $1, $2, $3, $4, $5, $6, 
             $7, $8, $9, $10,
             $11, $12, $13,
             $14, $15,
-            $16, $17
+            $16
         ) RETURNING id
     `,
-		hc.Name, hc.Description, hc.Url, hc.Method, headersJSON, hc.Body,
-		hc.Timeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
+		hc.Name, hc.Description, hc.Url, hc.ReqMethod, headersJSON, hc.ReqBody,
+		hc.ReqTimeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
-		hc.VerifySSL, hc.SSLExpiryAlert,
-		hc.AuthType, hc.AuthCredentials,
+		hc.VerifySSL, hc.AuthType, hc.AuthCredentials,
 	).Scan(&hc.ID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &hc.ID, tx.Commit(context.Background())
+	return hc.ID, tx.Commit(context.Background())
 }
 
 // GetHealthCheckById retrieves a healthcheck by its ID
@@ -115,7 +113,7 @@ func (hc *Healthcheck) Update(pool *pgxpool.Pool) error {
 	defer tx.Rollback(context.Background())
 
 	// Convert headers to JSON
-	headersJSON, err := json.Marshal(hc.Headers)
+	headersJSON, err := json.Marshal(hc.ReqHttpHeader)
 	if err != nil {
 		return err
 	}
@@ -136,19 +134,37 @@ func (hc *Healthcheck) Update(pool *pgxpool.Pool) error {
             expected_response_body = $12,
             response_validation = $13,
             verify_ssl = $14,
-            ssl_expiry_alert = $15,
-            auth_type = $16,
-            auth_credentials = $17
-        WHERE id = $18
+            auth_type = $15,
+            auth_credentials = $16
+        WHERE id = $17
     `,
-		hc.Name, hc.Description, hc.Url, hc.Method, headersJSON, hc.Body,
-		hc.Timeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
+		hc.Name, hc.Description, hc.Url, hc.ReqMethod, headersJSON, hc.ReqBody,
+		hc.ReqTimeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
-		hc.VerifySSL, hc.SSLExpiryAlert,
+		hc.VerifySSL,
 		hc.AuthType, hc.AuthCredentials,
 		hc.ID,
 	)
 
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(context.Background())
+}
+
+// DeleteHealthCheck deletes a healthcheck by its ID
+func DeleteHealthCheckById(pool *pgxpool.Pool, id uint) error {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(context.Background(), `
+		DELETE FROM healthcheck 
+		WHERE id = $1;
+	`, id)
 	if err != nil {
 		return err
 	}

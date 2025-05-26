@@ -45,7 +45,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL</label>
-                            <input type="url" id="url" name="url" required placeholder="https://example.com/health"
+                            <input id="url" name="url" required placeholder="/rest/healthCheck"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                         
@@ -181,55 +181,11 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex items-center">
-                            <input type="checkbox" id="verifySSL" name="verify_ssl" checked
+                            <input type="checkbox" id="verifySSL" name="verify_ssl" value="true"
                                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                             <label for="verifySSL" class="ml-2 block text-sm text-gray-700">
                                 Verify SSL Certificate
                             </label>
-                        </div>
-                        
-                        <div class="flex items-center">
-                            <input type="checkbox" id="sslExpiryAlert" name="ssl_expiry_alert"
-                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            <label for="sslExpiryAlert" class="ml-2 block text-sm text-gray-700">
-                                Alert on SSL Certificate Expiry
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Alerts Section -->
-                <div>
-                    <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Alert Settings</h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex items-center">
-                            <input type="checkbox" id="alertsEnabled" name="alerts_enabled"
-                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            <label for="alertsEnabled" class="ml-2 block text-sm text-gray-700">
-                                Enable Alerts
-                            </label>
-                        </div>
-                        
-                        <div id="alertChannelsContainer" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Alert Channels</label>
-                            <div class="space-y-2">
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="alertEmail" name="alert_channels" value="email"
-                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label for="alertEmail" class="ml-2 block text-sm text-gray-700">Email</label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="alertSlack" name="alert_channels" value="slack"
-                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label for="alertSlack" class="ml-2 block text-sm text-gray-700">Slack</label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="alertWebhook" name="alert_channels" value="webhook"
-                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label for="alertWebhook" class="ml-2 block text-sm text-gray-700">Webhook</label>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -239,7 +195,7 @@
                         Cancel
                     </a>
                     <button type="submit" class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">
-                        Create Health Check
+                        Create health check template
                     </button>
                 </div>
             </div>
@@ -313,41 +269,6 @@
                     alertChannelsContainer.classList.remove('hidden');
                 } else {
                     alertChannelsContainer.classList.add('hidden');
-                }
-            });
-            
-            // Convert duration inputs from seconds to nanoseconds before submission
-            document.querySelector('form').addEventListener('submit', function(e) {
-                // Convert seconds to nanoseconds (Go's time.Duration)
-                const timeoutInput = document.getElementById('timeout');
-                const checkIntervalInput = document.getElementById('checkInterval');
-                const retryIntervalInput = document.getElementById('retryInterval');
-                
-                if (timeoutInput.value) {
-                    timeoutInput.value = parseInt(timeoutInput.value) * 1000000000; // seconds to nanoseconds
-                }
-                
-                if (checkIntervalInput.value) {
-                    checkIntervalInput.value = parseInt(checkIntervalInput.value) * 1000000000;
-                }
-                
-                if (retryIntervalInput.value) {
-                    retryIntervalInput.value = parseInt(retryIntervalInput.value) * 1000000000;
-                }
-                
-                // Collect alert channels
-                const alertChannels = [];
-                document.querySelectorAll('input[name="alert_channels"]:checked').forEach(function(checkbox) {
-                    alertChannels.push(checkbox.value);
-                });
-                
-                // Create a hidden input for alert_channels array
-                if (alertChannels.length > 0) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'alert_channels';
-                    input.value = JSON.stringify(alertChannels);
-                    this.appendChild(input);
                 }
             });
         });

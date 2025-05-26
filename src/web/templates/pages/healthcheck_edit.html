@@ -234,20 +234,6 @@
                             </div>
                         </div>
                         <div class="sm:col-span-3">
-                            <div class="flex items-start">
-                                <div class="flex items-center h-5">
-                                    <input id="ssl_expiry_alert" name="ssl_expiry_alert" type="checkbox" {{ if
-                                        .Healthcheck.SSLExpiryAlert }}checked{{ end }}
-                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
-                                </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="ssl_expiry_alert" class="font-medium text-gray-700">SSL Expiry
-                                        Alerts</label>
-                                    <p class="text-gray-500">Enable alerts for SSL certificate expiration</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="sm:col-span-3">
                             <label for="auth_type" class="block text-sm font-medium text-gray-700">Authentication
                                 Type</label>
                             <div class="mt-1">

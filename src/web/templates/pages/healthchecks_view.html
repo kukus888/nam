@@ -24,7 +24,7 @@
     <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="healthcheck-grid">
         {{ range .Healthchecks }}
         <div class="bg-white border border-indigo-500 rounded-lg overflow-hidden hover:shadow-md transition-shadow duration-300 fade-in healthcheck-card"
-             data-id="{{ .ID }}" data-name="{{ .Name }}" data-url="{{ .Url }}" data-method="{{ .Method }}">
+             data-id="{{ .ID }}" data-name="{{ .Name }}" data-url="{{ .Url }}" data-method="{{ .ReqMethod }}">
             <div class="p-4">
                 <!-- Header with Name and Status -->
                 <div class="flex justify-between items-start mb-3">
@@ -34,9 +34,9 @@
                     </span>
                 </div>
                 
-                <!-- URL and Method -->
+                <!-- URL and ReqMethod -->
                 <div class="flex items-center mb-3 text-sm text-gray-500">
-                    <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium mr-2">{{ .Method }}</span>
+                    <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium mr-2">{{ .ReqMethod }}</span>
                     <span class="truncate" title="{{ .Url }}">{{ .Url }}</span>
                 </div>
                 
@@ -56,8 +56,8 @@
                         <span class="font-medium">{{ formatDuration .CheckInterval }}</span>
                     </div>
                     <div class="bg-gray-50 p-2 rounded">
-                        <span class="text-gray-500">Timeout:</span>
-                        <span class="font-medium">{{ formatDuration .Timeout }}</span>
+                        <span class="text-gray-500">Request timeout:</span>
+                        <span class="font-medium">{{ formatDuration .ReqTimeout }}</span>
                     </div>
                     <div class="bg-gray-50 p-2 rounded">
                         <span class="text-gray-500">Retries:</span>

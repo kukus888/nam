@@ -2,6 +2,8 @@ package data
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -12,14 +14,14 @@ type Server struct {
 }
 
 type Healthcheck struct {
-	ID             uint          `json:"id" db:"id"`
+	ID             *uint         `json:"id" db:"id"`
 	Name           string        `json:"name" db:"name"`
 	Description    string        `json:"description" db:"description"`
 	Url            string        `json:"url" db:"url"`
-	Method         string        `json:"method" db:"method"`   // GET, POST, etc.
-	Headers        []http.Header `json:"headers" db:"headers"` // Custom headers
-	Body           string        `json:"body" db:"body"`       // Request body for POST/PUT
-	Timeout        time.Duration `json:"timeout" db:"timeout"`
+	ReqMethod      string        `json:"method" db:"method"`   // GET, POST, etc.
+	ReqHttpHeader  http.Header   `json:"headers" db:"headers"` // Custom headers
+	ReqBody        string        `json:"body" db:"body"`       // Request body for POST/PUT
+	ReqTimeout     time.Duration `json:"timeout" db:"timeout"`
 	CheckInterval  time.Duration `json:"check_interval" db:"check_interval"`
 	RetryCount     int           `json:"retry_count" db:"retry_count"`       // Number of retries before marking as unhealthy
 	RetryInterval  time.Duration `json:"retry_interval" db:"retry_interval"` // Time between retries
@@ -30,12 +32,69 @@ type Healthcheck struct {
 	ResponseValidation   string `json:"response_validation" db:"response_validation"`       // contains, exact, regex
 
 	// SSL/TLS
-	VerifySSL      bool `json:"verify_ssl" db:"verify_ssl"`
-	SSLExpiryAlert bool `json:"ssl_expiry_alert" db:"ssl_expiry_alert"`
+	VerifySSL bool `json:"verify_ssl" db:"verify_ssl"`
 
 	// Authentication
 	AuthType        string `json:"auth_type" db:"auth_type"`               // none, basic, bearer, custom
 	AuthCredentials string `json:"auth_credentials" db:"auth_credentials"` // stored securely
+}
+
+type HealthcheckDTO struct {
+	ID            *uint      `json:"id"`
+	Name          string     `json:"name" binding:"required"`
+	Description   string     `json:"description"`
+	ReqUrl        string     `json:"url" binding:"required"`
+	ReqMethod     string     `json:"method" binding:"required"` // GET, POST, etc.
+	ReqHeader     [][]string `json:"headers"`                   // Custom headers
+	ReqBody       string     `json:"body"`                      // Request body for POST/PUT
+	ReqTimeout    int        `json:"timeout" binding:"required"`
+	CheckInterval int        `json:"check_interval" binding:"required"`
+	RetryCount    int        `json:"retry_count" binding:"required"`    // Number of retries before marking as unhealthy
+	RetryInterval int        `json:"retry_interval" binding:"required"` // Time between retries
+
+	// Response validation
+	ExpectedStatus       int     `json:"expected_status" binding:"required"`
+	ExpectedResponseBody *string `json:"expected_response_body"` // Expected response content
+	ResponseValidation   *string `json:"response_validation"`    // contains, exact, regex
+
+	// SSL/TLS
+	VerifySSL string `json:"verify_ssl"`
+
+	// Authentication
+	AuthType        string `json:"auth_type"`        // none, basic, bearer, custom
+	AuthCredentials string `json:"auth_credentials"` // stored securely
+}
+
+func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
+	httpHeader := http.Header{}
+	for i := range dto.ReqHeader {
+		httpHeader[dto.ReqHeader[i][0]] = strings.Split(dto.ReqHeader[i][1], ",")
+	}
+	reqTimeout, _ := time.ParseDuration(strconv.Itoa(dto.ReqTimeout) + "s")
+	reqInterval, _ := time.ParseDuration(strconv.Itoa(dto.CheckInterval) + "s")
+	hc := Healthcheck{
+		ID:                   dto.ID,
+		Name:                 dto.Name,
+		Description:          dto.Description,
+		Url:                  dto.ReqUrl,
+		ReqMethod:            dto.ReqMethod,
+		ReqHttpHeader:        httpHeader,
+		ReqBody:              dto.ReqBody,
+		ReqTimeout:           reqTimeout,
+		CheckInterval:        reqInterval,
+		RetryCount:           dto.RetryCount,
+		ExpectedStatus:       dto.ExpectedStatus,
+		ExpectedResponseBody: *dto.ExpectedResponseBody,
+		ResponseValidation:   *dto.ResponseValidation,
+		AuthType:             dto.AuthType,
+		AuthCredentials:      dto.AuthCredentials,
+	}
+	if dto.VerifySSL == "on" || dto.VerifySSL == "true" {
+		hc.VerifySSL = true
+	} else {
+		hc.VerifySSL = false
+	}
+	return hc
 }
 
 type HealthcheckRecord struct {

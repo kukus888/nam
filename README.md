@@ -16,3 +16,10 @@ This will create a rundeck community cluster, as well as nginx for balancing, an
 # TODO
 
 Implement DB migration
+
+
+sledovani MQ
+
+ovladani per farmu, start stop status
+
+koncem cervna status po arelu

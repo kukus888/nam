@@ -89,6 +89,12 @@ func (appDef ApplicationDefinitionDAO) DbInsert(tx pgx.Tx) (*uint, error) {
 	return &resId, nil
 }
 
+func DeleteApplicationDefinitionById(pool *pgxpool.Pool, id uint64) error {
+	appDef := ApplicationDefinitionDAO{ID: uint(id)}
+	_, err := appDef.Delete(pool)
+	return err
+}
+
 // Deletes specified ApplicationDefinition and all dependent ApplicationInstances
 func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
@@ -132,7 +138,7 @@ func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) 
 		return nil, err
 	}
 	affectedRows += int(com.RowsAffected())
-	return &affectedRows, nil
+	return &affectedRows, tx.Commit(context.Background())
 }
 
 func (ad ApplicationDefinitionDAO) GetInstances(pool *pgxpool.Pool) ([]ApplicationInstanceDAO, error) {

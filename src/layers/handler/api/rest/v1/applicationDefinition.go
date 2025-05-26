@@ -34,7 +34,7 @@ func (ac *ApplicationController) Init(routerGroup *gin.RouterGroup) {
 		idGroup.GET("/", ac.GetById)
 		idGroup.PATCH("/", handlers.MethodNotImplemented)
 		idGroup.PUT("/", handlers.MethodNotImplemented)
-		idGroup.DELETE("/", handlers.MethodNotImplemented)
+		idGroup.DELETE("/", ac.DeleteById)
 		NewApplicationInstanceController(ac.Service.Database).Init(idGroup.Group("/instances"))
 	}
 }
@@ -47,6 +47,20 @@ func (ac *ApplicationController) GetAll(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(200, dtos)
+}
+
+func (ac *ApplicationController) DeleteById(ctx *gin.Context) {
+	appId, err := strconv.Atoi(ctx.Param("appId"))
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "Must include ID of application"})
+		return
+	}
+	err = data.DeleteApplicationDefinitionById(ac.Service.Database.Pool, uint64(appId))
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Unable to delete application", "trace": err})
+		return
+	}
+	ctx.Status(204) // No Content
 }
 
 // GetAll ApplicationDefinition

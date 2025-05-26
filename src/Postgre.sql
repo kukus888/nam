@@ -57,7 +57,6 @@ CREATE TABLE healthcheck (
     response_validation VARCHAR(20) DEFAULT 'contains',
     
     verify_ssl BOOLEAN DEFAULT true,
-    ssl_expiry_alert BOOLEAN DEFAULT false,
     
     auth_type VARCHAR(20) DEFAULT 'none',
     auth_credentials TEXT
