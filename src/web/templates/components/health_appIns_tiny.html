@@ -1,7 +1,11 @@
-{{ define "template/healthcheck.latest.tiny" }}
-<div hx-get="/htmx/healthchecks/records/latest?instance_id={{ .InstanceId }}&size=tiny" hx-swap="outerHTML"
-    hx-trigger="every 30s">
-    {{ if .HealthcheckRecord.Healthy }}
+{{ define "components/health.application.instance.tiny" }}
+<div
+{{ if .LiveReload }}
+    hx-get="/htmx/health/application/instance?live_reload=true&size=tiny&id={{ .Id }}"
+    hx-swap="outerHTML"
+    hx-trigger="every 30s"
+{{ end }}>
+    {{ if .Healthy }}
     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
         Healthy
     </span>

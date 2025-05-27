@@ -112,7 +112,7 @@
                                 {{ .Name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div hx-get="/htmx/healthchecks/records/latest?instance_id={{ .ID }}&size=tiny" 
+                                <div hx-get="/htmx/health/application/instance?live_reload=true&size=tiny&id={{ .ID }}" 
                                      hx-swap="outerHTML" 
                                      hx-trigger="load">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
@@ -121,7 +121,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                <span hx-get="/htmx/healthchecks/records/latest?instance_id={{ .ID }}&size=tiny" 
+                                <span hx-get="/htmx/health/application/instance?live_reload=true&size=tiny&id={{ .ID }}" 
                                       hx-swap="innerHTML" 
                                       hx-trigger="load">
                                     Loading...

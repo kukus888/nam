@@ -178,22 +178,16 @@ func DeleteHealthCheckById(pool *pgxpool.Pool, id uint) error {
 }
 
 type HealthcheckTarget struct {
-	HealthcheckID uint   `db:"hc_id"`
-	Hostname      string `db:"hostname"`
-	Port          uint   `db:"port"`
-	Url           string `db:"url"`
+	HealthcheckID         uint   `db:"hc_id"`
+	ApplicationInstanceID uint   `db:"application_instance_id"`
+	Hostname              string `db:"hostname"`
+	Port                  uint   `db:"port"`
+	Url                   string `db:"url"`
 }
 
 // GetHealthcheckTargets retrieves all healthcheck targets from the database
 // Joins ApplicationDefinition, Healthcheck and Servers table
 func GetHealthcheckTargets(pool *pgxpool.Pool, hcId uint) (*[]HealthcheckTarget, error) {
-	/*
-		select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url from healthcheck h
-		left join application_definition ad  on ad.healthcheck_id = h.id
-		left join application_instance ai on application_definition_id = ad.id
-		left join "server" s on s.id = ai.server_id
-		where h.id = 2;
-	*/
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
@@ -201,12 +195,13 @@ func GetHealthcheckTargets(pool *pgxpool.Pool, hcId uint) (*[]HealthcheckTarget,
 	defer tx.Rollback(context.Background())
 
 	rows, err := tx.Query(context.Background(), `
-        select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url from healthcheck h
-		left join application_definition ad  on ad.healthcheck_id = h.id
-		left join application_instance ai on application_definition_id = ad.id
+		select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url, ai.id as application_instance_id 
+		from healthcheck h
+		left join application_definition ad on ad.healthcheck_id = h.id
+		inner join application_instance ai on application_definition_id = ad.id
 		left join "server" s on s.id = ai.server_id
 		where h.id = $1;
-    `, hcId)
+	`, hcId)
 	if err != nil {
 		return nil, err
 	}
@@ -219,11 +214,11 @@ func GetHealthcheckTargets(pool *pgxpool.Pool, hcId uint) (*[]HealthcheckTarget,
 }
 
 // Performs health check, returns the result
-func (hc *Healthcheck) PerformCheck(url string) (*HealthcheckRecord, error) {
+func (hc *Healthcheck) PerformCheck(url string) (*HealthcheckResult, error) {
 	httpClient := &http.Client{
 		Timeout: hc.ReqTimeout,
 	}
-	result := &HealthcheckRecord{
+	result := &HealthcheckResult{
 		HealthcheckID: *hc.ID,
 		TimeStart:     time.Now(),
 		IsSuccessful:  false,

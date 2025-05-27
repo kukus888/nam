@@ -97,16 +97,17 @@ func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
 	return hc
 }
 
-type HealthcheckRecord struct {
-	ID            uint64    `json:"id" db:"id"`
-	HealthcheckID uint      `json:"healthcheck_id" db:"healthcheck_id"`
-	IsSuccessful  bool      `json:"is_successful" db:"is_successful"`
-	TimeStart     time.Time `json:"time_start" db:"time_start"`
-	TimeEnd       time.Time `json:"time_end" db:"time_end"`
-	ResStatus     int       `json:"res_status" db:"res_status"`
-	ResBody       string    `json:"res_body" db:"res_body"`
-	ResTime       int       `json:"res_time" db:"res_time"` // in milliseconds
-	ErrorMessage  string    `json:"error_message" db:"error_message"`
+type HealthcheckResult struct {
+	ID                    uint64    `json:"id" db:"id"`
+	HealthcheckID         uint      `json:"healthcheck_id" db:"healthcheck_id"`
+	ApplicationInstanceID uint      `json:"application_instance_id" db:"application_instance_id"`
+	IsSuccessful          bool      `json:"is_successful" db:"is_successful"`
+	TimeStart             time.Time `json:"time_start" db:"time_start"`
+	TimeEnd               time.Time `json:"time_end" db:"time_end"`
+	ResStatus             int       `json:"res_status" db:"res_status"`
+	ResBody               string    `json:"res_body" db:"res_body"`
+	ResTime               int       `json:"res_time" db:"res_time"` // in milliseconds
+	ErrorMessage          string    `json:"error_message" db:"error_message"`
 }
 
 // ApplicationDefinition represents the definition of an application and its general properties

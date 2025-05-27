@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // TODO: Logging
@@ -70,7 +71,7 @@ func (hcs *HealthcheckService) ListenForChanges() {
 func (hcs *HealthcheckService) SyncObservers(payload string) error {
 	// Parse payload to get the healthcheck ID and operation
 	parts := strings.Split(payload, ":")
-	if len(parts) < 2 {
+	if len(parts) != 2 {
 		// full sync
 		// Clear existing observers
 		for id := range hcs.Observers {
@@ -80,29 +81,34 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 		}
 		healthchecks, err := data.GetHealthChecksAll(hcs.Database.Pool)
 		if err != nil {
-			hcs.Status = "error"
+			hcs.UpdateStatus("error")
 			return err
 		}
 		hcs.Observers = make(map[uint]*HealthcheckObserver)
 		for _, hc := range *healthchecks {
 			obj := HealthcheckObserver{
-				Healthcheck: &hc,
-				Timer:       time.NewTimer(hc.CheckInterval),
+				Healthcheck:     &hc,
+				Timer:           time.NewTimer(hc.CheckInterval),
+				TargetInstances: make(map[uint]string), // Initialize the map for target instances
 			}
-			hcs.Observers[*hc.ID] = &obj
 			// Get port from application definition
 			// Get server instances for the application
 			// Get the URL together
 			targets, err := data.GetHealthcheckTargets(hcs.Database.Pool, *hc.ID)
 			if err != nil {
-				hcs.Status = "error"
+				hcs.UpdateStatus("error")
 				return err
 			}
-			for _, target := range *targets {
-				// TODO: Support HTTPS
-				obj.TargetURLs = append(obj.TargetURLs, "http://"+target.Hostname+":"+strconv.Itoa(int(target.Port))+target.Url)
+			protocol := "http"
+			if hc.VerifySSL {
+				protocol = "https"
 			}
-			hcs.Observers[*hc.ID].Start()
+			for _, target := range *targets {
+				// TODO: Support HTTPS properly
+				obj.TargetInstances[target.ApplicationInstanceID] = protocol + "://" + target.Hostname + ":" + strconv.Itoa(int(target.Port)) + target.Url
+			}
+			obj.Start(hcs.Database.Pool)
+			hcs.Observers[*hc.ID] = &obj
 		}
 	} else {
 		id, err := strconv.Atoi(parts[1])
@@ -114,23 +120,28 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 		switch parts[0] {
 		case "INSERT":
 			// Add new ID to observers
-			hc, err := data.GetHealthCheckById(hcs.Database.Pool, uint(id))
-			if err != nil {
-				hcs.Status = "error"
-				return err
-			}
-			obj := HealthcheckObserver{
-				Healthcheck: hc,
-				Timer:       time.NewTimer(hc.CheckInterval),
-			}
-			hcs.Observers[uint(id)] = &obj
-			hcs.Observers[uint(id)].Start()
+			// TODO: Implement all the logic as in the full sync
+			/*
+				hc, err := data.GetHealthCheckById(hcs.Database.Pool, uint(id))
+				if err != nil {
+					hcs.Status = "error"
+					return err
+				}
+				obj := HealthcheckObserver{
+					Healthcheck: hc,
+					Timer:       time.NewTimer(hc.CheckInterval),
+				}
+				hcs.Observers[uint(id)] = &obj
+				hcs.Observers[uint(id)].Start(hcs.Database.Pool)
+			*/
+			hcs.SyncObservers("")
+			return nil
 		case "UPDATE":
 			// Update existing observer
 			if observer, exists := hcs.Observers[uint(id)]; exists {
 				hc, err := data.GetHealthCheckById(hcs.Database.Pool, uint(id))
 				if err != nil {
-					hcs.Status = "error"
+					hcs.UpdateStatus("error")
 					return err
 				}
 				observer.Healthcheck = hc
@@ -142,15 +153,16 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 				// If observer does not exist, we can treat it as an insert
 				hc, err := data.GetHealthCheckById(hcs.Database.Pool, uint(id))
 				if err != nil {
-					hcs.Status = "error"
+					hcs.UpdateStatus("error")
 					return err
 				}
 				obj := HealthcheckObserver{
-					Healthcheck: hc,
-					Timer:       time.NewTimer(hc.CheckInterval),
+					Healthcheck:     hc,
+					Timer:           time.NewTimer(hc.CheckInterval),
+					TargetInstances: make(map[uint]string), // Initialize the map for target instances
 				}
 				hcs.Observers[uint(id)] = &obj
-				hcs.Observers[uint(id)].Start()
+				hcs.Observers[uint(id)].Start(hcs.Database.Pool)
 			}
 		case "DELETE":
 			// Remove observer
@@ -172,13 +184,15 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 }
 
 type HealthcheckObserver struct {
-	Healthcheck *data.Healthcheck  // The healthcheck being observed
-	Timer       *time.Timer        // Timer for periodic checks
-	TimerCancel context.CancelFunc // Cancel function for the timer
-	TargetURLs  []string           // URLs to check, derived from the healthcheck
+	Healthcheck     *data.Healthcheck  // The healthcheck being observed
+	Timer           *time.Timer        // Timer for periodic checks
+	TimerCancel     context.CancelFunc // Cancel function for the timer
+	TargetInstances map[uint]string    // map of URLs to check, key is the application ID, value is the server URL
+	DbPool          *pgxpool.Pool      // Database connection pool
 }
 
-func (hco HealthcheckObserver) Start() {
+func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
+	hco.DbPool = pool
 	hco.Timer = time.NewTimer(hco.Healthcheck.CheckInterval)
 	hco.TimerCancel = func() {
 		if !hco.Timer.Stop() {
@@ -186,24 +200,36 @@ func (hco HealthcheckObserver) Start() {
 		}
 	}
 	go func() {
-		for {
+		for { // this is okay
 			select {
 			case <-hco.Timer.C:
 				// Perform the healthcheck for all associated applications, on all associated servers
-				for _, url := range hco.TargetURLs {
+				results := make([]data.HealthcheckResult, 0)
+				for instanceId, url := range hco.TargetInstances {
 					result, err := hco.Healthcheck.PerformCheck(url)
+					result.ApplicationInstanceID = instanceId
 					if err != nil {
 						// Happens only if there is something wrong on the network layer
 						println("Healthcheck failed:", err.Error())
 					}
-					println("Healthcheck result:", result)
-					// TODO: Save the result to the cache
-					// Reset the timer for the next check
+					println("Healthcheck result for instance", instanceId, ":", result.IsSuccessful, "Status:", result.ResStatus, "Response time:", result.ResTime, "ms")
+					results = append(results, *result)
 				}
+				err := data.HealthcheckResultBatchInsert(hco.DbPool, &results)
+				if err != nil {
+					// TODO: Handle error properly, maybe log it
+					println("Healthcheck failed:", err.Error())
+				}
+				// Reset the timer for the next check
 				hco.Timer.Reset(hco.Healthcheck.CheckInterval)
 			}
 		}
 	}()
+}
+
+// Sets the new status for the service. Useful for debugging
+func (hcs *HealthcheckService) UpdateStatus(newStatus string) {
+	hcs.Status = newStatus
 }
 
 func (hcs *HealthcheckService) Stop() error {

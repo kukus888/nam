@@ -1,0 +1,22 @@
+{{ define "components/health.application.definition.tiny" }}
+<div
+{{ if .LiveReload }}
+    hx-get="/htmx/health/application/definition?live_reload=true&size=tiny&id={{ .Id }}"
+    hx-swap="outerHTML"
+    hx-trigger="every 30s"
+{{ end }}>
+    {{ if eq .HealthyCount .TotalCount }}
+    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+        Healthy ({{ .HealthyCount }}/{{ .TotalCount }})
+    </span>
+    {{ else if gt .HealthyCount 0 }}
+    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+        Degraded ({{ .HealthyCount }}/{{ .TotalCount }})
+    </span>
+    {{ else }}
+    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+        Unhealthy ({{ .HealthyCount }}/{{ .TotalCount }})
+    </span>
+    {{ end }}
+</div>
+{{ end }}

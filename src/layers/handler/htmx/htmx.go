@@ -24,6 +24,7 @@ func NewHtmxController(database *data.Database) HtmxController {
 func (hc HtmxController) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/servers/:id", hc.Server)
 	NewApplicationView(hc.Database).Init(routeGroup.Group("/applications"))
+	NewHtmxHealthHandler(hc.Database.Pool).Init(routeGroup.Group("/health"))
 
 	NewTopologyNodeController(hc.Database).Init(routeGroup.Group("/nodes"))
 	NewItemView(hc.Database).Init(routeGroup.Group("/items"))
