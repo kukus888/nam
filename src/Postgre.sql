@@ -48,10 +48,10 @@ CREATE TABLE healthcheck (
     method VARCHAR(10) DEFAULT 'GET',
     headers JSONB DEFAULT '[]',
     body TEXT,
-    timeout BIGINT NOT NULL DEFAULT 5, -- 5 seconds
-    check_interval BIGINT NOT NULL DEFAULT 60, -- 60 seconds
+    timeout BIGINT NOT NULL DEFAULT 5000000000, -- 5 seconds in nanoseconds
+    check_interval BIGINT NOT NULL DEFAULT 60000000000, -- 60 seconds in nanoseconds
     retry_count INTEGER DEFAULT 3,
-    retry_interval BIGINT DEFAULT 10, -- 10 seconds
+    retry_interval BIGINT DEFAULT 10000000000, -- 10 seconds in nanoseconds
     expected_status INTEGER DEFAULT 200,
     expected_response_body TEXT,
     response_validation VARCHAR(20) DEFAULT 'none', -- 'none', 'contains', 'exact', 'regex'

@@ -178,18 +178,44 @@ func DeleteHealthCheckById(pool *pgxpool.Pool, id uint) error {
 }
 
 type HealthcheckTarget struct {
+	HealthcheckID uint   `db:"hc_id"`
+	Hostname      string `db:"hostname"`
+	Port          uint   `db:"port"`
+	Url           string `db:"url"`
 }
 
 // GetHealthcheckTargets retrieves all healthcheck targets from the database
 // Joins ApplicationDefinition, Healthcheck and Servers table
-func GetHealthcheckTargets(pool *pgxpool.Pool) (*[]HealthcheckTarget, error) {
+func GetHealthcheckTargets(pool *pgxpool.Pool, hcId uint) (*[]HealthcheckTarget, error) {
 	/*
-	   select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url from healthcheck h
-	   full join application_definition ad  on ad.healthcheck_id = h.id
-	   full join application_instance ai on application_definition_id = ad.id
-	   left join "server" s on s.id = ai.server_id
+		select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url from healthcheck h
+		left join application_definition ad  on ad.healthcheck_id = h.id
+		left join application_instance ai on application_definition_id = ad.id
+		left join "server" s on s.id = ai.server_id
+		where h.id = 2;
 	*/
-	return nil, nil
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+        select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url from healthcheck h
+		left join application_definition ad  on ad.healthcheck_id = h.id
+		left join application_instance ai on application_definition_id = ad.id
+		left join "server" s on s.id = ai.server_id
+		where h.id = $1;
+    `, hcId)
+	if err != nil {
+		return nil, err
+	}
+
+	hc, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[HealthcheckTarget])
+	if err != nil {
+		return nil, err
+	}
+	return &hc, tx.Commit(context.Background())
 }
 
 // Performs health check, returns the result
@@ -229,7 +255,7 @@ func (hc *Healthcheck) PerformCheck(url string) (*HealthcheckRecord, error) {
 		defer resp.Body.Close()
 		// Check if the response status matches the expected status
 		switch expression := hc.ResponseValidation; expression {
-		case "none":
+		case "none", "":
 			if resp.StatusCode == hc.ExpectedStatus {
 				result.IsSuccessful = true
 			} else {

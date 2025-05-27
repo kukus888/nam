@@ -93,7 +93,15 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 			// Get port from application definition
 			// Get server instances for the application
 			// Get the URL together
-
+			targets, err := data.GetHealthcheckTargets(hcs.Database.Pool, *hc.ID)
+			if err != nil {
+				hcs.Status = "error"
+				return err
+			}
+			for _, target := range *targets {
+				// TODO: Support HTTPS
+				obj.TargetURLs = append(obj.TargetURLs, "http://"+target.Hostname+":"+strconv.Itoa(int(target.Port))+target.Url)
+			}
 			hcs.Observers[*hc.ID].Start()
 		}
 	} else {
