@@ -189,6 +189,7 @@ type HealthcheckObserver struct {
 	TimerCancel     context.CancelFunc // Cancel function for the timer
 	TargetInstances map[uint]string    // map of URLs to check, key is the application ID, value is the server URL
 	DbPool          *pgxpool.Pool      // Database connection pool
+	ProbeFunc       func()             // Function to perform the healthcheck probe
 }
 
 func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
@@ -199,29 +200,35 @@ func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
 			<-hco.Timer.C // Drain the channel if the timer was already fired
 		}
 	}
+	// Set up the healthcheck probe function
+	hco.ProbeFunc = func() {
+		// Perform the healthcheck for all associated applications, on all associated servers
+		results := make([]data.HealthcheckResult, 0)
+		for instanceId, url := range hco.TargetInstances {
+			result, err := hco.Healthcheck.PerformCheck(url)
+			result.ApplicationInstanceID = instanceId
+			if err != nil {
+				// Happens only if there is something wrong on the network layer
+				println("Healthcheck failed:", err.Error())
+			}
+			println("Healthcheck result for instance", instanceId, ":", result.IsSuccessful, "Status:", result.ResStatus, "Response time:", result.ResTime, "ms")
+			results = append(results, *result)
+		}
+		err := data.HealthcheckResultBatchInsert(hco.DbPool, &results)
+		if err != nil {
+			// TODO: Handle error properly, maybe log it
+			println("Healthcheck failed:", err.Error())
+		}
+		// Reset the timer for the next check
+		hco.Timer.Reset(hco.Healthcheck.CheckInterval)
+	}
+	// Start the healthcheck probe function
 	go func() {
-		for { // this is okay
+		hco.ProbeFunc() // Initial call to start the healthcheck immediately
+		for {           // this is okay
 			select {
 			case <-hco.Timer.C:
-				// Perform the healthcheck for all associated applications, on all associated servers
-				results := make([]data.HealthcheckResult, 0)
-				for instanceId, url := range hco.TargetInstances {
-					result, err := hco.Healthcheck.PerformCheck(url)
-					result.ApplicationInstanceID = instanceId
-					if err != nil {
-						// Happens only if there is something wrong on the network layer
-						println("Healthcheck failed:", err.Error())
-					}
-					println("Healthcheck result for instance", instanceId, ":", result.IsSuccessful, "Status:", result.ResStatus, "Response time:", result.ResTime, "ms")
-					results = append(results, *result)
-				}
-				err := data.HealthcheckResultBatchInsert(hco.DbPool, &results)
-				if err != nil {
-					// TODO: Handle error properly, maybe log it
-					println("Healthcheck failed:", err.Error())
-				}
-				// Reset the timer for the next check
-				hco.Timer.Reset(hco.Healthcheck.CheckInterval)
+				hco.ProbeFunc()
 			}
 		}
 	}()

@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"errors"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
@@ -27,6 +28,9 @@ func (s ApplicationDefinitionDAO) ApiName() string {
 
 // GetApplicationDefinitions returns a full ApplicationDefinitionDAO object with all its dependencies
 func GetApplicationDefinitionById(pool *pgxpool.Pool, id uint64) (*ApplicationDefinitionDAO, error) {
+	if id == 0 {
+		return nil, errors.New("ID is required") // No ID provided, return nil
+	}
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
 		return nil, err

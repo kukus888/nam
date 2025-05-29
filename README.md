@@ -15,11 +15,20 @@ This will create a rundeck community cluster, as well as nginx for balancing, an
 
 # TODO
 
-Implement DB migration
+### DB migration
+Automagic DB migration on startup.
 
+### Configuration file
+Use configuration file, and perhaps environment variables to configure application.
 
-sledovani MQ
+### IBM MQ Integration
+Watch IBM MQ Queue Managers for health status.
 
-ovladani per farmu, start stop status
+### F5 Integration
+Watch F5 Load Balancer for health status.
 
-koncem cervna status po arelu
+### Arrange servers into farms (groups)
+Group servers into farms (groups) for easier management.
+
+## Issues
+

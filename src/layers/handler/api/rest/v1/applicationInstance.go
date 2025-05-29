@@ -3,21 +3,19 @@ package v1
 import (
 	data "kukus/nam/v2/layers/data"
 	handlers "kukus/nam/v2/layers/handler"
-	services "kukus/nam/v2/layers/service"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ApplicationInstanceController struct {
-	Service services.ApplicationInstanceService
+	DatabasePool *pgxpool.Pool
 }
 
 func NewApplicationInstanceController(db *data.Database) *ApplicationInstanceController {
 	return &ApplicationInstanceController{
-		Service: services.ApplicationInstanceService{
-			Database: db,
-		},
+		DatabasePool: db.Pool,
 	}
 }
 
@@ -42,16 +40,17 @@ func (aic *ApplicationInstanceController) Init(routerGroup *gin.RouterGroup) {
 func (aic *ApplicationInstanceController) CreateInstance(ctx *gin.Context) {
 	var appInst data.ApplicationInstanceDAO
 	if err := ctx.ShouldBindJSON(&appInst); err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
 		return
 	}
-	dtos, err := aic.Service.CreateApplicationInstance(appInst)
+	dtos, err := data.CreateApplicationInstance(aic.DatabasePool, appInst)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to create application instance", "trace": err.Error()})
 		return
 	} else if dtos == nil {
 		ctx.AbortWithStatus(404)
 	} else {
+		ctx.Header("HX-Redirect", "/applications/"+strconv.Itoa(int(appInst.Id))+"/details")
 		ctx.JSON(200, dtos)
 	}
 }
@@ -62,9 +61,9 @@ func (aic *ApplicationInstanceController) GetById(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of application instance"})
 	}
-	dtos, err := aic.Service.GetApplicationInstanceById(instanceId)
+	dtos, err := data.GetApplicationInstanceFullById(aic.DatabasePool, instanceId)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err.Error()})
 		return
 	} else if dtos == nil {
 		ctx.AbortWithStatus(404)
@@ -75,9 +74,9 @@ func (aic *ApplicationInstanceController) GetById(ctx *gin.Context) {
 
 // GetAll ApplicationInstance
 func (aic *ApplicationInstanceController) GetAllInstances(ctx *gin.Context) {
-	dtos, err := aic.Service.GetApplicationInstancesFull()
+	dtos, err := data.GetAllApplicationInstancesFull(aic.DatabasePool)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(200, dtos)
@@ -89,9 +88,9 @@ func (aic *ApplicationInstanceController) DeleteInstance(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of application instance"})
 	}
-	err = aic.Service.RemoveApplicationInstanceById(instanceId)
+	err = data.DeleteApplicationInstanceById(aic.DatabasePool, instanceId)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to delete application instance", "trace": err.Error()})
 		return
 	}
 	ctx.Status(200)

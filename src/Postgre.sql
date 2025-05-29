@@ -76,6 +76,12 @@ AFTER INSERT OR UPDATE OR DELETE ON healthcheck
 FOR EACH ROW
 EXECUTE FUNCTION notify_healthcheck_change();
 
+DROP TRIGGER IF EXISTS healthcheck_change_trigger ON healthcheck;
+CREATE TRIGGER healthcheck_change_trigger
+AFTER INSERT OR UPDATE OR DELETE ON application_instance
+FOR EACH ROW
+EXECUTE FUNCTION notify_healthcheck_change();
+
 CREATE TABLE IF NOT EXISTS application_definition (
   id SERIAL PRIMARY KEY,
   healthcheck_id INTEGER REFERENCES healthcheck (id) NULL,

@@ -2,21 +2,19 @@ package htmx
 
 import (
 	"kukus/nam/v2/layers/data"
-	services "kukus/nam/v2/layers/service"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ApplicationView struct {
-	Service *services.ApplicationInstanceService
+	DatabasePool *pgxpool.Pool
 }
 
 func NewApplicationView(database *data.Database) *ApplicationView {
 	return &ApplicationView{
-		Service: &services.ApplicationInstanceService{
-			Database: database,
-		},
+		DatabasePool: database.Pool,
 	}
 }
 
@@ -33,7 +31,7 @@ func (aiv *ApplicationView) RenderApplicationInstanceSmall(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(400, err)
 		return
 	}
-	instance, err := aiv.Service.GetApplicationInstanceById(id)
+	instance, err := data.GetApplicationInstanceFullById(aiv.DatabasePool, id)
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, err)
 		return

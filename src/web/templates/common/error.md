@@ -4,13 +4,14 @@ Include the component in your main layout or on pages where you need error notif
 
 Html
 Insert code
-
+```html
 {{ template "template/components/error-notification" . }}
+```
 Trigger the error notification from anywhere in your JavaScript code:
 
 Tsx
 Insert code
-
+```js
 // Display a simple error message
 showErrorMessage("Something went wrong. Please try again.");
 
@@ -22,15 +23,17 @@ showErrorMessage({
 
 // Pass a JSON string (common from API responses)
 showErrorMessage('{"error": "Authentication failed", "trace": {"code": 401, "details": "Token expired"}}');
+```
 Integrate with HTMX error handling:
 
 Html
 Insert code
-
+```html
 <form hx-post="/api/endpoint" 
       hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)">
   <!-- form content -->
 </form>
+```
 Programmatically hide the notification:
 
 Tsx

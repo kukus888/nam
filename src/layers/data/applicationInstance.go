@@ -17,7 +17,7 @@ type ApplicationInstanceDAO struct {
 	Name                    string `json:"name" db:"name"`
 }
 
-func GetApplicationInstanceFull(pool *pgxpool.Pool, id uint64) (*ApplicationInstance, error) {
+func GetApplicationInstanceFullById(pool *pgxpool.Pool, id uint64) (*ApplicationInstance, error) {
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func GetAllApplicationInstancesFull(pool *pgxpool.Pool) (*[]ApplicationInstance,
 
 // Creates new ApplicationInstance in DB, with underlying TopologyNode struct.
 // Returns the inserted ApplicationInstance ID
-func (instance ApplicationInstanceDAO) Create(pool *pgxpool.Pool) (*uint, error) {
+func CreateApplicationInstance(pool *pgxpool.Pool, instance ApplicationInstanceDAO) (*uint, error) {
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
 		return nil, err
@@ -102,33 +102,40 @@ func (instance ApplicationInstanceDAO) Create(pool *pgxpool.Pool) (*uint, error)
 }
 
 // Deletes specified ApplicationInstance, with their corresponding TopologyNodes
-func (instance ApplicationInstance) Delete(pool *pgxpool.Pool) (*int, error) {
-	dao := ApplicationInstanceDAO{
-		Id:             instance.ID,
-		TopologyNodeId: instance.ID,
+func DeleteApplicationInstanceById(pool *pgxpool.Pool, id uint64) error {
+	tx, err := pool.Begin(context.Background())
+	if err != nil {
+		return err
 	}
-	return dao.Delete(pool)
+	defer tx.Rollback(context.Background())
+	// Get TopologyNode ID
+	var topologyNodeId uint
+	err = tx.QueryRow(context.Background(), `
+		select tn.id from application_instance ai 
+		full join topology_node tn on ai.topology_node_id = tn.id 
+		where ai.id = $1`, id).Scan(&topologyNodeId)
+	if err != nil && id != 0 {
+		return err
+	}
+	// Delete everything
+	_, err = tx.Exec(context.Background(), `
+		delete from healthcheck_results hr 
+		where hr.application_instance_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(context.Background(), "DELETE FROM application_instance WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(context.Background(), "DELETE FROM topology_node WHERE id = $1", topologyNodeId)
+	if err != nil {
+		return err
+	}
+	return tx.Commit(context.Background())
 }
 
 // Deletes specified ApplicationInstance, with their corresponding TopologyNodes
 func (instance ApplicationInstanceDAO) Delete(pool *pgxpool.Pool) (*int, error) {
-	tx, err := pool.Begin(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	var ra = 0
-	// Remove TopologyNode
-	com, err := tx.Exec(context.Background(), "DELETE FROM topology_node WHERE id = $1", instance.TopologyNodeId)
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
-	}
-	// Remove ApplicationInstance
-	com, err = tx.Exec(context.Background(), "DELETE FROM application_instance WHERE id = $1", instance.Id)
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
-	}
-	ra += int(com.RowsAffected())
-	return &ra, tx.Commit(context.Background())
+	return nil, DeleteApplicationInstanceById(pool, uint64(instance.Id)) // Delete all healthcheck results for this instance
 }
