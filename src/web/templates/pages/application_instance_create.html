@@ -134,7 +134,20 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('createInstanceForm');
-            
+            const serverSelect = document.getElementById('server');
+            const instanceNameInput = document.getElementById('name');
+
+            // Update instance name when a server is selected
+            serverSelect.addEventListener('change', function() {
+                const selectedOption = serverSelect.options[serverSelect.selectedIndex];
+                if (selectedOption.value) {
+                    const serverHostname = selectedOption.text.split(" ")[0]; // Extract hostname from option text
+                    if (serverHostname) {
+                        instanceNameInput.value = `{{ .Application.Name }}@${serverHostname}`;
+                    }
+                }
+            });
+
             form.addEventListener('submit', function(e) {
                 const serverSelect = document.getElementById('server');
                 if (!serverSelect.value) {
