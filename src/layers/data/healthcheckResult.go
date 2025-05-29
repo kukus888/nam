@@ -94,7 +94,7 @@ func HealthcheckGetLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id 
 		  hcr.res_time AS res_time,
 		  hcr.error_message AS error_message
 		FROM application_instance ai
-		JOIN server s ON ai.server_id = s.id
+		JOIN "server" s ON ai.server_id = s.id
 		LEFT JOIN LATERAL (
 		    SELECT *
 		    FROM healthcheck_results hcr

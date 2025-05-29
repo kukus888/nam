@@ -54,14 +54,14 @@ func (h *HtmxHealthHandler) Init(routeGroup *gin.RouterGroup) {
 		})
 	})
 	routeGroup.GET("/application/definition", func(ctx *gin.Context) {
-		definitionIdStr := ctx.Query("definition_id")
+		definitionIdStr := ctx.Query("id")
 		liveReload := ctx.Query("live_reload") == "true" // Optional
 		size := ctx.Query("size")
 
 		// Parse and validate inputs
 		definitionId, err := strconv.Atoi(definitionIdStr)
 		if err != nil && definitionId != 0 {
-			ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid definition_id: " + err.Error()})
+			ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid definition id: " + err.Error()})
 			return
 		}
 		if size != "" && !slices.Contains(allowedComponentSizes, size) {
