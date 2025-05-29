@@ -53,7 +53,7 @@ func (s ServerDAO) Delete(pool *pgxpool.Pool) (*int, error) {
 		return nil, nil
 	}
 	// Check for dependent ApplicationInstances
-	var instances []ApplicationInstanceDAO
+	var instances []ApplicationInstance
 	err = pgxscan.Select(context.Background(), tx, &instances, "SELECT * FROM application_instance WHERE server_id = $1", s.ID)
 	if err != nil {
 		tx.Rollback(context.Background())
@@ -62,7 +62,7 @@ func (s ServerDAO) Delete(pool *pgxpool.Pool) (*int, error) {
 	if len(instances) > 0 {
 		// Remove dependent ApplicationInstances
 		for _, instance := range instances {
-			_, err = instance.Delete(pool)
+			err := DeleteApplicationInstanceById(pool, uint64(instance.ID))
 			if err != nil {
 				tx.Rollback(context.Background())
 				return nil, err

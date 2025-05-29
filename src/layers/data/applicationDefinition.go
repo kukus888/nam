@@ -118,7 +118,7 @@ func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) 
 		return nil, nil // The instance is technically deleted
 	}
 	// Check for dangling instances
-	var instances []ApplicationInstanceDAO
+	var instances []ApplicationInstance
 	err = pgxscan.Select(context.Background(), tx, &instances, "DELETE FROM application_instance WHERE application_definition_id = $1", appDef.ID)
 	if err != nil {
 		return nil, err
@@ -126,12 +126,11 @@ func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) 
 	if len(instances) > 0 {
 		// There are dangling instances >>> delete them
 		for _, instance := range instances {
-			ra, err := instance.Delete(pool)
+			err := DeleteApplicationInstanceById(pool, uint64(instance.ID))
 			if err != nil {
 				tx.Rollback(context.Background())
 				return nil, err
 			}
-			affectedRows += *ra
 		}
 	}
 	// Check if there arent any dangling instances
@@ -145,34 +144,16 @@ func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) 
 	return &affectedRows, tx.Commit(context.Background())
 }
 
-func (ad ApplicationDefinitionDAO) GetInstances(pool *pgxpool.Pool) ([]ApplicationInstanceDAO, error) {
-	var instances []ApplicationInstanceDAO
-	err := pgxscan.Select(context.Background(), pool, &instances, "select * from application_instance ai where ai.application_definition_id = $1", ad.ID)
+// GetApplicationInstancesByApplicationDefinitionId returns all ApplicationInstance objects for a given ApplicationDefinition ID
+func GetApplicationInstancesByApplicationDefinitionId(pool *pgxpool.Pool, id uint64) (*[]ApplicationInstance, error) {
+	tx, err := pool.Begin(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	return instances, nil
-}
-
-func (ad ApplicationDefinitionDAO) GetInstancesFull(pool *pgxpool.Pool) ([]ApplicationInstance, error) {
-	instances := []ApplicationInstance{}
-	rows, err := pool.Query(context.Background(), `
-	select 
-		ai.id as ai_id, ai."name" as ai_name, ai.topology_node_id as ai_tn_id, ai.application_definition_id as ai_definition_id,
-		s.id as s_id, s.alias as s_alias, s.hostname as s_hostname
-	from application_instance ai 
-	left join "server" s on s.id = ai.server_id
-	where ai.application_definition_id = $1`, ad.ID)
+	var instances []ApplicationInstance
+	err = pgxscan.Select(context.Background(), tx, &instances, `SELECT * FROM application_instance ai WHERE ai.application_definition_id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
-	for rows.Next() {
-		instance := ApplicationInstance{}
-		err := rows.Scan(&instance.ID, &instance.Name, &instance.TopologyNodeID, &instance.ApplicationDefinitionID, &instance.Server.ID, &instance.Server.Alias, &instance.Server.Hostname)
-		if err != nil {
-			return nil, err
-		}
-		instances = append(instances, instance)
-	}
-	return instances, nil
+	return &instances, nil
 }

@@ -38,7 +38,7 @@ func (aic *ApplicationInstanceController) Init(routerGroup *gin.RouterGroup) {
 
 // Creates new ApplicationInstance
 func (aic *ApplicationInstanceController) CreateInstance(ctx *gin.Context) {
-	var appInst data.ApplicationInstanceDAO
+	var appInst data.ApplicationInstance
 	if err := ctx.ShouldBindJSON(&appInst); err != nil {
 		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
 		return
@@ -50,7 +50,7 @@ func (aic *ApplicationInstanceController) CreateInstance(ctx *gin.Context) {
 	} else if dtos == nil {
 		ctx.AbortWithStatus(404)
 	} else {
-		ctx.Header("HX-Redirect", "/applications/"+strconv.Itoa(int(appInst.Id))+"/details")
+		ctx.Header("HX-Redirect", "/applications/"+strconv.Itoa(int(appInst.ApplicationDefinitionID))+"/details")
 		ctx.JSON(200, dtos)
 	}
 }

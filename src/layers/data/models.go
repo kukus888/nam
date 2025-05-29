@@ -8,9 +8,9 @@ import (
 )
 
 type Server struct {
-	ID       uint   `json:"server_id" db:"serverid"`
-	Alias    string `json:"alias" db:"serveralias"`
-	Hostname string `json:"hostname" db:"serverhostname"`
+	ID       uint   `json:"server_id" db:"server_id"`
+	Alias    string `json:"alias" db:"server_alias"`
+	Hostname string `json:"hostname" db:"server_hostname"`
 }
 
 type Healthcheck struct {
@@ -112,18 +112,29 @@ type HealthcheckResult struct {
 
 // ApplicationDefinition represents the definition of an application and its general properties
 type ApplicationDefinition struct {
-	ID          uint         `json:"id" db:"id"`
-	Name        string       `json:"name" db:"name"`
-	Port        int          `json:"port" db:"port"`
-	Type        string       `json:"type" db:"type"`
-	Healthcheck *Healthcheck `json:"healthcheck"`
+	ID            uint   `json:"id" db:"application_definition_id"`
+	Name          string `json:"name" db:"application_definition_name"`
+	Port          int    `json:"port" db:"application_definition_port"`
+	Type          string `json:"type" db:"application_definition_type"`
+	HealthcheckId *uint  `json:"healthcheck_id" db:"healthcheck_id"` // ID of the healthcheck, if any
 }
 
 // ApplicationInstance represents an instance of an application
 type ApplicationInstance struct {
-	ID                      uint   `json:"id" db:"applicationinstanceid"`
-	Name                    string `json:"name" db:"applicationinstancename"`
-	TopologyNodeID          uint   `json:"topology_node_id" db:"topologynodeid"`
+	ID                      uint   `json:"id" db:"id"`
+	Name                    string `json:"name" db:"name"`
+	TopologyNodeID          uint   `json:"topology_node_id" db:"topology_node_id"`
 	ApplicationDefinitionID uint   `json:"application_definition_id"`
-	Server                  Server `json:"server"`
+	ServerID                uint   `json:"server_id" db:"server_id"`
+}
+
+// ApplicationInstance represents an instance of an application
+// Joined with ApplicationDefinition and Server
+// This struct is used to return full information about the application instance
+type ApplicationInstanceFull struct {
+	ID             uint   `json:"id" db:"application_instance_id"`
+	Name           string `json:"name" db:"application_instance_name"`
+	TopologyNodeID uint   `json:"topology_node_id" db:"topology_node_id"`
+	ApplicationDefinition
+	Server
 }

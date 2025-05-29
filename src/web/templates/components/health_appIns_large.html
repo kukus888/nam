@@ -1,0 +1,62 @@
+{{ define "components/health.application.instance.large" }}
+<div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6"
+{{ if .LiveReload }}
+    hx-get="/htmx/health/application/instance?live_reload=true&size=large&id={{ .Id }}"
+    hx-swap="outerHTML"
+    hx-trigger="every 30s"
+{{ end }}>
+    {{ if .Healthy }}
+    <div class="px-4 py-5 sm:px-6 flex justify-between items-center bg-green-50">
+    {{ else }}
+    <div class="px-4 py-5 sm:px-6 flex justify-between items-center bg-red-50">
+    {{ end }}
+        <div>
+            <h2 class="text-lg leading-6 font-medium text-gray-900">Health status</h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">Configuration used to check application health.</p>
+        </div>
+        <div class="mt-5 sm:mt-0 sm:col-span-2">
+            {{ if .Healthy }}
+            <div class="sm:col-span-1 grid">
+                <dt id="health_status" class="px-2 py-1 sm:px-6 leading-5 font-semibold rounded-full bg-green-200 text-green-800">Unhealthy</dt>
+                <dd class="mt-1 text-sm text-gray-500 justify-self-center items-center justify-center">{{ .Timestamp | formatTime }}</dd>
+            </div>
+            {{ else }}
+            <div class="sm:col-span-1 grid">
+                <dt id="health_status" class="px-2 py-1 sm:px-6 leading-5 font-semibold rounded-full bg-red-200 text-red-800">Unhealthy</dt>
+                <dd class="mt-1 text-sm text-gray-500 justify-self-center items-center justify-center">{{ .Timestamp | formatTime }}</dd>
+            </div>
+            {{ end }}
+        </div>
+    </div>
+    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+        <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">Health Check Name</dt>
+                <dd class="mt-1 text-sm text-gray-900">{{ .Name }}</dd>
+            </div>
+            <div class="sm:col-span-1">
+                <dt class="text-sm font-medium text-gray-500">Endpoint</dt>
+                <dd class="mt-1 text-sm text-gray-900">{{ .Url }}</dd>
+            </div>
+            <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-gray-500">Expected Response</dt>
+                <dd class="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md font-mono">
+                    {{ if .ExpectedStatus }}{{ .ExpectedStatus }}{{ else }}Any{{ end }}
+                </dd>
+            </div>
+        </dl>
+    </div>
+</div>
+<script>
+    document.addEventListener('htmx:load', function(evt) {
+        // On load, animate the health status change with a heartbeat animation
+        const healthStatus = document.getElementById('health_status');
+        if (healthStatus) {
+            healthStatus.classList.add('animate-pulse');
+            setTimeout(() => {
+                healthStatus.classList.remove('animate-pulse');
+            }, 2000); // Remove pulse after 1 second
+        }
+    });
+</script>
+{{ end }}

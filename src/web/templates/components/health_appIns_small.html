@@ -1,7 +1,7 @@
-{{ define "components/health.application.instance.tiny" }}
+{{ define "components/health.application.instance.small" }}
 <div
 {{ if .LiveReload }}
-    hx-get="/htmx/health/application/instance?live_reload=true&size=tiny&id={{ .Id }}"
+    hx-get="/htmx/health/application/instance?live_reload=true&size=small&id={{ .Id }}"
     hx-swap="outerHTML"
     hx-trigger="every 30s"
 {{ end }}>
@@ -13,6 +13,7 @@
     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
         Unhealthy
     {{ end }}
+    ({{ .Timestamp | formatTime }})
     </span>
 </div>
 {{ end }}

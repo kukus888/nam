@@ -48,9 +48,11 @@ func (h *HtmxHealthHandler) Init(routeGroup *gin.RouterGroup) {
 		}
 		// Render template with health data
 		ctx.HTML(200, "components/health.application.instance."+size, gin.H{
-			"Id":         instanceId,
-			"LiveReload": liveReload,
-			"Healthy":    result.IsSuccessful, // This should be replaced with actual health check logic
+			"Id":           instanceId,
+			"LiveReload":   liveReload,
+			"Healthy":      result.IsSuccessful, // This should be replaced with actual health check logic
+			"ResponseTime": result.ResTime,
+			"Timestamp":    result.TimeEnd,
 		})
 	})
 	routeGroup.GET("/application/definition", func(ctx *gin.Context) {

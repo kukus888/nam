@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/gin-gonic/gin"
 	"kukus/nam/v2/layers/data"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ApplicationView struct {
@@ -50,6 +51,7 @@ func (av ApplicationView) Init(routeGroup *gin.RouterGroup) {
 	{
 		idGroup.GET("/details", av.GetPageApplicationDetails)
 		idGroup.GET("/instances/create", av.GetPageApplicationInstanceNew)
+		idGroup.GET("/instances/:instanceId/details", av.GetPageApplicationInstanceDetails)
 	}
 }
 
@@ -72,7 +74,7 @@ func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 			return
 		}
 	}
-	instances, err := app.GetInstancesFull(av.Database.Pool)
+	instances, err := data.GetApplicationInstancesFullByApplicationDefinitionId(av.Database.Pool, uint64(app.ID))
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
 		return
@@ -81,6 +83,50 @@ func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 		"Application": app,
 		"Healthcheck": hc,
 		"Instances":   instances,
+	})
+}
+
+func (av ApplicationView) GetPageApplicationInstanceDetails(ctx *gin.Context) {
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	appDefinition, err := data.GetApplicationDefinitionById(av.Database.Pool, uint64(id))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	instanceId, err := strconv.Atoi(ctx.Param("instanceId"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	appInstance, err := data.GetApplicationInstanceById(av.Database.Pool, uint64(instanceId))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	} else if appInstance == nil {
+		ctx.AbortWithStatusJSON(404, gin.H{"error": "Application instance not found"})
+		return
+	}
+	// Check if the instance belongs to the application
+	if appInstance.ApplicationDefinitionID != appDefinition.ID {
+		ctx.AbortWithStatusJSON(418, gin.H{"error": "Application instance does not belong to this application"})
+		return
+	}
+	var hc *data.Healthcheck
+	if appDefinition.HealthcheckId != nil {
+		hc, err = data.GetHealthCheckById(av.Database.Pool, uint(*appDefinition.HealthcheckId))
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+			return
+		}
+	}
+	ctx.HTML(200, "pages/application/instance/details", gin.H{
+		"Application": appDefinition,
+		"Healthcheck": hc,
+		"Instance":    appInstance,
 	})
 }
 
