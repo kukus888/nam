@@ -1,6 +1,9 @@
 package services
 
-import "errors"
+import (
+	"errors"
+	"log/slog"
+)
 
 // Contains basic service definition and functions for service management.
 
@@ -15,11 +18,13 @@ type Service interface {
 
 type ServiceManager struct {
 	services map[string]Service
+	logger   slog.Logger
 }
 
-func NewServiceManager() *ServiceManager {
+func NewServiceManager(logger slog.Logger) *ServiceManager {
 	return &ServiceManager{
 		services: make(map[string]Service),
+		logger:   logger,
 	}
 }
 func (sm *ServiceManager) RegisterService(svc Service) {
