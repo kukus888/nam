@@ -4,3 +4,14 @@ postgres:
   user: postgres
   password: heslo123
   database: postgres
+
+logging:
+  level: debug
+
+webserver:
+  enabled: true
+  port: 8080
+  mode: debug # or development
+
+services:
+  HealthcheckService: true

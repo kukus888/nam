@@ -1,0 +1,131 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+
+	"gopkg.in/yaml.v3"
+)
+
+// Specifies an object that stores the topology data before it has been processed
+type Topology struct {
+	Servers         map[string]Server
+	Applications    map[string]ApplicationInstance
+	NetworkElements map[string]NetworkElement
+}
+
+func NewTopology() Topology {
+	return Topology{
+		Servers:         make(map[string]Server),
+		Applications:    make(map[string]ApplicationInstance),
+		NetworkElements: make(map[string]NetworkElement),
+	}
+}
+
+func ParseTopologyYAML(path string) (*RawTopology, error) {
+	fileContent, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	topology := NewRawTopology()
+	yaml.Unmarshal(fileContent, topology)
+	// Test all of the contents of the YAML
+	for key, server := range topology.Servers {
+		server.Name = key
+		if server.Hostname == "" {
+			return nil, fmt.Errorf("Server %s has no hostname", key)
+		}
+		topology.Servers[key] = server
+	}
+	for key, app := range topology.Applications {
+		app.Name = key
+		if app.Port == 0 {
+			return nil, fmt.Errorf("application %s has no port", key)
+		}
+		if app.Type == "" || !IsValidApplicationType(app.Type) {
+			return nil, fmt.Errorf("application %s has no valid type. Possible types are: %s", key, ListApplicationTypes())
+		}
+		if app.HealthCheck.Url == "" { // Check if healthcheck is manually defined for this app
+			if app.HealthCheckTemplate == "" { // Check if a healthcheck template is defined
+				return nil, fmt.Errorf("application %s has no healthcheck template or manually defined healthcheck", key)
+			} else {
+				template, ok := topology.Templates.HealthCheckTemplates[app.HealthCheckTemplate]
+				if !ok {
+					return nil, fmt.Errorf("application %s has a healthcheck template %s that doesn't exist", key, app.HealthCheckTemplate)
+				}
+				app.HealthCheck = template
+			}
+		}
+		topology.Applications[key] = app
+	}
+	for key, network := range topology.Networks {
+		network.Name = key
+		if network.Type == "" || !IsValidNetworkElementType(network.Type) {
+			return nil, fmt.Errorf("network %s has no type. Possible types are: %s", key, ListNetworkElementTypes())
+		}
+		for _, endpoint := range network.Ingress { // Check if all ingress endpoints exist
+			if _, ok := topology.Servers[string(endpoint)]; !ok {
+				if _, ok := topology.Applications[string(endpoint)]; !ok {
+					// check if ingress is just a port
+					if _, err := strconv.Atoi(string(endpoint)); err != nil {
+						return nil, fmt.Errorf("network %s has an ingress endpoint %s that doesn't exist", key, endpoint)
+					}
+				}
+			}
+		}
+		for _, endpoint := range network.Egress {
+			if _, ok := topology.Servers[string(endpoint)]; !ok {
+				if _, ok := topology.Applications[string(endpoint)]; !ok {
+					return nil, fmt.Errorf("network %s has an egress endpoint %s that doesn't exist", key, endpoint)
+				}
+			}
+		}
+		topology.Networks[key] = network
+	}
+	return &topology, nil
+}
+
+func NewRawTopology() RawTopology {
+	return RawTopology{
+		Servers:      make(map[string]Server),
+		Applications: make(map[string]ApplicationDefinition),
+		Networks:     make(map[string]NetworkElement),
+		Templates: struct {
+			HealthCheckTemplates map[string]Healthcheck `yaml:"healthchecks"`
+		}{HealthCheckTemplates: make(map[string]Healthcheck)},
+	}
+}
+
+// Performs linking between the servers, applications, and network elements and returns linked topology object
+func (r *RawTopology) FinalizeTopology() (*Topology, error) {
+	topology := NewTopology()
+	topology.Servers = r.Servers
+	for appAlias, app := range r.Applications {
+		for _, serverAlias := range app.Servers {
+			instance := ApplicationInstance{
+				Name:        app.Name,
+				ServerName:  serverAlias,
+				Port:        app.Port,
+				Type:        app.Type,
+				HealthCheck: app.HealthCheck,
+			}
+			topology.Applications[appAlias] = instance
+		}
+	}
+	for networkAlias, network := range r.Networks {
+
+		topology.NetworkElements[networkAlias] = network
+	}
+	return &topology, nil
+}
+
+// Specifies an object that stores the topology data before it has been processed
+type RawTopology struct {
+	Servers      map[string]Server                `yaml:"servers"`
+	Applications map[string]ApplicationDefinition `yaml:"applications"`
+	Networks     map[string]NetworkElement        `yaml:"networks"`
+	Templates    struct {
+		HealthCheckTemplates map[string]Healthcheck `yaml:"healthchecks"`
+	}
+}

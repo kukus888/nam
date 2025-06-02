@@ -24,36 +24,41 @@ type ServiceManager struct {
 func NewServiceManager(logger slog.Logger) *ServiceManager {
 	return &ServiceManager{
 		services: make(map[string]Service),
-		logger:   logger,
+		logger:   *logger.With("component", "ServiceManager"),
 	}
 }
 func (sm *ServiceManager) RegisterService(svc Service) {
 	sm.services[svc.GetName()] = svc
+	sm.logger.Debug("Service registered", "name", svc.GetName())
 }
 func (sm *ServiceManager) StartService(name string) error {
 	svc, exists := sm.services[name]
 	if !exists {
-		return nil // or return an error if you prefer
+		sm.logger.Warn("Error starting service: Service not found", "name", name)
+		return nil
 	}
 	if svc.IsRunning() {
-		return nil // or return an error if you prefer
+		sm.logger.Debug("Error starting service: Service already running", "name", name)
+		return nil
 	}
 	return svc.Start()
 }
 func (sm *ServiceManager) StopService(name string) error {
 	svc, exists := sm.services[name]
 	if !exists {
-		return nil // or return an error if you prefer
+		sm.logger.Debug("Error stopping service: Wanted to stop service, but it does not exist", "name", name)
+		return nil
 	}
 	if !svc.IsRunning() {
-		return nil // or return an error if you prefer
+		sm.logger.Debug("Error stopping service: Service is not running, nothing to stop", "name", name)
+		return nil
 	}
 	return svc.Stop()
 }
 func (sm *ServiceManager) GetServiceStatus(name string) (string, error) {
 	svc, exists := sm.services[name]
 	if !exists {
-		return "", errors.New("service not found")
+		return "", errors.New("Error getting service status: Service not found: " + name)
 	}
 	return svc.GetStatus(), nil
 }

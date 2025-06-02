@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	data "kukus/nam/v2/layers/data"
@@ -51,18 +52,28 @@ func main() {
 	if err != nil {
 		panic("Unable to initialise database connection: " + err.Error())
 	}
+	// Try connecting to the database
+	if err := db.Pool.Ping(context.Background()); err != nil {
+		panic("Unable to connect to the database: " + err.Error())
+	}
 	App.Database = db
 	pgxConnStrSafe := strings.Replace(pgxConnStr, App.Configuration.Database.Password, "*****", -1) // Hide password in logs
 	log.Info("Successfully initialised database connection", "dsn", pgxConnStrSafe)
 
-	// Init WS
-	go InitWebServer(&App)
+	if App.Configuration.WebServer.Enabled {
+		go InitWebServer(&App)
+	} else {
+		log.Warn("Web server is disabled in the configuration, skipping web server initialization")
+	}
 
 	// Init Services
 	slog.Debug("Initializing services")
 	App.Services = services.NewServiceManager(*log)
-	healthcheckService := services.NewHealthcheckService(App.Database)
-	App.Services.RegisterService(healthcheckService)
+	if enabled, found := App.Configuration.Services["HealthcheckService"]; enabled && found {
+		slog.Info("HealthcheckService is enabled, initializing")
+		healthcheckService := services.NewHealthcheckService(App.Database, log.With("component", "HealthcheckService"))
+		App.Services.RegisterService(healthcheckService)
+	}
 	for {
 		status, _ := App.Services.GetServiceStatus("HealthcheckService")
 		fmt.Println("HealthcheckService status:", status)

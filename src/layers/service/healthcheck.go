@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"kukus/nam/v2/layers/data"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -18,12 +19,14 @@ type HealthcheckService struct {
 	ListenerConnector *pgx.Conn                     // Connector for listening to healthcheck changes
 	Status            string                        // Status of the healthcheck service, e.g., "running", "stopped"
 	Observers         map[uint]*HealthcheckObserver // Map of healthchecks being monitored with their observers
+	Logger            *slog.Logger
 }
 
-func NewHealthcheckService(database *data.Database) *HealthcheckService {
+func NewHealthcheckService(database *data.Database, logger *slog.Logger) *HealthcheckService {
 	hcs := HealthcheckService{
 		Database:  database,
 		Observers: make(map[uint]*HealthcheckObserver),
+		Logger:    logger,
 	}
 	go hcs.Start()
 	return &hcs
@@ -34,6 +37,7 @@ func (hcs *HealthcheckService) Start() error {
 	// Initialize the listener connector
 	conn, err := hcs.Database.Pool.Acquire(context.Background())
 	if err != nil {
+		hcs.Logger.Error("Failed to acquire database connection for healthcheck listener", "error", err)
 		hcs.Status = "error"
 		return err
 	}
@@ -41,6 +45,7 @@ func (hcs *HealthcheckService) Start() error {
 	// Start listening for notifications
 	_, err = hcs.ListenerConnector.Exec(context.Background(), "LISTEN healthcheck_changes")
 	if err != nil {
+		hcs.Logger.Error("Failed to start listening for healthcheck changes", "error", err)
 		hcs.Status = "error"
 		return err
 	}
@@ -48,6 +53,7 @@ func (hcs *HealthcheckService) Start() error {
 	// Sync existing healthchecks from the database
 	hcs.SyncObservers("")
 	go hcs.ListenForChanges()
+	hcs.Logger.Info("Healthcheck service started successfully")
 	return nil
 }
 
@@ -56,6 +62,7 @@ func (hcs *HealthcheckService) ListenForChanges() {
 		// Wait for notifications
 		notification, err := hcs.ListenerConnector.WaitForNotification(context.Background())
 		if err != nil {
+			hcs.Logger.Error("Failed to receive notification", "error", err)
 			hcs.Status = "error"
 			return
 		}
@@ -81,6 +88,7 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 		}
 		healthchecks, err := data.GetHealthChecksAll(hcs.Database.Pool)
 		if err != nil {
+			hcs.Logger.Error("Failed to get healthchecks from database", "error", err)
 			hcs.UpdateStatus("error")
 			return err
 		}
@@ -96,6 +104,7 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 			// Get the URL together
 			targets, err := data.GetHealthcheckTargets(hcs.Database.Pool, *hc.ID)
 			if err != nil {
+				hcs.Logger.Error("Failed to get healthcheck targets", "error", err)
 				hcs.UpdateStatus("error")
 				return err
 			}
@@ -107,8 +116,10 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 				// TODO: Support HTTPS properly
 				obj.TargetInstances[target.ApplicationInstanceID] = protocol + "://" + target.Hostname + ":" + strconv.Itoa(int(target.Port)) + target.Url
 			}
+			obj.Logger = hcs.Logger.With("healthcheck_id", *hc.ID, "healthcheck_name", hc.Name)
 			obj.Start(hcs.Database.Pool)
 			hcs.Observers[*hc.ID] = &obj
+			hcs.Logger.Debug("Healthcheck observer started", "id", *hc.ID, "name", hc.Name)
 		}
 	} else {
 		id, err := strconv.Atoi(parts[1])
@@ -190,6 +201,7 @@ type HealthcheckObserver struct {
 	TargetInstances map[uint]string    // map of URLs to check, key is the application ID, value is the server URL
 	DbPool          *pgxpool.Pool      // Database connection pool
 	ProbeFunc       func()             // Function to perform the healthcheck probe
+	Logger          *slog.Logger
 }
 
 func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
@@ -209,15 +221,14 @@ func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
 			result.ApplicationInstanceID = instanceId
 			if err != nil {
 				// Happens only if there is something wrong on the network layer
-				println("Healthcheck failed:", err.Error())
+				hco.Logger.Debug("Healthcheck failed", "instance_id", instanceId, "url", url, "error", err.Error())
 			}
-			println("Healthcheck result for instance", instanceId, ":", result.IsSuccessful, "Status:", result.ResStatus, "Response time:", result.ResTime, "ms")
+			hco.Logger.Debug("Healthcheck result", "instance_id", instanceId, "is_successful", result.IsSuccessful, "status", result.ResStatus, "response_time", result.ResTime)
 			results = append(results, *result)
 		}
 		err := data.HealthcheckResultBatchInsert(hco.DbPool, &results)
 		if err != nil {
-			// TODO: Handle error properly, maybe log it
-			println("Healthcheck failed:", err.Error())
+			hco.Logger.Error("Failed to insert healthcheck results into database", "error", err)
 		}
 		// Reset the timer for the next check
 		hco.Timer.Reset(hco.Healthcheck.CheckInterval)
@@ -225,7 +236,7 @@ func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
 	// Start the healthcheck probe function
 	go func() {
 		hco.ProbeFunc() // Initial call to start the healthcheck immediately
-		for {           // this is okay
+		for {           // this is okay, ignore linter
 			select {
 			case <-hco.Timer.C:
 				hco.ProbeFunc()

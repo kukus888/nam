@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	handlers "kukus/nam/v2/layers/handler"
 	v1 "kukus/nam/v2/layers/handler/api/rest/v1"
 	"kukus/nam/v2/layers/handler/htmx"
+	"log/slog"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +15,44 @@ import (
 
 // Initialize and start the web server
 func InitWebServer(app *Application) {
-	app.Engine = gin.Default()
+	slogLevel := slog.LevelInfo
+	switch App.Configuration.WebServer.Mode {
+	case "debug":
+		gin.SetMode(gin.DebugMode)
+		slogLevel = slog.LevelDebug
+	case "release":
+		gin.SetMode(gin.ReleaseMode)
+	case "test":
+		gin.SetMode(gin.TestMode)
+		slogLevel = slog.LevelDebug
+	default:
+		panic("Invalid web server mode: " + App.Configuration.WebServer.Mode + ". Allowed values are: debug, release, test")
+	}
+	// Initialize the Gin engine with the specified mode and logging level
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slogLevel,
+	}))
+	log.Info("Starting web server", "mode", App.Configuration.WebServer.Mode, "port", App.Configuration.WebServer.Port)
+	app.Engine = gin.New()
+	app.Engine.Use(gin.Recovery())
+	// Set up logging middleware
+	app.Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Formatter: func(params gin.LogFormatterParams) string {
+			log := make(map[string]interface{})
+
+			log["status_code"] = params.StatusCode
+			log["method"] = params.Method
+			log["path"] = params.Path
+			log["start_time"] = params.TimeStamp.Format(time.RFC3339)
+			log["remote_addr"] = params.ClientIP
+			log["response_time"] = params.Latency.String()
+
+			s, _ := json.Marshal(log)
+			return string(s) + "\n"
+		},
+		Output: os.Stdout,
+	}))
+	// Set up resources
 	app.Engine.FuncMap["formatDuration"] = formatDuration
 	app.Engine.FuncMap["formatTime"] = formatTime
 	app.Engine.LoadHTMLGlob("./web/templates/*/*.html")
@@ -30,9 +70,8 @@ func InitWebServer(app *Application) {
 	handlers.NewPageController(App.Database).Init(App.Engine.Group("/"))
 	handlers.NewApplicationView(App.Database).Init(App.Engine.Group("/applications"))
 	handlers.NewHealthcheckView(App.Database).Init(App.Engine.Group("/healthchecks"))
-	app.Engine.Run(":8080")
-	// TODO: debug | prod
-	// TODO: logging
+
+	app.Engine.Run(":" + fmt.Sprintf("%d", app.Configuration.WebServer.Port))
 }
 
 // Add these to your template functions
