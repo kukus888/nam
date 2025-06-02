@@ -46,9 +46,16 @@ func (h *HtmxHealthHandler) Init(routeGroup *gin.RouterGroup) {
 			ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck result: " + err.Error()})
 			return
 		}
+		// Get instance
+		instance, err := data.GetApplicationInstanceFullById(h.Database, uint64(instanceId))
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get application instance", "trace": err.Error()})
+			return
+		}
 		// Render template with health data
 		ctx.HTML(200, "components/health.application.instance."+size, gin.H{
-			"Id":           instanceId,
+			"Instance":     instance, // This should be replaced with actual instance data
+			"Result":       result,
 			"LiveReload":   liveReload,
 			"Healthy":      result.IsSuccessful, // This should be replaced with actual health check logic
 			"ResponseTime": result.ResTime,

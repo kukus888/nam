@@ -1,7 +1,7 @@
 {{ define "components/health.application.instance.small" }}
 <div
 {{ if .LiveReload }}
-    hx-get="/htmx/health/application/instance?live_reload=true&size=small&id={{ .Id }}"
+    hx-get="/htmx/health/application/instance?live_reload=true&size=small&id={{ .Instance.Id }}"
     hx-swap="outerHTML"
     hx-trigger="every 30s"
 {{ end }}>

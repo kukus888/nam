@@ -132,7 +132,7 @@ type ApplicationInstance struct {
 // Joined with ApplicationDefinition and Server
 // This struct is used to return full information about the application instance
 type ApplicationInstanceFull struct {
-	ID             uint   `json:"id" db:"application_instance_id"`
+	Id             uint   `json:"id" db:"application_instance_id"`
 	Name           string `json:"name" db:"application_instance_name"`
 	TopologyNodeID uint   `json:"topology_node_id" db:"topology_node_id"`
 	ApplicationDefinition

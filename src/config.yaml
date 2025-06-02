@@ -6,7 +6,7 @@ postgres:
   database: postgres
 
 logging:
-  level: debug
+  level: info
 
 webserver:
   enabled: true

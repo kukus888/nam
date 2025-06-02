@@ -14,6 +14,7 @@ func GetApplicationInstanceById(pool *pgxpool.Pool, id uint64) (*ApplicationInst
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(context.Background())
 	var inst []ApplicationInstance
 	err = pgxscan.Select(context.Background(), tx, &inst, "SELECT id, name, server_id, application_definition_id, topology_node_id FROM application_instance WHERE id = $1", id)
 	if err != nil {
@@ -22,31 +23,32 @@ func GetApplicationInstanceById(pool *pgxpool.Pool, id uint64) (*ApplicationInst
 	if len(inst) == 0 {
 		return nil, nil // No instance found
 	}
-	return &inst[0], nil
+	return &inst[0], tx.Commit(context.Background())
 }
 
-func GetApplicationInstanceFullById(pool *pgxpool.Pool, id uint64) (*ApplicationInstance, error) {
+// Fetches appropriate ApplicationInstanceFull struct from DB, which includes server and application definition details
+// Returns the first instance found, or an error if none found
+func GetApplicationInstanceFullById(pool *pgxpool.Pool, id uint64) (*ApplicationInstanceFull, error) {
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	var inst []ApplicationInstance
+	defer tx.Rollback(context.Background())
+	var inst []ApplicationInstanceFull
 	err = pgxscan.Select(context.Background(), tx, &inst, `
 		SELECT 
-			ai.id AS ApplicationInstanceID, ai.name AS ApplicationInstanceName, ai.server_id AS ServerId, ai.application_definition_id AS ApplicationDefinitionID, ai.topology_node_id AS TopologyNodeID,
-			s.alias AS ServerAlias, s.hostname AS ServerHostname,
-			ad.name AS ApplicationDefinitionName, ad.port AS ApplicationDefinitionPort, ad.port AS ApplicationDefinitionType, ad.healthcheck_id AS HealthcheckID,
-			h.url AS HealthcheckUrl, h.timeout AS HealthcheckTimeout, h.check_interval AS HealthcheckCheckInterval, h.expected_status AS HealthcheckExpectedStatus
+			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id,
+			s.alias AS server_alias, s.hostname AS server_hostname,
+			ad.name AS application_definition_name, ad.port AS application_definition_port, ad.port AS application_definition_type, ad.healthcheck_id AS healthcheck_id
 		FROM application_instance ai
 		LEFT JOIN "server" s ON ai.server_id = s.id
 		LEFT JOIN application_definition ad ON ai.application_definition_id = ad.id
-		LEFT JOIN healthcheck h ON ad.healthcheck_id = h.id
 		WHERE ai.id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &inst[0], nil
+	return &inst[0], tx.Commit(context.Background())
 }
 
 // Returns a slice of all application instances.
@@ -55,6 +57,7 @@ func GetAllApplicationInstancesFull(pool *pgxpool.Pool) (*[]ApplicationInstanceF
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(context.Background())
 	var inst []ApplicationInstanceFull
 	err = pgxscan.Select(context.Background(), tx, &inst, `
 		SELECT 
@@ -68,7 +71,7 @@ func GetAllApplicationInstancesFull(pool *pgxpool.Pool) (*[]ApplicationInstanceF
 		return nil, err
 	}
 
-	return &inst, nil
+	return &inst, tx.Commit(context.Background())
 }
 
 // Returns a slice of all application instances.
@@ -77,6 +80,7 @@ func GetApplicationInstancesFullByApplicationDefinitionId(pool *pgxpool.Pool, id
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(context.Background())
 	var inst []ApplicationInstanceFull
 	err = pgxscan.Select(context.Background(), tx, &inst, `
 		SELECT 
@@ -91,7 +95,7 @@ func GetApplicationInstancesFullByApplicationDefinitionId(pool *pgxpool.Pool, id
 		return nil, err
 	}
 
-	return &inst, nil
+	return &inst, tx.Commit(context.Background())
 }
 
 // Creates new ApplicationInstance in DB, with underlying TopologyNode struct.

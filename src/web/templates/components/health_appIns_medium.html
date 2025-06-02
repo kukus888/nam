@@ -1,0 +1,35 @@
+{{ define "components/health.application.instance.medium" }}
+<div
+    {{ if .LiveReload }}
+        hx-get="/htmx/health/application/instance?live_reload=true&size=medium&id={{ .Instance.Id }}"
+        hx-swap="outerHTML"
+        hx-trigger="every 30s"
+    {{ end }}
+    class="relative w-full max-w-xs rounded-lg shadow bg-white overflow-hidden"
+    style="min-width: 220px;"
+>
+    <!-- App Type Logo Placeholder (background, left, behind content) -->
+    <div class="absolute inset-y-0 left-0 flex items-center z-0 pointer-events-none">
+        <img src="/static/logo.svg" alt="App Logo" class="h-16 w-auto ml-2" style="max-height: 80px; mask-image: linear-gradient(to right, black 40%, transparent 100%); -webkit-mask-image: linear-gradient(to right, black 40%, transparent 100%);">
+    </div>
+    <!-- Health status bubble, top right, flush with edges -->
+    <div class="absolute top-0 right-0 z-10">
+        {{ if .Healthy }}
+            <span class="block rounded-bl-lg rounded-tr-lg px-3 py-1 text-xs font-semibold bg-green-100 text-green-800">
+                Healthy
+            </span>
+        {{ else }}
+            <span class="block rounded-bl-lg rounded-tr-lg px-3 py-1 text-xs font-semibold bg-red-100 text-red-800">
+                Unhealthy
+            </span>
+        {{ end }}
+    </div>
+    <!-- Foreground content, centered, above background -->
+    <div class="relative flex flex-col items-center justify-center z-10 px-4 py-4">
+        <span class="font-semibold text-gray-800 text-base truncate w-full text-center">{{ .Instance.Name }}</span>
+        <div class="text-xs text-gray-500 mt-1 text-center w-full">
+            Last checked: {{ .Timestamp | formatTime }}
+        </div>
+    </div>
+</div>
+{{ end }}

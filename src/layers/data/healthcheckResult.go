@@ -72,6 +72,7 @@ type ApplicationDefinitionHealthcheckResult struct {
 	ErrorMessage          string    `json:"error_message" db:"error_message"`
 }
 
+// Gets the latest healthcheck results for all application instances of a given application definition
 func HealthcheckGetLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id uint64) (*[]ApplicationDefinitionHealthcheckResult, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -105,6 +106,51 @@ func HealthcheckGetLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id 
 		WHERE ai.application_definition_id = $1
 		ORDER BY ai.id desc;
 	`, id)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[ApplicationDefinitionHealthcheckResult])
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, tx.Commit(context.Background())
+}
+
+// Gets the latest healthcheck results for all application instances
+func HealthcheckGetLatestResultAll(pool *pgxpool.Pool) (*[]ApplicationDefinitionHealthcheckResult, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+		SELECT
+		  ai.id AS application_instance_id,
+		  ai.name AS instance_name,
+		  s.hostname AS server_hostname,
+		  hcr.id AS id,
+		  hcr.healthcheck_id AS healthcheck_id,
+		  hcr.is_successful AS is_successful,
+		  hcr.time_start AS time_start,
+		  hcr.time_end AS time_end,
+		  hcr.res_status AS res_status,
+		  hcr.res_body AS res_body,
+		  hcr.res_time AS res_time,
+		  hcr.error_message AS error_message
+		FROM application_instance ai
+		JOIN "server" s ON ai.server_id = s.id
+		LEFT JOIN LATERAL (
+		    SELECT *
+		    FROM healthcheck_results hcr
+		    WHERE hcr.application_instance_id = ai.id
+		    ORDER BY hcr.time_end DESC
+		    LIMIT 1
+		) hcr ON TRUE
+		ORDER BY ai.name desc;
+	`)
 	if err != nil {
 		return nil, err
 	}
