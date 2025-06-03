@@ -1,0 +1,73 @@
+{{ define "pages/settings" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/static/tailwindcss.js"></script>
+    <script src="/static/jquery.js"></script>
+    <script src="/static/htmx.js"></script>
+    <script src="/static/htmx-extensions.js"></script>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-8">
+        <!-- Secondary Navbar -->
+        <nav class="w-64 flex-shrink-0">
+            <div class="bg-white rounded-xl shadow p-4 sticky top-8">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
+                <ul class="space-y-2">
+                    <li>
+                        <button hx-get="/settings/database" hx-target="#settings-content" hx-swap="innerHTML"
+                            class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                            Database
+                        </button>
+                    </li>
+                    <li>
+                        <button hx-get="/settings/external-connectors" hx-target="#settings-content" hx-swap="innerHTML"
+                            class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                            External Connectors
+                        </button>
+                    </li>
+                    <li>
+                        <button hx-get="/settings/resources" hx-target="#settings-content" hx-swap="innerHTML"
+                            class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                            Resources
+                        </button>
+                    </li>
+                    <li>
+                        <button hx-get="/settings/services" hx-target="#settings-content" hx-swap="innerHTML"
+                            class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                            Services
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="settings-content" class="flex-1">
+            <!-- 
+                By default, you can show a welcome or overview.
+                When a sidebar button is clicked, HTMX will replace this content.
+            -->
+            <div class="bg-white shadow rounded-xl p-8">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome to Settings</h1>
+                <p class="text-gray-600 mb-4">Select a category from the left to view or edit settings.</p>
+                <ul class="list-disc pl-6 text-gray-500">
+                    <li>Database: Configure database connection and options.</li>
+                    <li>External Connectors: Manage integrations with external systems.</li>
+                    <li>Resources: Upload and manage icons and other assets.</li>
+                    <li>Services: Configure background services and jobs.</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>
+{{ end }}

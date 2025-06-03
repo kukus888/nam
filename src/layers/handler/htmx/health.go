@@ -52,14 +52,21 @@ func (h *HtmxHealthHandler) Init(routeGroup *gin.RouterGroup) {
 			ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get application instance", "trace": err.Error()})
 			return
 		}
+		// Get healthcheckTemplate definition
+		healthcheckTemplate, err := data.GetHealthCheckById(h.Database, result.HealthcheckID)
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck definition", "trace": err.Error()})
+			return
+		}
 		// Render template with health data
 		ctx.HTML(200, "components/health.application.instance."+size, gin.H{
-			"Instance":     instance, // This should be replaced with actual instance data
-			"Result":       result,
-			"LiveReload":   liveReload,
-			"Healthy":      result.IsSuccessful,
-			"ResponseTime": result.ResTime,
-			"Timestamp":    result.TimeEnd,
+			"Instance":            instance, // This should be replaced with actual instance data
+			"HealthcheckTemplate": healthcheckTemplate,
+			"Result":              result,
+			"LiveReload":          liveReload,
+			"Healthy":             result.IsSuccessful,
+			"ResponseTime":        result.ResTime,
+			"Timestamp":           result.TimeEnd,
 		})
 	})
 	routeGroup.GET("/application/definition", func(ctx *gin.Context) {

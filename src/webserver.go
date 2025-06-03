@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	handlers "kukus/nam/v2/layers/handler"
@@ -42,13 +43,15 @@ func InitWebServer(app *Application) {
 
 			log["status_code"] = params.StatusCode
 			log["method"] = params.Method
-			log["path"] = params.Path
+			log["path"] = fmt.Sprintf("%s", params.Path)
 			log["start_time"] = params.TimeStamp.Format(time.RFC3339)
 			log["remote_addr"] = params.ClientIP
 			log["response_time"] = params.Latency.String()
-
-			s, _ := json.Marshal(log)
-			return string(s) + "\n"
+			var buf bytes.Buffer
+			enc := json.NewEncoder(&buf)
+			enc.SetEscapeHTML(false)
+			enc.Encode(log)
+			return buf.String()
 		},
 		Output: os.Stdout,
 	}))

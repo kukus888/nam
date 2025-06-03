@@ -34,17 +34,9 @@ func (pc PageController) Init(routeGroup *gin.RouterGroup) {
 			"AppDefDAOs": appDefDAOs,
 		})
 	})
-	/* Everything by result
-	routeGroup.GET("/", func(ctx *gin.Context) {
-		apps, err := data.HealthcheckGetLatestResultAll(pc.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get healthcheck results", "trace": err.Error()})
-			return
-		}
-		ctx.HTML(200, "pages/dashboard", gin.H{
-			"Results": apps,
-		})
-	})*/
+	routeGroup.GET("/settings", func(ctx *gin.Context) {
+		ctx.HTML(200, "pages/settings", gin.H{})
+	})
 	routeGroup.GET("/nodes", func(ctx *gin.Context) {
 		nodes, err := pc.TopologyService.GetAllTopologyNodes()
 		if err != nil {
