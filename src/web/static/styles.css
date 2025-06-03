@@ -1,0 +1,11 @@
+#fade-in.htmx-added {
+  opacity: 0.5;
+}
+#fade-in.htmx-removed {
+  opacity: 0.5;
+  transition: opacity 1s ease-out;
+}
+#fade-in {
+  opacity: 1;
+  transition: opacity 1s ease-out;
+}

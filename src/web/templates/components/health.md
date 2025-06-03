@@ -13,3 +13,8 @@ size - tiny, small, medium, large
     </span>
 </div>
 ```
+
+Components:
+appDef - Application definition only
+appIns - Application instance only
+appDefwIns - Application definition with all of their instances

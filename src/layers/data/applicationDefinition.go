@@ -9,15 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// ApplicationDefinitionDAO represents the definition of an application and its general properties
-type ApplicationDefinitionDAO struct {
-	Id            uint   `json:"id" db:"id"`
-	Name          string `json:"name" db:"name"`
-	Port          int    `json:"port" db:"port"`
-	Type          string `json:"type" db:"type"`
-	HealthcheckId *uint  `json:"healthcheck_id" db:"healthcheck_id"`
-}
-
 func (s ApplicationDefinitionDAO) TableName() string {
 	return "application_definition"
 }
@@ -35,26 +26,29 @@ func GetApplicationDefinitionById(pool *pgxpool.Pool, id uint64) (*ApplicationDe
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(context.Background())
 	var appDefs []ApplicationDefinitionDAO
 	err = pgxscan.Select(context.Background(), tx, &appDefs, `SELECT * FROM application_definition ad WHERE ad.id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
-	return &appDefs[0], nil
+	return &appDefs[0], tx.Commit(context.Background())
 }
 
-// GetApplicationDefinitions returns a full ApplicationDefinitionDAO object with all its dependencies
-func GetApplicationDefinitions(pool *pgxpool.Pool) (*[]ApplicationDefinitionDAO, error) {
+// GetApplicationDefinitionsAll returns all ApplicationDefinitionDAO objects from the database
+// Returns a slice of ApplicationDefinitionDAO objects
+func GetApplicationDefinitionsAll(pool *pgxpool.Pool) (*[]ApplicationDefinitionDAO, error) {
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(context.Background())
 	var appDefs []ApplicationDefinitionDAO
 	err = pgxscan.Select(context.Background(), tx, &appDefs, `SELECT * FROM application_definition ad`)
 	if err != nil {
 		return nil, err
 	}
-	return &appDefs, nil
+	return &appDefs, tx.Commit(context.Background())
 }
 
 // GetApplicationDefinitions returns a full ApplicationDefinitionDAO object with all its dependencies
@@ -63,6 +57,7 @@ func GetApplicationDefinitionsFull(pool *pgxpool.Pool) (*[]ApplicationDefinition
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(context.Background())
 	var appDefs []ApplicationDefinition
 	err = pgxscan.Select(context.Background(), tx, &appDefs, `
 		SELECT
@@ -73,7 +68,7 @@ func GetApplicationDefinitionsFull(pool *pgxpool.Pool) (*[]ApplicationDefinition
 	if err != nil {
 		return nil, err
 	}
-	return &appDefs, nil
+	return &appDefs, tx.Commit(context.Background())
 }
 
 // Creates new ApplicationDefinition in DB
@@ -150,10 +145,11 @@ func GetApplicationInstancesByApplicationDefinitionId(pool *pgxpool.Pool, id uin
 	if err != nil {
 		return nil, err
 	}
+	defer tx.Rollback(context.Background())
 	var instances []ApplicationInstance
 	err = pgxscan.Select(context.Background(), tx, &instances, `SELECT * FROM application_instance ai WHERE ai.application_definition_id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
-	return &instances, nil
+	return &instances, tx.Commit(context.Background())
 }

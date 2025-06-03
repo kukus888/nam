@@ -22,7 +22,7 @@ func NewApplicationView(database *data.Database) ApplicationView {
  */
 func (av ApplicationView) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/", func(ctx *gin.Context) {
-		apps, err := data.GetApplicationDefinitions(av.Database.Pool)
+		apps, err := data.GetApplicationDefinitionsAll(av.Database.Pool)
 		if err != nil {
 			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
 			return

@@ -33,7 +33,7 @@ func (as *ApplicationService) CreateApplication(appDef data.ApplicationDefinitio
 
 // Reads All ApplicationDefinition from database
 func (as *ApplicationService) GetAllApplications() (*[]data.ApplicationDefinitionDAO, error) {
-	return data.GetApplicationDefinitions(as.Database.Pool)
+	return data.GetApplicationDefinitionsAll(as.Database.Pool)
 }
 
 // Reads ApplicationDefinition from database

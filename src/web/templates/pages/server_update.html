@@ -8,13 +8,13 @@
         </button>
     </div>
 
-    <form hx-put="/api/rest/v1/servers/{{ .Server.ID }}"
+    <form hx-put="/api/rest/v1/servers/{{ .Server.Id }}"
         hx-on::after-request="handleRestApiResponse(event, '/htmx/items/servers/view')" hx-ext="submitjson">
         <div class="space-y-4">
             <!-- Server ID (read-only) -->
             <div class="grid grid-cols-1 gap-2">
                 <label class="block text-sm font-medium text-gray-700">Server ID</label>
-                <input type="number" value="{{ .Server.ID }}" name="id"
+                <input type="number" value="{{ .Server.Id }}" name="id"
                     class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     readonly>
 

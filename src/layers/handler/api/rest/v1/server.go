@@ -68,7 +68,7 @@ func (sc *ServerController) GetById(ctx *gin.Context) {
 
 // Create Server
 func (sc *ServerController) NewServer(ctx *gin.Context) {
-	var server data.ServerDAO
+	var server data.Server
 	if err := ctx.ShouldBindJSON(&server); err != nil {
 		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
 		return
@@ -87,7 +87,7 @@ func (sc *ServerController) RemoveById(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of server"})
 	}
-	dao := data.ServerDAO{ID: uint(serverId)}
+	dao := data.Server{Id: uint(serverId)}
 	deletedId, err := dao.Delete(sc.Service.Database.Pool)
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": "Unable to remove server", "trace": err})
@@ -99,7 +99,7 @@ func (sc *ServerController) RemoveById(ctx *gin.Context) {
 
 // Get server with ID
 func (sc *ServerController) UpdateById(ctx *gin.Context) {
-	var server data.ServerDAO
+	var server data.Server
 	if err := ctx.ShouldBindJSON(&server); err != nil {
 		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
 		return

@@ -25,6 +25,17 @@ func NewPageController(database *data.Database) PageController {
 
 func (pc PageController) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/", func(ctx *gin.Context) {
+		appDefDAOs, err := data.GetApplicationDefinitionsAll(pc.Database.Pool)
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get healthcheck results", "trace": err.Error()})
+			return
+		}
+		ctx.HTML(200, "pages/dashboard", gin.H{
+			"AppDefDAOs": appDefDAOs,
+		})
+	})
+	/* Everything by result
+	routeGroup.GET("/", func(ctx *gin.Context) {
 		apps, err := data.HealthcheckGetLatestResultAll(pc.Database.Pool)
 		if err != nil {
 			ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get healthcheck results", "trace": err.Error()})
@@ -33,7 +44,7 @@ func (pc PageController) Init(routeGroup *gin.RouterGroup) {
 		ctx.HTML(200, "pages/dashboard", gin.H{
 			"Results": apps,
 		})
-	})
+	})*/
 	routeGroup.GET("/nodes", func(ctx *gin.Context) {
 		nodes, err := pc.TopologyService.GetAllTopologyNodes()
 		if err != nil {

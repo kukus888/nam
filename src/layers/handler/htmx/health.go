@@ -57,7 +57,7 @@ func (h *HtmxHealthHandler) Init(routeGroup *gin.RouterGroup) {
 			"Instance":     instance, // This should be replaced with actual instance data
 			"Result":       result,
 			"LiveReload":   liveReload,
-			"Healthy":      result.IsSuccessful, // This should be replaced with actual health check logic
+			"Healthy":      result.IsSuccessful,
 			"ResponseTime": result.ResTime,
 			"Timestamp":    result.TimeEnd,
 		})
@@ -93,7 +93,56 @@ func (h *HtmxHealthHandler) Init(routeGroup *gin.RouterGroup) {
 		ctx.HTML(200, "components/health.application.definition."+size, gin.H{
 			"Id":           definitionId,
 			"LiveReload":   liveReload,
-			"HealthyCount": healthyCount, // This should be replaced with actual health check logic
+			"HealthyCount": healthyCount,
+			"TotalCount":   len(*results),
+		})
+	})
+	routeGroup.GET("/application/definition_with_instances", func(ctx *gin.Context) {
+		definitionIdStr := ctx.Query("id")
+		liveReload := ctx.Query("live_reload") == "true" // Optional
+		size := ctx.Query("size")
+
+		// Parse and validate inputs
+		definitionId, err := strconv.Atoi(definitionIdStr)
+		if err != nil && definitionId != 0 {
+			ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid definition id", "trace": err.Error()})
+			return
+		}
+		if size != "" && !slices.Contains(allowedComponentSizes, size) {
+			ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid size parameter. Allowed values are: " + strings.Join(allowedComponentSizes, ", ")})
+			return
+		}
+		// Get definition
+		definition, err := data.GetApplicationDefinitionById(h.Database, uint64(definitionId))
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get application definition", "trace": err.Error()})
+			return
+		}
+		// Get instances
+		instances, err := data.GetApplicationInstancesByApplicationDefinitionId(h.Database, uint64(definitionId))
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get application instances", "trace": err.Error()})
+			return
+		}
+		// Get health
+		results, err := data.HealthcheckGetLatestResultByApplicationDefinitionId(h.Database, uint64(definitionId))
+		if err != nil {
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck results", "trace": err.Error()})
+			return
+		}
+		// Compute stats
+		healthyCount := 0
+		for _, result := range *results {
+			if result.IsSuccessful {
+				healthyCount++
+			}
+		}
+		ctx.HTML(200, "components/health.application.definition.withInstances."+size, gin.H{
+			"Id":           definitionId,
+			"Definition":   definition,
+			"Instances":    instances,
+			"LiveReload":   liveReload,
+			"HealthyCount": healthyCount,
 			"TotalCount":   len(*results),
 		})
 	})

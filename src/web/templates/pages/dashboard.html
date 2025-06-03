@@ -9,6 +9,7 @@
     <script src="/static/jquery.js"></script>
     <script src="/static/htmx.js"></script>
     <script src="/static/htmx-extensions.js"></script>
+    <link rel="stylesheet" href="/static/styles.css" />
 </head>
 
 <body class="bg-gray-50">
@@ -16,14 +17,17 @@
     {{ template "templates/navbar" }}
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {{ range .Results }}
-        <div class="m-1">
-            <div hx-get="/htmx/health/application/instance?size=medium&id={{ .ApplicationInstanceID }}"
+        {{ range .AppDefDAOs }}
+        <div class="mb-4">
+            <div hx-get="/htmx/health/application/definition_with_instances?live_reload=true&size=small&id={{ .Id }}"
                 hx-swap="outerHTML" hx-trigger="load"
                 hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                    Loading...
-                </span>
+                <div class="bg-white shadow rounded-lg p-6 mb-6">
+                    <span
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        Loading...
+                    </span>
+                </div>
             </div>
         </div>
         {{ end }}

@@ -16,7 +16,7 @@ type ServerService struct {
 
 // Inserts new Server into database
 // Returns: The new ID, error
-func (sc *ServerService) CreateServer(server data.ServerDAO) (*uint, error) {
+func (sc *ServerService) CreateServer(server data.Server) (*uint, error) {
 	tx, err := sc.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
@@ -32,13 +32,13 @@ func (sc *ServerService) CreateServer(server data.ServerDAO) (*uint, error) {
 }
 
 // Reads All Servers from database
-func (sc *ServerService) GetAllServers() (*[]data.ServerDAO, error) {
+func (sc *ServerService) GetAllServers() (*[]data.Server, error) {
 	// Insert AppDef into Db
 	tx, err := sc.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
-	daos, err := data.DbQueryTypeAll(tx, data.ServerDAO{})
+	daos, err := data.DbQueryTypeAll(tx, data.Server{})
 	if err != nil {
 		tx.Rollback(context.Background())
 		return nil, err
@@ -49,12 +49,12 @@ func (sc *ServerService) GetAllServers() (*[]data.ServerDAO, error) {
 }
 
 // Reads Servers from database
-func (sc *ServerService) GetServerById(id uint) (*data.ServerDAO, error) {
+func (sc *ServerService) GetServerById(id uint) (*data.Server, error) {
 	tx, err := sc.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
-	daos, err := data.DbQueryTypeWithParams(tx, data.ServerDAO{}, data.DbFilter{
+	daos, err := data.DbQueryTypeWithParams(tx, data.Server{}, data.DbFilter{
 		Column:   "id",
 		Operator: data.DbOperatorEqual,
 		Value:    strconv.Itoa(int(id)),
@@ -73,7 +73,7 @@ func (sc *ServerService) GetServerById(id uint) (*data.ServerDAO, error) {
 
 // Removes Server from database
 func (sc *ServerService) RemoveApplicationById(id uint) error {
-	server := data.ServerDAO{ID: id}
+	server := data.Server{Id: id}
 	_, err := server.Delete(sc.Database.Pool) // TODO: Log
 	return err
 }

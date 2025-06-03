@@ -119,6 +119,15 @@ type ApplicationDefinition struct {
 	HealthcheckId *uint  `json:"healthcheck_id" db:"healthcheck_id"` // ID of the healthcheck, if any
 }
 
+// ApplicationDefinitionDAO represents the definition of an application and its general properties
+type ApplicationDefinitionDAO struct {
+	Id            uint   `json:"id" db:"id"`
+	Name          string `json:"name" db:"name"`
+	Port          int    `json:"port" db:"port"`
+	Type          string `json:"type" db:"type"`
+	HealthcheckId *uint  `json:"healthcheck_id" db:"healthcheck_id"`
+}
+
 // ApplicationInstance represents an instance of an application
 type ApplicationInstance struct {
 	Id                      uint   `json:"id" db:"id"`
