@@ -102,7 +102,7 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 			// Get port from application definition
 			// Get server instances for the application
 			// Get the URL together
-			targets, err := data.GetHealthcheckTargets(hcs.Database.Pool, *hc.ID)
+			targets, err := data.GetHealthcheckTargets(hcs.Database.Pool, *hc.Id)
 			if err != nil {
 				hcs.Logger.Error("Failed to get healthcheck targets", "error", err)
 				hcs.UpdateStatus("error")
@@ -116,10 +116,10 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 				// TODO: Support HTTPS properly
 				obj.TargetInstances[target.ApplicationInstanceID] = protocol + "://" + target.Hostname + ":" + strconv.Itoa(int(target.Port)) + target.Url
 			}
-			obj.Logger = hcs.Logger.With("healthcheck_id", *hc.ID, "healthcheck_name", hc.Name)
+			obj.Logger = hcs.Logger.With("healthcheck_id", *hc.Id, "healthcheck_name", hc.Name)
 			obj.Start(hcs.Database.Pool)
-			hcs.Observers[*hc.ID] = &obj
-			hcs.Logger.Debug("Healthcheck observer started", "id", *hc.ID, "name", hc.Name)
+			hcs.Observers[*hc.Id] = &obj
+			hcs.Logger.Debug("Healthcheck observer started", "id", *hc.Id, "name", hc.Name)
 		}
 	} else {
 		id, err := strconv.Atoi(parts[1])

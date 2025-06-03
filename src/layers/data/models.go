@@ -8,13 +8,13 @@ import (
 )
 
 type Server struct {
-	ID       uint   `json:"server_id" db:"server_id"`
+	Id       uint   `json:"server_id" db:"server_id"`
 	Alias    string `json:"alias" db:"server_alias"`
 	Hostname string `json:"hostname" db:"server_hostname"`
 }
 
 type Healthcheck struct {
-	ID             *uint         `json:"id" db:"id"`
+	Id             *uint         `json:"id" db:"id"`
 	Name           string        `json:"name" db:"name"`
 	Description    string        `json:"description" db:"description"`
 	Url            string        `json:"url" db:"url"`
@@ -40,7 +40,7 @@ type Healthcheck struct {
 }
 
 type HealthcheckDTO struct {
-	ID            *uint      `json:"id"`
+	Id            *uint      `json:"id"`
 	Name          string     `json:"name" binding:"required"`
 	Description   string     `json:"description"`
 	ReqUrl        string     `json:"url" binding:"required"`
@@ -73,7 +73,7 @@ func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
 	reqTimeout, _ := time.ParseDuration(strconv.Itoa(dto.ReqTimeout) + "s")
 	reqInterval, _ := time.ParseDuration(strconv.Itoa(dto.CheckInterval) + "s")
 	hc := Healthcheck{
-		ID:                   dto.ID,
+		Id:                   dto.Id,
 		Name:                 dto.Name,
 		Description:          dto.Description,
 		Url:                  dto.ReqUrl,
@@ -98,7 +98,7 @@ func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
 }
 
 type HealthcheckResult struct {
-	ID                    uint64    `json:"id" db:"id"`
+	Id                    uint64    `json:"id" db:"id"`
 	HealthcheckID         uint      `json:"healthcheck_id" db:"healthcheck_id"`
 	ApplicationInstanceID uint      `json:"application_instance_id" db:"application_instance_id"`
 	IsSuccessful          bool      `json:"is_successful" db:"is_successful"`
@@ -112,7 +112,7 @@ type HealthcheckResult struct {
 
 // ApplicationDefinition represents the definition of an application and its general properties
 type ApplicationDefinition struct {
-	ID            uint   `json:"id" db:"application_definition_id"`
+	Id            uint   `json:"id" db:"application_definition_id"`
 	Name          string `json:"name" db:"application_definition_name"`
 	Port          int    `json:"port" db:"application_definition_port"`
 	Type          string `json:"type" db:"application_definition_type"`
@@ -121,7 +121,7 @@ type ApplicationDefinition struct {
 
 // ApplicationInstance represents an instance of an application
 type ApplicationInstance struct {
-	ID                      uint   `json:"id" db:"id"`
+	Id                      uint   `json:"id" db:"id"`
 	Name                    string `json:"name" db:"name"`
 	TopologyNodeID          uint   `json:"topology_node_id" db:"topology_node_id"`
 	ApplicationDefinitionID uint   `json:"application_definition_id"`

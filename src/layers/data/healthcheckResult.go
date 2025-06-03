@@ -27,11 +27,11 @@ func (hr HealthcheckResult) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 		) RETURNING id;
 	`, hr.HealthcheckID, hr.ApplicationInstanceID, hr.IsSuccessful,
 		hr.TimeStart, hr.TimeEnd, hr.ResStatus, hr.ResBody,
-		hr.ResTime, hr.ErrorMessage).Scan(&hr.ID)
+		hr.ResTime, hr.ErrorMessage).Scan(&hr.Id)
 	if err != nil {
 		return nil, err
 	}
-	return &hr.ID, tx.Commit(context.Background())
+	return &hr.Id, tx.Commit(context.Background())
 }
 
 func HealthcheckGetLatestResultByApplicationInstanceId(pool *pgxpool.Pool, id uint64) (*HealthcheckResult, error) {
@@ -183,11 +183,11 @@ func HealthcheckResultBatchInsert(pool *pgxpool.Pool, hrs *[]HealthcheckResult) 
 		) RETURNING id;
 		`, hr.HealthcheckID, hr.ApplicationInstanceID, hr.IsSuccessful,
 			hr.TimeStart, hr.TimeEnd, hr.ResStatus, hr.ResBody,
-			hr.ResTime, hr.ErrorMessage).Scan(&hr.ID)
+			hr.ResTime, hr.ErrorMessage).Scan(&hr.Id)
 		if err != nil {
 			return err
 		}
-		(*hrs)[hrId].ID = hr.ID // Assign the ID back to the slice
+		(*hrs)[hrId].Id = hr.Id // Assign the ID back to the slice
 	}
 	return tx.Commit(context.Background())
 }

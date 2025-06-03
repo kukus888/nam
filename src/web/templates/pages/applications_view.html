@@ -34,8 +34,8 @@
             </thead>
             <tbody class="bg-white divide-y divide-gray-200" id="server-table-body">
                 {{ range .Applications }}
-                <tr class="hover:bg-gray-50 server-row fade-in" data-id="{{ .ID }}" data-name="{{ .Name }}" data-port="{{ .Port }}" data-type="{{ .Type }}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .ID }}</td>
+                <tr class="hover:bg-gray-50 server-row fade-in" data-id="{{ .Id }}" data-name="{{ .Name }}" data-port="{{ .Port }}" data-type="{{ .Type }}">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .Id }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="flex-shrink-0 h-10 w-10 flex items-center justify-center bg-indigo-100 rounded-full">
@@ -52,7 +52,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .Type }}</td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
-                            hx-get="/htmx/health/application/definition?size=tiny&id={{ .ID }}"
+                            hx-get="/htmx/health/application/definition?size=tiny&id={{ .Id }}"
                             hx-swap="outerHTML"
                             hx-trigger="load">
                             Loading...
@@ -61,7 +61,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-2">
                             <!-- EDIT -->
-                            <button hx-get="/htmx/items/applications/update/{{ .ID }}" hx-target="#items-container"
+                            <button hx-get="/htmx/items/applications/update/{{ .Id }}" hx-target="#items-container"
                                 class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 p-2 rounded-md transition-colors">
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -69,7 +69,7 @@
                                 </svg>
                             </button>
                             <!-- DELETE -->
-                            <button hx-delete="/api/rest/v1/applications/{{ .ID }}" 
+                            <button hx-delete="/api/rest/v1/applications/{{ .Id }}" 
                                 hx-confirm="Are you sure you wish to delete this application?"
                                 hx-on::after-request="handleDeleteResponse(event, this)"
                                 class="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-2 rounded-md transition-colors">
@@ -80,7 +80,7 @@
                             </button>
                             <!-- DETAILS -->
                             <a class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 p-2 rounded-md transition-colors"
-                            href="/applications/{{ .ID }}/details">
+                            href="/applications/{{ .Id }}/details">
                                 <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                         d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

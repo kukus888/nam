@@ -19,7 +19,7 @@
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-900">{{ .Instance.Name }}</h1>
             <div class="flex space-x-3">
-                <button hx-delete="/api/rest/v1/applications/{{ $.Application.ID }}/instances/{{ .ID }}"
+                <button hx-delete="/api/rest/v1/applications/{{ $.Application.Id }}/instances/{{ .Id }}"
                     hx-confirm="Are you sure you want to remove this instance?"
                     hx-target="closest tr" hx-swap="outerHTML swap:1s"
                     hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)"
@@ -39,7 +39,7 @@
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
                     <div class="sm:col-span-1">
                         <dt class="text-sm font-medium text-gray-500">Instance ID</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Instance.ID }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Instance.Id }}</dd>
                     </div>
                     <div class="sm:col-span-1">
                         <dt class="text-sm font-medium text-gray-500">Port</dt>
@@ -73,7 +73,7 @@
                     <h2 class="text-lg leading-6 font-medium text-gray-900">Application Instances</h2>
                     <p class="mt-1 max-w-2xl text-sm text-gray-500">Servers where this application is deployed.</p>
                 </div>
-                <a href="/applications/{{ .Application.ID }}/instances/create"
+                <a href="/applications/{{ .Application.Id }}/instances/create"
                     class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                     Add Instance
                 </a>
@@ -122,7 +122,7 @@
                                 <div class="flex justify-end space-x-2">
                                     <!-- DETAILS -->
                                     <a class="text-blue-600 hover:text-blue-900 bg-blue-100 hover:bg-blue-200 p-2 rounded-md transition-colors"
-                                        href="/applications/{{ $.Application.ID }}/instances/{{ .Id }}">
+                                        href="/applications/{{ $.Application.Id }}/instances/{{ .Id }}">
                                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
                                             viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -132,7 +132,7 @@
                                         </svg>
                                     </a>
                                     <!-- DELETE -->
-                                    <button hx-delete="/api/rest/v1/applications/{{ $.Application.ID }}/instances/{{ .Id }}"
+                                    <button hx-delete="/api/rest/v1/applications/{{ $.Application.Id }}/instances/{{ .Id }}"
                                         hx-confirm="Are you sure you want to remove this instance?"
                                         hx-target="closest tr" hx-swap="outerHTML swap:1s"
                                         hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)"
@@ -158,7 +158,7 @@
             </div>
         </div>
         <!-- Health Check Status -->
-        <div hx-get="/htmx/health/application/instance?live_reload=true&size=large&id={{ .Instance.ID }}"
+        <div hx-get="/htmx/health/application/instance?live_reload=true&size=large&id={{ .Instance.Id }}"
             hx-swap="outerHTML"
             hx-trigger="load"
             class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
@@ -175,11 +175,11 @@
                 <div>
                     <select id="historyFilter"
                         class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                        hx-get="/api/applications/{{ .Application.ID }}/history" hx-target="#historyTable"
+                        hx-get="/api/applications/{{ .Application.Id }}/history" hx-target="#historyTable"
                         hx-trigger="change">
                         <option value="all">All Instances</option>
                         {{ range .Instances }}
-                        <option value="{{ .ID }}">{{ .Name }} - {{ .Server.Alias }}</option>
+                        <option value="{{ .Id }}">{{ .Name }} - {{ .Server.Alias }}</option>
                         {{ end }}
                     </select>
                 </div>
@@ -212,7 +212,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200"
-                            hx-get="/api/applications/{{ .Application.ID }}/history?filter=all" hx-trigger="load">
+                            hx-get="/api/applications/{{ .Application.Id }}/history?filter=all" hx-trigger="load">
                             <tr>
                                 <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
                                     Loading history...

@@ -69,13 +69,13 @@ func (hc *Healthcheck) DbInsert(pool *pgxpool.Pool) (*uint, error) {
 		hc.ReqTimeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
 		hc.VerifySSL, hc.AuthType, hc.AuthCredentials,
-	).Scan(&hc.ID)
+	).Scan(&hc.Id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return hc.ID, tx.Commit(context.Background())
+	return hc.Id, tx.Commit(context.Background())
 }
 
 // GetHealthCheckById retrieves a healthcheck by its ID
@@ -148,7 +148,7 @@ func (hc *Healthcheck) Update(pool *pgxpool.Pool) error {
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
 		hc.VerifySSL,
 		hc.AuthType, hc.AuthCredentials,
-		hc.ID,
+		hc.Id,
 	)
 
 	if err != nil {
@@ -219,7 +219,7 @@ func (hc *Healthcheck) PerformCheck(url string) (*HealthcheckResult, error) {
 		Timeout: hc.ReqTimeout,
 	}
 	result := &HealthcheckResult{
-		HealthcheckID: *hc.ID,
+		HealthcheckID: *hc.Id,
 		TimeStart:     time.Now(),
 		IsSuccessful:  false,
 	}

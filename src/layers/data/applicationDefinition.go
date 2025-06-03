@@ -11,7 +11,7 @@ import (
 
 // ApplicationDefinitionDAO represents the definition of an application and its general properties
 type ApplicationDefinitionDAO struct {
-	ID            uint   `json:"id" db:"id"`
+	Id            uint   `json:"id" db:"id"`
 	Name          string `json:"name" db:"name"`
 	Port          int    `json:"port" db:"port"`
 	Type          string `json:"type" db:"type"`
@@ -94,7 +94,7 @@ func (appDef ApplicationDefinitionDAO) DbInsert(tx pgx.Tx) (*uint, error) {
 }
 
 func DeleteApplicationDefinitionById(pool *pgxpool.Pool, id uint64) error {
-	appDef := ApplicationDefinitionDAO{ID: uint(id)}
+	appDef := ApplicationDefinitionDAO{Id: uint(id)}
 	_, err := appDef.Delete(pool)
 	return err
 }
@@ -108,25 +108,25 @@ func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) 
 	var affectedRows = 0
 	// Check if application definition exists
 	var appDefTry ApplicationDefinitionDAO
-	err = pgxscan.Get(context.Background(), tx, &appDefTry, "SELECT * FROM application_definition WHERE id = $1", appDef.ID)
+	err = pgxscan.Get(context.Background(), tx, &appDefTry, "SELECT * FROM application_definition WHERE id = $1", appDef.Id)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return nil, err
 	}
-	if appDefTry.ID == 0 {
+	if appDefTry.Id == 0 {
 		tx.Rollback(context.Background())
 		return nil, nil // The instance is technically deleted
 	}
 	// Check for dangling instances
 	var instances []ApplicationInstance
-	err = pgxscan.Select(context.Background(), tx, &instances, "DELETE FROM application_instance WHERE application_definition_id = $1", appDef.ID)
+	err = pgxscan.Select(context.Background(), tx, &instances, "DELETE FROM application_instance WHERE application_definition_id = $1", appDef.Id)
 	if err != nil {
 		return nil, err
 	}
 	if len(instances) > 0 {
 		// There are dangling instances >>> delete them
 		for _, instance := range instances {
-			err := DeleteApplicationInstanceById(pool, uint64(instance.ID))
+			err := DeleteApplicationInstanceById(pool, uint64(instance.Id))
 			if err != nil {
 				tx.Rollback(context.Background())
 				return nil, err
@@ -135,7 +135,7 @@ func (appDef ApplicationDefinitionDAO) Delete(pool *pgxpool.Pool) (*int, error) 
 	}
 	// Check if there arent any dangling instances
 	// Remove ApplicationDefinitionDAO
-	com, err := tx.Exec(context.Background(), "DELETE FROM application_definition WHERE id = $1", appDef.ID)
+	com, err := tx.Exec(context.Background(), "DELETE FROM application_definition WHERE id = $1", appDef.Id)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return nil, err

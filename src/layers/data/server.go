@@ -62,7 +62,7 @@ func (s ServerDAO) Delete(pool *pgxpool.Pool) (*int, error) {
 	if len(instances) > 0 {
 		// Remove dependent ApplicationInstances
 		for _, instance := range instances {
-			err := DeleteApplicationInstanceById(pool, uint64(instance.ID))
+			err := DeleteApplicationInstanceById(pool, uint64(instance.Id))
 			if err != nil {
 				tx.Rollback(context.Background())
 				return nil, err

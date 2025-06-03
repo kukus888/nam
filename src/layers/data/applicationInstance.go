@@ -124,9 +124,9 @@ func CreateApplicationInstance(pool *pgxpool.Pool, instance ApplicationInstance)
 		return nil, err
 	}
 	// Insert instance into DB
-	instance.ID = tnid
+	instance.Id = tnid
 	var resId uint
-	err = tx.QueryRow(context.Background(), "INSERT INTO application_instance (id, name, server_id, application_definition_id) VALUES ($1, $2, $3, $4) RETURNING id", instance.ID, instance.Name, instance.ServerID, instance.ApplicationDefinitionID).Scan(&resId)
+	err = tx.QueryRow(context.Background(), "INSERT INTO application_instance (id, name, server_id, application_definition_id) VALUES ($1, $2, $3, $4) RETURNING id", instance.Id, instance.Name, instance.ServerID, instance.ApplicationDefinitionID).Scan(&resId)
 	if err != nil {
 		tx.Rollback(context.Background())
 		return nil, err

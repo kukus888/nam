@@ -44,7 +44,7 @@ func (as *ApplicationService) GetApplicationById(id uint) (*data.ApplicationDefi
 // Removes ApplicationDefinition from database
 func (as *ApplicationService) RemoveApplicationById(id uint64) error {
 	appDef := data.ApplicationDefinitionDAO{
-		ID: uint(id),
+		Id: uint(id),
 	}
 	_, err := appDef.Delete(as.Database.Pool)
 	return err

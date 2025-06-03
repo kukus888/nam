@@ -74,7 +74,7 @@ func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 			return
 		}
 	}
-	instances, err := data.GetApplicationInstancesFullByApplicationDefinitionId(av.Database.Pool, uint64(app.ID))
+	instances, err := data.GetApplicationInstancesFullByApplicationDefinitionId(av.Database.Pool, uint64(app.Id))
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
 		return
@@ -111,7 +111,7 @@ func (av ApplicationView) GetPageApplicationInstanceDetails(ctx *gin.Context) {
 		return
 	}
 	// Check if the instance belongs to the application
-	if appInstance.ApplicationDefinitionID != appDefinition.ID {
+	if appInstance.ApplicationDefinitionID != appDefinition.Id {
 		ctx.AbortWithStatusJSON(418, gin.H{"error": "Application instance does not belong to this application"})
 		return
 	}
