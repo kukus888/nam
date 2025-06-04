@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -23,7 +24,7 @@ func (hr HealthcheckResult) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 			time_start, time_end, res_status, res_body,
 			res_time, error_message
 		) VALUES (
-			$1, $2, $3, $4, $5, $6
+			$1, $2, $3, $4, $5, $6, $7, $8, $9
 		) RETURNING id;
 	`, hr.HealthcheckID, hr.ApplicationInstanceID, hr.IsSuccessful,
 		hr.TimeStart, hr.TimeEnd, hr.ResStatus, hr.ResBody,
@@ -40,18 +41,22 @@ func HealthcheckGetLatestResultByApplicationInstanceId(pool *pgxpool.Pool, id ui
 		return nil, err
 	}
 	defer tx.Rollback(context.Background())
-
 	rows, err := tx.Query(context.Background(), `
 		select * from healthcheck_results hr 
 		where application_instance_id = $1
 		order by hr.id desc
 		limit 1
 	`, id)
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No results found
+	} else if err != nil {
 		return nil, err
 	}
+
 	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[HealthcheckResult])
-	if err != nil {
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No results found
+	} else if err != nil {
 		return nil, err
 	}
 	return &res, tx.Commit(context.Background())

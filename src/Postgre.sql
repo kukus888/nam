@@ -76,7 +76,7 @@ AFTER INSERT OR UPDATE OR DELETE ON healthcheck
 FOR EACH ROW
 EXECUTE FUNCTION notify_healthcheck_change();
 
-DROP TRIGGER IF EXISTS healthcheck_change_trigger ON healthcheck;
+DROP TRIGGER IF EXISTS healthcheck_change_trigger ON application_instance;
 CREATE TRIGGER healthcheck_change_trigger
 AFTER INSERT OR UPDATE OR DELETE ON application_instance
 FOR EACH ROW

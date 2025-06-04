@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"regexp"
@@ -95,7 +96,10 @@ func GetHealthCheckById(pool *pgxpool.Pool, id uint) (*Healthcheck, error) {
 	}
 
 	hc, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[Healthcheck])
-	if err != nil {
+	// Check if no rows were found
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No healthcheck found with the given ID
+	} else if err != nil {
 		return nil, err
 	}
 

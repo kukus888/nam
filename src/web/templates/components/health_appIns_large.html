@@ -32,11 +32,11 @@
         <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
             <div class="sm:col-span-1">
                 <dt class="text-sm font-medium text-gray-500">Health Check Name</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ .HealthcheckTemplate.Name }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ if .HealthcheckTemplate }}{{ .HealthcheckTemplate.Name }}{{ else }}Unknown{{ end }}</dd>
             </div>
             <div class="sm:col-span-1">
                 <dt class="text-sm font-medium text-gray-500">Endpoint</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ .HealthcheckTemplate.Url }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ if .HealthcheckTemplate }}{{ .HealthcheckTemplate.Url }}{{ else }}Unknown{{ end }}</dd>
             </div>
             <div class="sm:col-span-2">
                 <dt class="text-sm font-medium text-gray-500">Expected Response</dt>

@@ -87,11 +87,11 @@
                         <tr>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Server
+                                Instance Name
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Instance Name
+                                Server alias
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -107,10 +107,10 @@
                         {{ range .Instances }}
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {{ .Server.Alias }}
+                                {{ .Name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ .Name }}
+                                {{ .Server.Alias }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div hx-get="/htmx/health/application/instance?live_reload=true&size=small&id={{ .Id }}"
