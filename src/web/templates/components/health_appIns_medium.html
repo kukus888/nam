@@ -1,5 +1,5 @@
 {{ define "components/health.application.instance.medium" }}
-<div
+<a
     {{ if .LiveReload }}
         hx-get="/htmx/health/application/instance?live_reload=true&size=medium&id={{ .Instance.Id }}"
         hx-swap="outerHTML settle:1s"
@@ -8,6 +8,7 @@
     class="relative w-full max-w-xs rounded-lg shadow bg-white overflow-hidden"
     style="min-width: 220px;"
     id="fade-in"
+    href="/instances/{{ .Instance.Id }}/details"
 >
     <!-- App Type Logo Placeholder (background, left, behind content) -->
     <div class="absolute inset-y-0 left-0 flex items-center z-0 pointer-events-none">
@@ -32,5 +33,5 @@
             Last checked: {{ .Timestamp | formatTime }}
         </div>
     </div>
-</div>
+</a>
 {{ end }}

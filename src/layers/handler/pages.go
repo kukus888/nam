@@ -37,25 +37,10 @@ func (pc PageController) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/settings", func(ctx *gin.Context) {
 		ctx.HTML(200, "pages/settings", gin.H{})
 	})
-	routeGroup.GET("/nodes", func(ctx *gin.Context) {
-		nodes, err := pc.TopologyService.GetAllTopologyNodes()
-		if err != nil {
-			ctx.AbortWithStatus(500)
-			return
-		}
-		ctx.HTML(200, "pages/nodes", gin.H{
-			"Nodes": nodes,
-		})
-	})
-	routeGroup.GET("/items", func(ctx *gin.Context) {
-		ctx.HTML(200, "pages/items", gin.H{
-			"Types": pc.ItemService.GetAllItemTypes(),
-		})
-	})
 	routeGroup.GET("/servers", func(ctx *gin.Context) {
 		servers, err := data.GetServerAll(pc.Database.Pool)
 		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get servers", "trace": err.Error()})
 			return
 		}
 		ctx.HTML(200, "pages/servers", gin.H{

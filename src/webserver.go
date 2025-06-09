@@ -76,6 +76,7 @@ func InitWebServer(app *Application) {
 	// Pages
 	handlers.NewPageController(App.Database).Init(App.Engine.Group("/"))
 	handlers.NewApplicationView(App.Database).Init(App.Engine.Group("/applications"))
+	handlers.NewInstanceView(App.Database).Init(App.Engine.Group("/instances"))
 	handlers.NewHealthcheckView(App.Database).Init(App.Engine.Group("/healthchecks"))
 
 	app.Engine.Run(":" + fmt.Sprintf("%d", app.Configuration.WebServer.Port))
