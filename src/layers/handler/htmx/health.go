@@ -28,6 +28,7 @@ func (h *HtmxHealthHandler) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/application/instance", h.RenderHealthApplicationInstanceComponent)
 	routeGroup.GET("/application/definition", h.RenderHealthApplicationDefinitionComponent)
 	routeGroup.GET("/application/definition_with_instances", h.RenderHealthApplicationDefinitionWithInstancesComponent)
+	routeGroup.GET("/healthcheck/result", h.RenderHealthCheckResultComponent)
 }
 
 // RenderHealthApplicationInstanceComponent renders the health component for a specific application definition.
@@ -48,7 +49,7 @@ func (h *HtmxHealthHandler) RenderHealthApplicationDefinitionComponent(ctx *gin.
 		return
 	}
 	// Get health
-	results, err := data.HealthcheckGetLatestResultByApplicationDefinitionId(h.Database, uint64(definitionId))
+	results, err := data.GetHealthcheckLatestResultByApplicationDefinitionId(h.Database, uint64(definitionId))
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck results: " + err.Error()})
 		return
@@ -151,7 +152,7 @@ func (h *HtmxHealthHandler) RenderHealthApplicationDefinitionWithInstancesCompon
 		return
 	}
 	// Get health
-	results, err := data.HealthcheckGetLatestResultByApplicationDefinitionId(h.Database, uint64(definitionId))
+	results, err := data.GetHealthcheckLatestResultByApplicationDefinitionId(h.Database, uint64(definitionId))
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck results", "trace": err.Error()})
 		return
@@ -170,5 +171,31 @@ func (h *HtmxHealthHandler) RenderHealthApplicationDefinitionWithInstancesCompon
 		"LiveReload":   liveReload,
 		"HealthyCount": healthyCount,
 		"TotalCount":   len(*results),
+	})
+}
+
+func (h *HtmxHealthHandler) RenderHealthCheckResultComponent(ctx *gin.Context) {
+	resultIdStr := ctx.Query("id")
+	size := ctx.Query("size")
+
+	// Parse and validate inputs
+	resultId, err := strconv.Atoi(resultIdStr)
+	if err != nil && resultId != 0 {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid healthcheck result id", "trace": err.Error()})
+		return
+	}
+	if size != "" && !slices.Contains(h.AllowedComponentSizes, size) {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid size parameter. Allowed values are: " + strings.Join(h.AllowedComponentSizes, ", ")})
+		return
+	}
+	result, err := data.GetHealthcheckResultById(h.Database, uint(resultId))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck result", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "components/health.result."+size, gin.H{
+		"Id":           resultId,
+		"Result":       result,
+		"IsSuccessful": result.IsSuccessful,
 	})
 }

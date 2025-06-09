@@ -123,10 +123,16 @@ func (av ApplicationView) GetPageApplicationInstanceDetails(ctx *gin.Context) {
 			return
 		}
 	}
+	healthcheckResults, err := data.GetHealthcheckResultsByApplicationInstanceId(av.Database.Pool, uint64(appInstance.Id))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get healthcheck results.", "trace": err.Error()})
+		return
+	}
 	ctx.HTML(200, "pages/application/instance/details", gin.H{
-		"Application": appDefinition,
-		"Healthcheck": hc,
-		"Instance":    appInstance,
+		"Application":        appDefinition,
+		"Healthcheck":        hc,
+		"Instance":           appInstance,
+		"HealthcheckResults": *healthcheckResults,
 	})
 }
 

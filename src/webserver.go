@@ -20,11 +20,14 @@ func InitWebServer(app *Application) {
 	switch App.Configuration.WebServer.Mode {
 	case "debug":
 		gin.SetMode(gin.DebugMode)
+		app.Engine = gin.Default()
 		slogLevel = slog.LevelDebug
 	case "release":
 		gin.SetMode(gin.ReleaseMode)
+		app.Engine = gin.New()
 	case "test":
 		gin.SetMode(gin.TestMode)
+		app.Engine = gin.Default()
 		slogLevel = slog.LevelDebug
 	default:
 		panic("Invalid web server mode: " + App.Configuration.WebServer.Mode + ". Allowed values are: debug, release, test")
@@ -34,7 +37,6 @@ func InitWebServer(app *Application) {
 		Level: slogLevel,
 	}))
 	log.Info("Starting web server", "mode", App.Configuration.WebServer.Mode, "port", App.Configuration.WebServer.Port)
-	app.Engine = gin.New()
 	app.Engine.Use(gin.Recovery())
 	// Set up logging middleware
 	app.Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
@@ -58,6 +60,8 @@ func InitWebServer(app *Application) {
 	// Set up resources
 	app.Engine.FuncMap["formatDuration"] = formatDuration
 	app.Engine.FuncMap["formatTime"] = formatTime
+	app.Engine.FuncMap["formatTimeRFC3339Nano"] = formatTimeRFC3339Nano
+	app.Engine.FuncMap["sub1"] = sub1
 	app.Engine.LoadHTMLGlob("./web/templates/*/*.html")
 	app.Engine.Static("/static", "./web/static")
 	// REST
@@ -92,4 +96,12 @@ func formatDuration(d time.Duration) string {
 
 func formatTime(t time.Time) string {
 	return t.Format("Jan 02, 15:04:05")
+}
+
+func formatTimeRFC3339Nano(t time.Time) string {
+	return t.Format(time.RFC3339Nano)
+}
+
+func sub1(x int) int {
+	return x - 1
 }

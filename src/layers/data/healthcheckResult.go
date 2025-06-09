@@ -78,7 +78,7 @@ type ApplicationDefinitionHealthcheckResult struct {
 }
 
 // Gets the latest healthcheck results for all application instances of a given application definition
-func HealthcheckGetLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id uint64) (*[]ApplicationDefinitionHealthcheckResult, error) {
+func GetHealthcheckLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id uint64) (*[]ApplicationDefinitionHealthcheckResult, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
@@ -123,8 +123,44 @@ func HealthcheckGetLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id 
 	return &res, tx.Commit(context.Background())
 }
 
+// Gets all healthcheck results for a given application instance id
+func GetHealthcheckResultsByApplicationInstanceId(pool *pgxpool.Pool, id uint64) (*[]HealthcheckResult, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+		SELECT
+		  hcr.id AS id,
+		  hcr.healthcheck_id AS healthcheck_id,
+		  hcr.application_instance_id AS application_instance_id,
+		  hcr.is_successful AS is_successful,
+		  hcr.time_start AS time_start,
+		  hcr.time_end AS time_end,
+		  hcr.res_status AS res_status,
+		  hcr.res_body AS res_body,
+		  hcr.res_time AS res_time,
+		  hcr.error_message AS error_message
+		FROM healthcheck_results hcr
+		WHERE hcr.application_instance_id = $1
+		ORDER BY hcr.id desc;
+	`, id)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[HealthcheckResult])
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, tx.Commit(context.Background())
+}
+
 // Gets the latest healthcheck results for all application instances
-func HealthcheckGetLatestResultAll(pool *pgxpool.Pool) (*[]ApplicationDefinitionHealthcheckResult, error) {
+func GetHealthcheckLatestResultAll(pool *pgxpool.Pool) (*[]ApplicationDefinitionHealthcheckResult, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
@@ -207,7 +243,7 @@ func GetHealthcheckResultsAll(pool *pgxpool.Pool) (*[]HealthcheckResult, error) 
 	defer tx.Rollback(context.Background())
 
 	rows, err := tx.Query(context.Background(), `
-		SELECT * FROM healthcheck_result 
+		SELECT * FROM healthcheck_results
 		ORDER BY id ASC;
 	`)
 	if err != nil {
@@ -216,6 +252,33 @@ func GetHealthcheckResultsAll(pool *pgxpool.Pool) (*[]HealthcheckResult, error) 
 
 	res, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[HealthcheckResult])
 	if err != nil {
+		return nil, err
+	}
+
+	return &res, tx.Commit(context.Background())
+}
+
+// Gets healthcheck results from the database by ID
+// Returns a slice of HealthcheckResult or an error
+func GetHealthcheckResultById(pool *pgxpool.Pool, id uint) (*HealthcheckResult, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+		SELECT * FROM healthcheck_results hcr
+		WHERE hcr.id = $1;
+	`, id)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[HealthcheckResult])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No results found
+	} else if err != nil {
 		return nil, err
 	}
 

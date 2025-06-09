@@ -1,0 +1,18 @@
+{{ define "components/health.result.medium" }}
+<div class="w-full max-w-xl mx-auto bg-gray-50 rounded-lg p-4 shadow">
+    <div class="flex items-center mb-2">
+        <span class="font-semibold text-lg mr-2">Status:</span>
+        {{ if .IsSuccessful }}
+        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">Healthy</span>
+        {{ else }}
+        <span class="px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">Unhealthy</span>
+        {{ end }}
+    </div>
+    <div class="mb-1"><span class="font-semibold">Timestamp:</span> {{ formatTime .Result.TimeEnd }} </div>
+    <div class="mb-1"><span class="font-semibold">HTTP Status:</span> {{ .Result.ResStatus }}</div>
+    <div class="mb-1"><span class="font-semibold">Response Time:</span> {{ .Result.ResTime }} ms</div>
+    {{ if .Result.ErrorMessage }}
+    <div class="mb-1 text-red-600"><span class="font-semibold">Error:</span> {{ .Result.ErrorMessage }}</div>
+    {{ end }}
+</div>
+{{ end }}
