@@ -110,15 +110,25 @@ func (h *HtmxHealthHandler) RenderHealthApplicationInstanceComponent(ctx *gin.Co
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck definition", "trace": err.Error()})
 		return
 	}
+	// Figure out which icon to use
+	// TODO: Get from DB
+	iconPath := "/static/icons/golang.svg"
+	switch instance.Type {
+	case "JBoss":
+		iconPath = "/static/icons/jboss.svg"
+	case "Springboot":
+		iconPath = "/static/icons/spring.svg"
+	}
 	// Render template with health data
 	ctx.HTML(200, "components/health.application.instance."+size, gin.H{
-		"Instance":            instance, // This should be replaced with actual instance data
+		"Instance":            instance,
 		"HealthcheckTemplate": healthcheckTemplate,
 		"Result":              result,
 		"LiveReload":          liveReload,
 		"Healthy":             result.IsSuccessful,
 		"ResponseTime":        result.ResTime,
 		"Timestamp":           result.TimeEnd,
+		"IconPath":            iconPath,
 	})
 }
 

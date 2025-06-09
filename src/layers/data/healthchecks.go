@@ -66,7 +66,7 @@ func (hc *Healthcheck) DbInsert(pool *pgxpool.Pool) (*uint, error) {
             $16
         ) RETURNING id
     `,
-		hc.Name, hc.Description, hc.Url, hc.ReqMethod, headersJSON, hc.ReqBody,
+		hc.Name, hc.Description, hc.ReqUrl, hc.ReqMethod, headersJSON, hc.ReqBody,
 		hc.ReqTimeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
 		hc.VerifySSL, hc.AuthType, hc.AuthCredentials,
@@ -147,7 +147,7 @@ func (hc *Healthcheck) Update(pool *pgxpool.Pool) error {
             auth_credentials = $16
         WHERE id = $17
     `,
-		hc.Name, hc.Description, hc.Url, hc.ReqMethod, headersJSON, hc.ReqBody,
+		hc.Name, hc.Description, hc.ReqUrl, hc.ReqMethod, headersJSON, hc.ReqBody,
 		hc.ReqTimeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
 		hc.VerifySSL,

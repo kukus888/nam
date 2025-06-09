@@ -5,10 +5,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="/static/tailwindcss.js"></script>
-    <script src="/static/jquery.js"></script>
-    <script src="/static/htmx.js"></script>
-    <script src="/static/htmx-extensions.js"></script>
+    {{ template "template/head.includes" }}
+    <title>Edit {{ .Healthcheck.Name }}</title>
 </head>
 
 <body class="bg-gray-50">
@@ -71,7 +69,7 @@
                         <div class="sm:col-span-6">
                             <label for="url" class="block text-sm font-medium text-gray-700">URL</label>
                             <div class="mt-1">
-                                <input type="url" name="url" id="url" value="{{ .Healthcheck.Url }}" required
+                                <input name="url" id="url" value="{{ .Healthcheck.ReqUrl }}" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             </div>
                         </div>
@@ -80,15 +78,15 @@
                             <div class="mt-1">
                                 <select id="method" name="method"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <option value="GET" {{ if eq .Healthcheck.Method "GET" }}selected{{ end }}>GET
+                                    <option value="GET" {{ if eq .Healthcheck.ReqMethod "GET" }}selected{{ end }}>GET
                                     </option>
-                                    <option value="POST" {{ if eq .Healthcheck.Method "POST" }}selected{{ end }}>POST
+                                    <option value="POST" {{ if eq .Healthcheck.ReqMethod "POST" }}selected{{ end }}>POST
                                     </option>
-                                    <option value="PUT" {{ if eq .Healthcheck.Method "PUT" }}selected{{ end }}>PUT
+                                    <option value="PUT" {{ if eq .Healthcheck.ReqMethod "PUT" }}selected{{ end }}>PUT
                                     </option>
-                                    <option value="DELETE" {{ if eq .Healthcheck.Method "DELETE" }}selected{{ end }}>
+                                    <option value="DELETE" {{ if eq .Healthcheck.ReqMethod "DELETE" }}selected{{ end }}>
                                         DELETE</option>
-                                    <option value="HEAD" {{ if eq .Healthcheck.Method "HEAD" }}selected{{ end }}>HEAD
+                                    <option value="HEAD" {{ if eq .Healthcheck.ReqMethod "HEAD" }}selected{{ end }}>HEAD
                                     </option>
                                 </select>
                             </div>
@@ -108,8 +106,7 @@
                                 format, one per line)</label>
                             <div class="mt-1">
                                 <textarea id="headers" name="headers" rows="3"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">{{ range .Healthcheck.Headers }}{{ .Key }}: {{ .Value }}
-{{ end }}</textarea>
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">{{ range $key, $value := .Healthcheck.ReqHttpHeader }}{{ range $value }}{{ $key }}: {{ . }}{{ end }}{{ end }}</textarea>
                             </div>
                             <p class="mt-2 text-sm text-gray-500">Example: Content-Type: application/json</p>
                         </div>
@@ -117,7 +114,7 @@
                             <label for="body" class="block text-sm font-medium text-gray-700">Request Body</label>
                             <div class="mt-1">
                                 <textarea id="body" name="body" rows="4"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">{{ .Healthcheck.Body }}</textarea>
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">{{ .Healthcheck.ReqBody }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -136,7 +133,7 @@
                             <label for="check_interval" class="block text-sm font-medium text-gray-700">Check Interval
                                 (seconds)</label>
                             <div class="mt-1">
-                                <input type="number" name="check_interval" id="check_interval"
+                                <input name="check_interval" id="check_interval"
                                     value="{{ .Healthcheck.CheckInterval.Seconds }}" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
@@ -146,8 +143,8 @@
                             <label for="timeout" class="block text-sm font-medium text-gray-700">Timeout
                                 (seconds)</label>
                             <div class="mt-1">
-                                <input type="number" name="timeout" id="timeout"
-                                    value="{{ .Healthcheck.Timeout.Seconds }}" required
+                                <input name="timeout" id="timeout"
+                                    value="{{ .Healthcheck.ReqTimeout.Seconds }}" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
                             </div>
@@ -165,7 +162,7 @@
                             <label for="retry_interval" class="block text-sm font-medium text-gray-700">Retry Interval
                                 (seconds)</label>
                             <div class="mt-1">
-                                <input type="number" name="retry_interval" id="retry_interval"
+                                <input name="retry_interval" id="retry_interval"
                                     value="{{ .Healthcheck.RetryInterval.Seconds }}" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">

@@ -5,10 +5,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="/static/tailwindcss.js"></script>
-    <script src="/static/jquery.js"></script>
-    <script src="/static/htmx.js"></script>
-    <script src="/static/htmx-extensions.js"></script>
+    {{ template "template/head.includes" }}
+    <title>{{ .Healthcheck.Name }} details</title>
 </head>
 
 <body class="bg-gray-50">
@@ -44,72 +42,46 @@
             </div>
         </div>
 
-        <!-- Status Card -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-            <div class="px-4 py-5 sm:px-6 bg-green-50">
-                <h2 class="text-lg leading-6 font-medium text-gray-900">Current Status</h2>
-                <p class="mt-1 text-sm text-gray-500">Last check performed {{ if not .LastCheckTime }}Not yet{{ else }}{{ formatTime .LastCheckTime }}{{ end }}</p>
-            </div>
-            <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
-                <div class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
-                    <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Status</dt>
-                        <dd class="mt-1">
-                            <span class="px-2 py-1 text-sm font-medium rounded-full bg-green-100 text-green-800">
-                                STATUS
-                            </span>
-                        </dd>
-                    </div>
-                    <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Success Rate</dt>
-                        <dd class="mt-1 text-sm text-gray-900">
-                            A lot of %
-                        </dd>
-                    </div>
-                    <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Average Response Time</dt>
-                        <dd class="mt-1 text-sm text-gray-900">AVG</dd>
-                    </div>
-                    <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Last Success</dt>
-                        <dd class="mt-1 text-sm text-gray-900">1s</dd>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Endpoint Configuration -->
+        <!-- Request Configuration -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
             <div class="px-4 py-5 sm:px-6 bg-indigo-50">
-                <h2 class="text-lg leading-6 font-medium text-gray-900">Endpoint Configuration</h2>
-                <p class="mt-1 text-sm text-gray-500">Details about the health check endpoint.</p>
+                <h2 class="text-lg leading-6 font-medium text-gray-900">Request Configuration</h2>
+                <p class="mt-1 text-sm text-gray-500">Details about the request sent.</p>
             </div>
             <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                    <div class="sm:col-span-2">
-                        <dt class="text-sm font-medium text-gray-500">URL</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-mono bg-gray-50 p-2 rounded">{{ .Healthcheck.Url }}</dd>
-                    </div>
                     <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Method</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Healthcheck.ReqMethod }}</dd>
-                    </div>
-                    <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Expected Status</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Healthcheck.ExpectedStatus }}</dd>
-                    </div>
-                    {{ if .Healthcheck.ReqHttpHeader }}
-                    <div class="sm:col-span-2">
-                        <dt class="text-sm font-medium text-gray-500">Headers</dt>
-                        <dd class="mt-1 text-sm text-gray-900">
-                            <div class="bg-gray-50 p-2 rounded font-mono">
-                                {{ range .Healthcheck.ReqHttpHeader }}
-                                <div>{{ .Key }}: {{ .Value }}</div>
-                                {{ end }}
-                            </div>
+                        <dt class="text-sm font-medium text-gray-500">Request</dt>
+                        <dd class="mt-1 text-sm text-gray-900 font-mono bg-gray-50 p-2 rounded">
+                            <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-mono mr-1">{{ .Healthcheck.ReqMethod }}</span>
+                            <span class="text-gray-500">{{ .Healthcheck.ReqUrl }}</span>
                         </dd>
                     </div>
-                    {{ end }}
+                    <div class="sm:col-span-1">
+                        <dt class="mb-1 text-sm font-medium text-gray-500">Request Body</dt>
+                        {{ if .Healthcheck.ReqBody }}
+                        <dd class="text-sm text-gray-900 font-mono bg-gray-50 p-2 rounded">{{ .Healthcheck.ReqBody }}</dd>
+                        {{ else }}
+                        <dd class="bg-gray-50 p-2 rounded font-mono">None</dd>
+                        {{ end }}
+                    </div>
+                    <!-- Request Headers -->
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Headers</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            {{ if .Healthcheck.ReqHttpHeader }}
+                            <div class="bg-gray-50 p-2 rounded font-mono">
+                                {{ range $key, $value := .Healthcheck.ReqHttpHeader }}
+                                    {{ range $value }}
+                                    <div>{{ $key }}: {{ . }}</div>
+                                    {{ end }}
+                                {{ end }}
+                            </div>
+                            {{ else }}
+                            <div class="bg-gray-50 p-2 rounded font-mono">None</div>
+                            {{ end }}
+                        </dd>
+                    </div>
                     {{ if .Healthcheck.ReqBody }}
                     <div class="sm:col-span-2">
                         <dt class="text-sm font-medium text-gray-500">Request Body</dt>
@@ -125,8 +97,8 @@
         <!-- Check Configuration -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
             <div class="px-4 py-5 sm:px-6 bg-indigo-50">
-                <h2 class="text-lg leading-6 font-medium text-gray-900">Check Configuration</h2>
-                <p class="mt-1 text-sm text-gray-500">Settings for how the health check is performed.</p>
+                <h2 class="text-lg leading-6 font-medium text-gray-900">Timer configuration</h2>
+                <p class="mt-1 text-sm text-gray-500">Settings for how often the health check is performed.</p>
             </div>
             <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -159,17 +131,23 @@
             <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
                 <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                     <div class="sm:col-span-1">
-                        <dt class="text-sm font-medium text-gray-500">Validation Type</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ if .Healthcheck.ResponseValidation }}{{ else }}None (Expect 2xx status only){{ end }}</dd>
+                        <dt class="text-sm font-medium text-gray-500">Expected Status</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .Healthcheck.ExpectedStatus }}</dd>
                     </div>
-                    {{ if .Healthcheck.ExpectedResponseBody }}
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Validation Type</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ if .Healthcheck.ResponseValidation }}{{ .Healthcheck.ResponseValidation }}{{ else }}None (Expect 2xx status only){{ end }}</dd>
+                    </div>
                     <div class="sm:col-span-2">
-                        <dt class="text-sm font-medium text-gray-500">Expected Response</dt>
+                        <dt class="text-sm font-medium text-gray-500 mb-1">Expected Response</dt>
                         <dd class="mt-1 text-sm text-gray-900">
+                            {{ if .Healthcheck.ExpectedResponseBody }}
                             <pre class="bg-gray-50 p-2 rounded font-mono overflow-x-auto">{{ .Healthcheck.ExpectedResponseBody }}</pre>
+                            {{ else }}
+                            <span class="bg-gray-50 p-2 rounded font-mono overflow-x-auto">Not configured</span>
+                            {{ end }}
                         </dd>
                     </div>
-                    {{ end }}
                 </dl>
             </div>
         </div>

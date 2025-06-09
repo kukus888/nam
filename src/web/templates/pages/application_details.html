@@ -5,10 +5,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="/static/tailwindcss.js"></script>
-    <script src="/static/jquery.js"></script>
-    <script src="/static/htmx.js"></script>
-    <script src="/static/htmx-extensions.js"></script>
+    <title>Application details - {{ .Application.Name }}</title>
+    {{ template "template/head.includes" }}
 </head>
 
 <body class="bg-gray-50">
@@ -176,7 +174,7 @@
                     </div>
                     <div class="sm:col-span-1">
                         <dt class="text-sm font-medium text-gray-500">Endpoint</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Url }}</dd>
+                        <dd class="mt-1 text-sm text-gray-900">{{ .ReqUrl }}</dd>
                     </div>
                     <div class="sm:col-span-1">
                         <dt class="text-sm font-medium text-gray-500">Timeout</dt>

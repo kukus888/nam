@@ -36,7 +36,7 @@
             </div>
             <div class="sm:col-span-1">
                 <dt class="text-sm font-medium text-gray-500">Endpoint</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ if .HealthcheckTemplate }}{{ .HealthcheckTemplate.Url }}{{ else }}Unknown{{ end }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ if .HealthcheckTemplate }}{{ .HealthcheckTemplate.ReqUrl }}{{ else }}Unknown{{ end }}</dd>
             </div>
             <div class="sm:col-span-2">
                 <dt class="text-sm font-medium text-gray-500">Expected Response</dt>

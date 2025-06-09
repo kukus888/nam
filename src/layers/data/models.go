@@ -17,7 +17,7 @@ type Healthcheck struct {
 	Id             *uint         `json:"id" db:"id"`
 	Name           string        `json:"name" db:"name"`
 	Description    string        `json:"description" db:"description"`
-	Url            string        `json:"url" db:"url"`
+	ReqUrl         string        `json:"url" db:"url"`
 	ReqMethod      string        `json:"method" db:"method"`   // GET, POST, etc.
 	ReqHttpHeader  http.Header   `json:"headers" db:"headers"` // Custom headers
 	ReqBody        string        `json:"body" db:"body"`       // Request body for POST/PUT
@@ -40,17 +40,17 @@ type Healthcheck struct {
 }
 
 type HealthcheckDTO struct {
-	Id            *uint      `json:"id"`
-	Name          string     `json:"name" binding:"required"`
-	Description   string     `json:"description"`
-	ReqUrl        string     `json:"url" binding:"required"`
-	ReqMethod     string     `json:"method" binding:"required"` // GET, POST, etc.
-	ReqHeader     [][]string `json:"headers"`                   // Custom headers
-	ReqBody       string     `json:"body"`                      // Request body for POST/PUT
-	ReqTimeout    int        `json:"timeout" binding:"required"`
-	CheckInterval int        `json:"check_interval" binding:"required"`
-	RetryCount    int        `json:"retry_count" binding:"required"`    // Number of retries before marking as unhealthy
-	RetryInterval int        `json:"retry_interval" binding:"required"` // Time between retries
+	Id            *uint  `json:"id"`
+	Name          string `json:"name" binding:"required"`
+	Description   string `json:"description"`
+	ReqUrl        string `json:"url" binding:"required"`
+	ReqMethod     string `json:"method" binding:"required"` // GET, POST, etc.
+	ReqHeader     string `json:"headers"`                   // Custom headers
+	ReqBody       string `json:"body"`                      // Request body for POST/PUT
+	ReqTimeout    int    `json:"timeout" binding:"required"`
+	CheckInterval int    `json:"check_interval" binding:"required"`
+	RetryCount    int    `json:"retry_count"`    // Number of retries before marking as unhealthy
+	RetryInterval int    `json:"retry_interval"` // Time between retries
 
 	// Response validation
 	ExpectedStatus       int     `json:"expected_status" binding:"required"`
@@ -67,8 +67,11 @@ type HealthcheckDTO struct {
 
 func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
 	httpHeader := http.Header{}
-	for i := range dto.ReqHeader {
-		httpHeader[dto.ReqHeader[i][0]] = strings.Split(dto.ReqHeader[i][1], ",")
+	headerLines := strings.Split(dto.ReqHeader, "\n")
+	for _, line := range headerLines {
+		key := strings.Split(line, ":")[0]
+		value := strings.TrimSpace(strings.Split(line, ":")[1])
+		httpHeader[key] = []string{value}
 	}
 	reqTimeout, _ := time.ParseDuration(strconv.Itoa(dto.ReqTimeout) + "s")
 	reqInterval, _ := time.ParseDuration(strconv.Itoa(dto.CheckInterval) + "s")
@@ -76,7 +79,7 @@ func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
 		Id:                   dto.Id,
 		Name:                 dto.Name,
 		Description:          dto.Description,
-		Url:                  dto.ReqUrl,
+		ReqUrl:               dto.ReqUrl,
 		ReqMethod:            dto.ReqMethod,
 		ReqHttpHeader:        httpHeader,
 		ReqBody:              dto.ReqBody,

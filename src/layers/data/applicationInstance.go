@@ -39,7 +39,7 @@ func GetApplicationInstanceFullById(pool *pgxpool.Pool, id uint64) (*Application
 		SELECT 
 			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id,
 			s.alias AS server_alias, s.hostname AS server_hostname,
-			ad.name AS application_definition_name, ad.port AS application_definition_port, ad.port AS application_definition_type, ad.healthcheck_id AS healthcheck_id
+			ad.name AS application_definition_name, ad.port AS application_definition_port, ad.type AS application_definition_type, ad.healthcheck_id AS healthcheck_id
 		FROM application_instance ai
 		LEFT JOIN "server" s ON ai.server_id = s.id
 		LEFT JOIN application_definition ad ON ai.application_definition_id = ad.id

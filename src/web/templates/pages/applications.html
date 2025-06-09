@@ -5,18 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application Management</title>
-    <!-- Add Inter font for modern typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Add Heroicons -->
-    <script src="https://unpkg.com/heroicons@1.0.6/outline/index.js"></script>
 
-    <script src="/static/tailwindcss.js"></script>
-    <script src="/static/jquery.js"></script>
-    <script src="/static/htmx.js"></script>
-    <script src="/static/htmx-extensions.js"></script>
+    {{ template "template/head.includes" }}
     <style>
         body {
-            font-family: 'Inter', sans-serif;
             background-color: #f9fafb;
         }
         
@@ -154,7 +146,7 @@
                                 </dt>
                                 <dd class="flex items-baseline">
                                     <div class="text-2xl font-semibold text-gray-900">
-                                        {{ len .Applications }}
+                                        Some
                                     </div>
                                 </dd>
                             </dl>
@@ -178,7 +170,7 @@
                                     Total instances
                                 </dt>
                                 <dd class="flex items-baseline">
-                                    <div class="text-2xl font-semibold text-gray-900">Over 9000</div>
+                                    <div class="text-2xl font-semibold text-gray-900">A lot</div>
                                 </dd>
                             </dl>
                         </div>
@@ -202,7 +194,7 @@
                                 </dt>
                                 <dd class="flex items-baseline">
                                     <div class="text-2xl font-semibold text-gray-900">
-                                        42%
+                                        69%
                                     </div>
                                 </dd>
                             </dl>

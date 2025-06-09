@@ -11,7 +11,7 @@
     <div class="flex flex-row items-center text-nowrap">
         <div class="text-base flex flex-col justify-self-start bg-gray-50 px-2 py-2 rounded-md">
             <span class="font-semibold text-gray-400 text-left">Request start</span>
-            <span class="font-semibold text-gray-500 text-left">
+            <span class="text-gray-500 text-left">
                 {{ formatTimeRFC3339Nano .Result.TimeStart }}
             </span>
         </div>
@@ -20,18 +20,43 @@
         <hr class="border-t border-gray-300 w-1/2">
         <div class="text-base flex flex-col justify-self-end bg-gray-50 px-2 py-2 rounded-md">
             <span class="font-semibold text-gray-400 text-right">Request end</span>
-            <span class="font-semibold text-gray-500 text-right">
+            <span class="text-gray-500 text-right">
                 {{ formatTimeRFC3339Nano .Result.TimeEnd }}
             </span>
         </div>
     </div>
-    {{ if gt .Result.ResStatus 0 }}
-    <div class="mb-1"><span class="font-semibold">HTTP Status:</span> {{ .Result.ResStatus }}</div>
-    <div class="mb-1 font-mono"><span class="font-semibold">Response:</span> {{ .Result.ResBody }}</div>
-    <!-- TODO: Click on response to see the whole, in case of big responses.-->
-    {{ end }}
-    {{ if .Result.ErrorMessage }}
-    <div class="mb-1 font-mono"><span class="font-semibold text-red-600">Error:</span> {{ .Result.ErrorMessage }}</div>
-    {{ end }}
+    <div class="flex flex-row mt-2 gap-2">
+        {{ if .Result.ErrorMessage }}
+        <div class="w-1/2">
+            <div class="flex flex-col">
+                <div class="w-full font-semibold text-red-800 rounded-t-md bg-red-100 px-2 py-1">Error</div>
+                <div class="w-full font-mono text-gray-800 rounded-b-md bg-red-50 px-2 py-1">{{ .Result.ErrorMessage }}</div>
+            </div>
+        </div>
+        <div class="w-1/2">
+        {{ else }}
+        <div class="w-full">
+        {{ end }}
+            {{ if gt .Result.ResStatus 0 }}
+            <div class="flex flex-row mb-2">
+                <div class="font-semibold text-green-800 rounded-l-md bg-green-100 px-2 py-1">HTTP Status</div>
+                <div class="font-mono text-gray-800 rounded-r-md bg-green-50 px-2 py-1 grow">{{ .Result.ResStatus }}</div>
+            </div>
+            <div class="flex flex-col">
+                <div class="w-full font-semibold text-green-800 rounded-t-md bg-green-100 px-2 py-1">Response body</div>
+                <div class="w-full font-mono text-gray-800 rounded-b-md bg-green-50 px-2 py-1 trunctate">{{ .Result.ResBody }}</div>
+            </div>
+            <!-- TODO: Click on response to see the whole, in case of big responses.-->
+            {{ else }}
+            <div id="no-results-message" class="py-8 text-center text-gray-500">
+                <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="mt-2 text-lg font-medium">No response from target</p>
+                <p class="mt-1 text-sm">See error for more details</p>
+            </div>
+            {{ end }}
+        </div>
+    </div>
 </div>
 {{ end }}
