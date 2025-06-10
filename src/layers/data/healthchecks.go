@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io"
@@ -218,9 +219,13 @@ func GetHealthcheckTargets(pool *pgxpool.Pool, hcId uint) (*[]HealthcheckTarget,
 }
 
 // Performs health check, returns the result
-func (hc *Healthcheck) PerformCheck(url string) (*HealthcheckResult, error) {
+func (hc *Healthcheck) PerformCheck(url string, tlsConfig *tls.Config) (*HealthcheckResult, error) {
+	tr := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
 	httpClient := &http.Client{
-		Timeout: hc.ReqTimeout,
+		Timeout:   hc.ReqTimeout,
+		Transport: tr,
 	}
 	result := &HealthcheckResult{
 		HealthcheckID: *hc.Id,
@@ -231,11 +236,7 @@ func (hc *Healthcheck) PerformCheck(url string) (*HealthcheckResult, error) {
 	if err != nil {
 		return result, err
 	}
-	for key, values := range hc.ReqHttpHeader {
-		for _, value := range values {
-			req.Header.Add(key, value)
-		}
-	}
+	req.Header = hc.ReqHttpHeader
 	resp, err := httpClient.Do(req)
 	result.TimeEnd = time.Now()
 	result.ResTime = int(result.TimeEnd.Sub(result.TimeStart).Milliseconds())

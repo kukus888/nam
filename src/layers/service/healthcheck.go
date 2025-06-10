@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"crypto/tls"
 	"kukus/nam/v2/layers/data"
 	"log/slog"
 	"strconv"
@@ -19,13 +20,15 @@ type HealthcheckService struct {
 	Status            string                        // Status of the healthcheck service, e.g., "running", "stopped"
 	Observers         map[uint]*HealthcheckObserver // Map of healthchecks being monitored with their observers
 	Logger            *slog.Logger
+	TlsConfig         *tls.Config
 }
 
-func NewHealthcheckService(database *data.Database, logger *slog.Logger) *HealthcheckService {
+func NewHealthcheckService(database *data.Database, logger *slog.Logger, tlsConfig *tls.Config) *HealthcheckService {
 	hcs := HealthcheckService{
 		Database:  database,
 		Observers: make(map[uint]*HealthcheckObserver),
 		Logger:    logger,
+		TlsConfig: tlsConfig,
 	}
 	go hcs.Start()
 	return &hcs
@@ -107,6 +110,7 @@ func (hcs *HealthcheckService) SyncObservers(payload string) error {
 		protocol := "http"
 		if hc.VerifySSL {
 			protocol = "https"
+			obj.TlsConfig = hcs.TlsConfig.Clone()
 		}
 		for _, target := range *targets {
 			// TODO: Support HTTPS properly
@@ -128,6 +132,7 @@ type HealthcheckObserver struct {
 	DbPool          *pgxpool.Pool      // Database connection pool
 	ProbeFunc       func()             // Function to perform the healthcheck probe
 	Logger          *slog.Logger
+	TlsConfig       *tls.Config
 }
 
 func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
@@ -143,7 +148,7 @@ func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
 		// Perform the healthcheck for all associated applications, on all associated servers
 		results := make([]data.HealthcheckResult, 0)
 		for instanceId, url := range hco.TargetInstances {
-			result, err := hco.Healthcheck.PerformCheck(url)
+			result, err := hco.Healthcheck.PerformCheck(url, hco.TlsConfig)
 			result.ApplicationInstanceID = instanceId
 			if err != nil {
 				// Happens only if there is something wrong on the network layer

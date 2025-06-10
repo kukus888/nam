@@ -1,2 +1,4 @@
 src/sqlite.db
 src/__*
+src/nam.static.linux64.bin
+src/nam.dynamic.linux64.bin

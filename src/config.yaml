@@ -11,7 +11,12 @@ logging:
 webserver:
   enabled: true
   port: 8080
-  mode: debug # or development
+  mode: debug # release, test
+
+keys:
+  cacerts: "ca.crt"
+  clientcert: "client.pem"
+  clientkey: "client.key"
 
 services:
   HealthcheckService: true

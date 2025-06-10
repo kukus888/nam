@@ -34,4 +34,7 @@ Group servers into farms (groups) for easier management.
 
 This section intentionally left blank.
 
-TODO: Rip all unused services out
+
+### Rip all unused services out
+### Cron job to delete old healthcheckrecords
+### better build pipeline

@@ -57,7 +57,12 @@ type ApplicationConfiguration struct {
 		Level     string     `yaml:"level" default:"info"` // Log level, e.g. "debug", "info", "warn", "error"
 		SlogLevel slog.Level `yaml:"-"`                    // Internal representation of log level, e.g. 0 for debug, 1 for info, etc.
 	} `yaml:"logging"`
-	Services  map[string]bool `yaml:"services"` // Map of service names to their enabled status
+	Services map[string]bool `yaml:"services"` // Map of service names to their enabled status
+	Keys     struct {
+		CaCertsPath    string `yaml:"cacerts"`
+		ClientCertPath string `yaml:"clientcert"`
+		ClientKeyPath  string `yaml:"clientkey"`
+	} `yaml:"keys"`
 	WebServer struct {
 		Port    int    `yaml:"port"`    // Port to run the web server on
 		Mode    string `yaml:"mode"`    // Gin mode, e.g. "debug", "release", "test"

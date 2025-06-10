@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	data "kukus/nam/v2/layers/data"
@@ -20,6 +21,7 @@ type Application struct {
 	Database      *data.Database
 	Configuration ApplicationConfiguration
 	Services      *services.ServiceManager
+	TlsConfig     *tls.Config
 }
 
 var App Application
@@ -37,6 +39,11 @@ func main() {
 		App.Configuration = *appCfg
 		fmt.Println("Configuration loaded successfully")
 	}
+	tlsConfig, err := ParseSecrets(App.Configuration)
+	if err != nil {
+		panic("Unable to parse secrets! " + err.Error())
+	}
+	App.TlsConfig = tlsConfig
 
 	// Init logging
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
@@ -71,7 +78,7 @@ func main() {
 	App.Services = services.NewServiceManager(*log)
 	if enabled, found := App.Configuration.Services["HealthcheckService"]; enabled && found {
 		slog.Info("HealthcheckService is enabled, initializing")
-		healthcheckService := services.NewHealthcheckService(App.Database, log.With("component", "HealthcheckService"))
+		healthcheckService := services.NewHealthcheckService(App.Database, log.With("component", "HealthcheckService"), App.TlsConfig)
 		App.Services.RegisterService(healthcheckService)
 	}
 	for {
