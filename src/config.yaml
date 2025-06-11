@@ -1,9 +1,5 @@
 postgres:
-  host: localhost
-  port: 5432
-  user: postgres
-  password: heslo123
-  database: postgres
+  dsn: "postgres://postgres:heslo123@localhost:5432/postgres?application_name=nam"
 
 logging:
   level: info
@@ -14,9 +10,9 @@ webserver:
   mode: debug # release, test
 
 keys:
-  cacerts: "ca.crt"
-  clientcert: "client.pem"
-  clientkey: "client.key"
+  cacerts: "cacert.pem"
+  clientcert: ""
+  clientkey: ""
 
 services:
   HealthcheckService: true

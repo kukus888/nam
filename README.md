@@ -30,11 +30,12 @@ Watch F5 Load Balancer for health status.
 ### Arrange servers into farms (groups)
 Group servers into farms (groups) for easier management.
 
-## Issues
-
-This section intentionally left blank.
-
-
 ### Rip all unused services out
 ### Cron job to delete old healthcheckrecords
 ### better build pipeline
+### Create tags (to tag applications, servers, ...)
+### Embed web files into embed.FS
+
+## Issues
+
+This section intentionally left blank.

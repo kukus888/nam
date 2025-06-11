@@ -47,11 +47,7 @@ func LoadAndParseConfiguration(path string) (*ApplicationConfiguration, error) {
 
 type ApplicationConfiguration struct {
 	Database struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"` // TODO: add password encryption
-		Name     string `yaml:"name"`
+		Dsn string `yaml:"dsn"`
 	} `yaml:"postgres"`
 	Logging struct {
 		Level     string     `yaml:"level" default:"info"` // Log level, e.g. "debug", "info", "warn", "error"

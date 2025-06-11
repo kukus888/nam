@@ -9,8 +9,6 @@ import (
 	services "kukus/nam/v2/layers/service"
 	"log/slog"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -52,10 +50,8 @@ func main() {
 	log.Info("Successfully initialised configuration and logging")
 
 	log.Debug("Initializing postgres database connection")
-	// Initialise pgx database
-	pgxConnStr := "postgres://" + App.Configuration.Database.User + ":" + App.Configuration.Database.Password + "@" + App.Configuration.Database.Host + ":" + strconv.Itoa(App.Configuration.Database.Port) + "/" + App.Configuration.Database.Name
 	// Initialise database connection
-	db, err := data.NewDatabase(pgxConnStr + "?application_name=nam")
+	db, err := data.NewDatabase(App.Configuration.Database.Dsn)
 	if err != nil {
 		panic("Unable to initialise database connection: " + err.Error())
 	}
@@ -64,8 +60,7 @@ func main() {
 		panic("Unable to connect to the database: " + err.Error())
 	}
 	App.Database = db
-	pgxConnStrSafe := strings.Replace(pgxConnStr, App.Configuration.Database.Password, "*****", -1) // Hide password in logs
-	log.Info("Successfully initialised database connection", "dsn", pgxConnStrSafe)
+	log.Info("Successfully initialised database connection")
 
 	if App.Configuration.WebServer.Enabled {
 		go InitWebServer(&App)
