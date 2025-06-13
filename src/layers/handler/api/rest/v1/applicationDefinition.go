@@ -9,12 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ApplicationController struct {
+type RestApiApplicationController struct {
 	Service services.ApplicationService
 }
 
-func NewApplicationController(db *data.Database) *ApplicationController {
-	return &ApplicationController{
+func NewApplicationController(db *data.Database) *RestApiApplicationController {
+	return &RestApiApplicationController{
 		Service: services.ApplicationService{
 			Database: db,
 		},
@@ -22,7 +22,7 @@ func NewApplicationController(db *data.Database) *ApplicationController {
 }
 
 // Initializes new Controller on declared RouterGroup, with specified resources
-func (ac *ApplicationController) Init(routerGroup *gin.RouterGroup) {
+func (ac *RestApiApplicationController) Init(routerGroup *gin.RouterGroup) {
 	routerGroup.POST("/", ac.NewApplication)
 	routerGroup.GET("/", ac.GetAll)
 	routerGroup.PATCH("/", handlers.MethodNotAllowed)
@@ -33,23 +33,23 @@ func (ac *ApplicationController) Init(routerGroup *gin.RouterGroup) {
 		idGroup.POST("/", handlers.MethodNotAllowed)
 		idGroup.GET("/", ac.GetById)
 		idGroup.PATCH("/", handlers.MethodNotImplemented)
-		idGroup.PUT("/", handlers.MethodNotImplemented)
+		idGroup.PUT("/", ac.UpdateApplicationDefinition)
 		idGroup.DELETE("/", ac.DeleteById)
 		NewApplicationInstanceController(ac.Service.Database).Init(idGroup.Group("/instances"))
 	}
 }
 
 // GetAll ApplicationDefinition
-func (ac *ApplicationController) GetAll(ctx *gin.Context) {
+func (ac *RestApiApplicationController) GetAll(ctx *gin.Context) {
 	dtos, err := ac.Service.GetAllApplications()
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(200, dtos)
 }
 
-func (ac *ApplicationController) DeleteById(ctx *gin.Context) {
+func (ac *RestApiApplicationController) DeleteById(ctx *gin.Context) {
 	appId, err := strconv.Atoi(ctx.Param("appId"))
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of application"})
@@ -57,21 +57,21 @@ func (ac *ApplicationController) DeleteById(ctx *gin.Context) {
 	}
 	err = data.DeleteApplicationDefinitionById(ac.Service.Database.Pool, uint64(appId))
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to delete application", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to delete application", "trace": err.Error()})
 		return
 	}
 	ctx.Status(204) // No Content
 }
 
 // GetAll ApplicationDefinition
-func (ac *ApplicationController) GetById(ctx *gin.Context) {
+func (ac *RestApiApplicationController) GetById(ctx *gin.Context) {
 	appId, err := strconv.Atoi(ctx.Param("appId"))
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of application"})
 	}
 	dtos, err := ac.Service.GetApplicationById(uint(appId))
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err.Error()})
 		return
 	} else if dtos == nil {
 		ctx.AbortWithStatus(404)
@@ -81,31 +81,31 @@ func (ac *ApplicationController) GetById(ctx *gin.Context) {
 }
 
 // Create ApplicationDefinition
-func (ac *ApplicationController) NewApplication(ctx *gin.Context) {
+func (ac *RestApiApplicationController) NewApplication(ctx *gin.Context) {
 	var appDef data.ApplicationDefinitionDAO
 	if err := ctx.ShouldBindJSON(&appDef); err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
 		return
 	}
 	id, err := ac.Service.CreateApplication(appDef)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to create ApplicationDefinition", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to create ApplicationDefinition", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(201, id)
 }
 
-// Update whole ApplicationDefinition
-func (ac *ApplicationController) Patch(ctx *gin.Context) {
-	ctx.AbortWithStatus(409)
-}
-
-// Update part of ApplicationDefinition
-func (ac *ApplicationController) Put(ctx *gin.Context) {
-	ctx.AbortWithStatus(409)
-}
-
-// Delete ApplicationDefinition
-func (ac *ApplicationController) Delete(ctx *gin.Context) {
-	ctx.AbortWithStatus(409)
+// Update ApplicationDefinition
+func (ac *RestApiApplicationController) UpdateApplicationDefinition(ctx *gin.Context) {
+	var appDef data.ApplicationDefinitionDAO
+	if err := ctx.ShouldBindJSON(&appDef); err != nil {
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
+		return
+	}
+	err := data.UpdateApplicationDefinition(ac.Service.Database.Pool, &appDef)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Unable to update ApplicationDefinition", "trace": err.Error()})
+		return
+	}
+	ctx.Status(204) // No Content
 }

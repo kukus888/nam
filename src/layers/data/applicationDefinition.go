@@ -153,3 +153,20 @@ func GetApplicationInstancesByApplicationDefinitionId(pool *pgxpool.Pool, id uin
 	}
 	return &instances, tx.Commit(context.Background())
 }
+
+// UpdateApplicationDefinition updates an ApplicationDefinitionDAO object in the database
+func UpdateApplicationDefinition(pool *pgxpool.Pool, appDef *ApplicationDefinitionDAO) error {
+	tx, err := pool.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+	if appDef.Id == 0 {
+		return errors.New("id is required for db update, got id = 0")
+	}
+	_, err = tx.Exec(context.Background(), `UPDATE application_definition SET name = $1, port = $2, type = $3, healthcheck_id = $4 WHERE id = $5`, appDef.Name, appDef.Port, appDef.Type, appDef.HealthcheckId, appDef.Id)
+	if err != nil {
+		return err
+	}
+	return tx.Commit(context.Background())
+}

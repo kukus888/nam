@@ -14,39 +14,41 @@
     {{ template "template/components/error-notification" . }}
     <div class="max-w-4xl mx-auto p-6">
         <h1 class="text-3xl font-bold mb-6">Create New Health Check</h1>
-        
-        <form hx-post="/api/rest/v1/healthchecks" hx-ext="submitjson" hx-swap="outerHTML" class="bg-white shadow-md rounded-lg p-6">
+
+        <form hx-post="/api/rest/v1/healthchecks" hx-ext="submitjson" hx-swap="outerHTML"
+            class="bg-white shadow-md rounded-lg p-6">
             <div class="space-y-6">
                 <!-- Basic Details Section -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Basic Details</h2>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
                             <input type="text" id="name" name="name" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
-                        
+
                         <div>
-                            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <label for="description"
+                                class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                             <input type="text" id="description" name="description"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Endpoint Configuration Section -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Endpoint Configuration</h2>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label for="url" class="block text-sm font-medium text-gray-700 mb-1">URL</label>
                             <input id="url" name="url" required placeholder="/rest/healthCheck"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
-                        
+
                         <div>
                             <label for="method" class="block text-sm font-medium text-gray-700 mb-1">HTTP Method</label>
                             <select id="method" name="method" required
@@ -58,79 +60,84 @@
                                 <option value="HEAD">HEAD</option>
                             </select>
                         </div>
-                        
+
                         <div>
-                            <label for="expectedStatus" class="block text-sm font-medium text-gray-700 mb-1">Expected Status Code</label>
+                            <label for="expectedStatus" class="block text-sm font-medium text-gray-700 mb-1">Expected
+                                Status Code</label>
                             <input type="number" id="expectedStatus" name="expected_status" required value="200"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
                         </div>
-                        
+
                         <div class="md:col-span-2">
-                            <label for="body" class="block text-sm font-medium text-gray-700 mb-1">Request Body (for POST/PUT)</label>
+                            <label for="body" class="block text-sm font-medium text-gray-700 mb-1">Request Body (for
+                                POST/PUT)</label>
                             <textarea id="body" name="body" rows="3"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Headers Section -->
                 <div>
                     <div class="flex justify-between items-center mb-4 pb-2 border-b border-indigo-200">
                         <h2 class="text-xl font-semibold">Custom Headers</h2>
-                        <button type="button" id="addHeaderBtn"
-                            class="px-3 py-1 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            Add Header
-                        </button>
                     </div>
-                    
-                    <div id="headersContainer" class="space-y-3">
-                        <!-- Headers will be added here dynamically -->
+
+                    <div class="md:col-span-2">
+                        <label for="headers" class="block text-sm font-medium text-gray-700 mb-1">Headers</label>
+                        <textarea id="headers" name="headers" rows="3"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
                 </div>
-                
+
                 <!-- Timing Configuration Section -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Timing Configuration</h2>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label for="timeout" class="block text-sm font-medium text-gray-700 mb-1">Timeout (seconds)</label>
+                            <label for="timeout" class="block text-sm font-medium text-gray-700 mb-1">Timeout
+                                (seconds)</label>
                             <input type="number" id="timeout" name="timeout" required value="5"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
                         </div>
-                        
+
                         <div>
-                            <label for="checkInterval" class="block text-sm font-medium text-gray-700 mb-1">Check Interval (seconds)</label>
+                            <label for="checkInterval" class="block text-sm font-medium text-gray-700 mb-1">Check
+                                Interval (seconds)</label>
                             <input type="number" id="checkInterval" name="check_interval" required value="60"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
                         </div>
-                        
+
                         <div>
-                            <label for="retryCount" class="block text-sm font-medium text-gray-700 mb-1">Retry Count</label>
+                            <label for="retryCount" class="block text-sm font-medium text-gray-700 mb-1">Retry
+                                Count</label>
                             <input type="number" id="retryCount" name="retry_count" required value="3"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
                         </div>
-                        
+
                         <div>
-                            <label for="retryInterval" class="block text-sm font-medium text-gray-700 mb-1">Retry Interval (seconds)</label>
+                            <label for="retryInterval" class="block text-sm font-medium text-gray-700 mb-1">Retry
+                                Interval (seconds)</label>
                             <input type="number" id="retryInterval" name="retry_interval" required value="10"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Response Validation Section -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Response Validation</h2>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="responseValidation" class="block text-sm font-medium text-gray-700 mb-1">Validation Type</label>
+                            <label for="responseValidation"
+                                class="block text-sm font-medium text-gray-700 mb-1">Validation Type</label>
                             <select id="responseValidation" name="response_validation"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="none">None</option>
@@ -139,22 +146,24 @@
                                 <option value="regex">Regular Expression</option>
                             </select>
                         </div>
-                        
+
                         <div>
-                            <label for="expectedResponseBody" class="block text-sm font-medium text-gray-700 mb-1">Expected Response Content</label>
+                            <label for="expectedResponseBody"
+                                class="block text-sm font-medium text-gray-700 mb-1">Expected Response Content</label>
                             <input type="text" id="expectedResponseBody" name="expected_response_body"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Authentication Section -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Authentication</h2>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="authType" class="block text-sm font-medium text-gray-700 mb-1">Authentication Type</label>
+                            <label for="authType" class="block text-sm font-medium text-gray-700 mb-1">Authentication
+                                Type</label>
                             <select id="authType" name="auth_type"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="none">None</option>
@@ -163,20 +172,22 @@
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
-                        
+
                         <div id="authCredentialsContainer" class="hidden">
-                            <label for="authCredentials" class="block text-sm font-medium text-gray-700 mb-1">Credentials</label>
+                            <label for="authCredentials"
+                                class="block text-sm font-medium text-gray-700 mb-1">Credentials</label>
                             <input type="password" id="authCredentials" name="auth_credentials"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <p class="mt-1 text-xs text-gray-500">For Basic Auth: "username:password", For Bearer: "token"</p>
+                            <p class="mt-1 text-xs text-gray-500">For Basic Auth: "username:password", For Bearer:
+                                "token"</p>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- SSL/TLS Section -->
                 <div>
                     <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">SSL/TLS Settings</h2>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex items-center">
                             <input type="checkbox" id="verifySSL" name="verify_ssl" value="true"
@@ -187,7 +198,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex justify-end space-x-3 pt-4 border-t border-indigo-200">
                     <a href="/healthchecks" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
                         Cancel
@@ -199,70 +210,26 @@
             </div>
         </form>
     </div>
-    
-    <!-- Template for new header -->
-    <template id="headerTemplate">
-        <div class="header-item flex items-center space-x-2">
-            <input type="text" name="headers[].key" placeholder="Header Name" required
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <input type="text" name="headers[].value" placeholder="Value" required
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-            <button type="button" class="remove-header p-2 text-red-500 hover:text-red-700">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-            </button>
-        </div>
-    </template>
-    
+
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Headers management
-            const addHeaderBtn = document.getElementById('addHeaderBtn');
-            const headersContainer = document.getElementById('headersContainer');
-            const headerTemplate = document.getElementById('headerTemplate');
-            
-            let headerCount = 0;
-            
-            addHeaderBtn.addEventListener('click', function() {
-                const headerNode = document.importNode(headerTemplate.content, true);
-                const headerElement = headerNode.querySelector('.header-item');
-                
-                // Update the name attributes with the current index
-                headerElement.querySelectorAll('[name="headers[].key"]').forEach(el => {
-                    el.name = `headers[${headerCount}].key`;
-                });
-                
-                headerElement.querySelectorAll('[name="headers[].value"]').forEach(el => {
-                    el.name = `headers[${headerCount}].value`;
-                });
-                
-                // Add remove functionality
-                headerElement.querySelector('.remove-header').addEventListener('click', function() {
-                    headerElement.remove();
-                });
-                
-                headersContainer.appendChild(headerElement);
-                headerCount++;
-            });
-            
+        document.addEventListener('DOMContentLoaded', function () {
             // Authentication type change handler
             const authType = document.getElementById('authType');
             const authCredentialsContainer = document.getElementById('authCredentialsContainer');
-            
-            authType.addEventListener('change', function() {
+
+            authType.addEventListener('change', function () {
                 if (this.value === 'none') {
                     authCredentialsContainer.classList.add('hidden');
                 } else {
                     authCredentialsContainer.classList.remove('hidden');
                 }
             });
-            
+
             // Alert settings handler
             const alertsEnabled = document.getElementById('alertsEnabled');
             const alertChannelsContainer = document.getElementById('alertChannelsContainer');
-            
-            alertsEnabled.addEventListener('change', function() {
+
+            alertsEnabled.addEventListener('change', function () {
                 if (this.checked) {
                     alertChannelsContainer.classList.remove('hidden');
                 } else {

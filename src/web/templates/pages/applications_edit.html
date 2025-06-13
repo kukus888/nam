@@ -1,0 +1,85 @@
+{{ define "pages/applications/edit" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ template "template/head.includes" }}
+    <title>Edit {{ .Application.Name }}</title>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "templates/navbar" }}
+    {{ template "template/components/error-notification" . }}
+    <div class="max-w-4xl mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6">Edit application: {{ .Application.Name }}</h1>
+        
+        <form hx-put="/api/rest/v1/applications/{{ .Application.Id }}" hx-ext="submitjson" hx-swap="outerHTML" class="bg-white shadow-md rounded-lg p-6"
+        hx-on::after-request="if(event.detail.successful) { location.href = '/applications/{{ .Application.Id }}/details' } else { showErrorMessage(event.detail.xhr.responseText) }">
+            <div class="space-y-6">
+                <!-- Application Details Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Application Details</h2>
+                    <input type="number" id="id" name="id" value="{{ .Application.Id }}" hidden />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="appName" class="block text-sm font-medium text-gray-700 mb-1">Application Name</label>
+                            <input type="text" id="appName" name="name" required value="{{ .Application.Name }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label for="appPort" class="block text-sm font-medium text-gray-700 mb-1">Port</label>
+                            <input type="number" id="appPort" name="port" required value="{{ .Application.Port }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                style="appearance: textfield; -moz-appearance: textfield; -webkit-appearance: textfield;">
+                        </div>
+                        
+                        <div>
+                            <!-- TODO: Modularly add application type selection, with icons -->
+                            <label for="appType" class="block text-sm font-medium text-gray-700 mb-1">Application Type</label>
+                            <select id="appType" name="type" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="Other">Other</option>
+                                <option value="JBoss" {{ if eq .Application.Type "JBoss" }}selected{{ end }}>JBoss</option>
+                                <option value="Springboot" {{ if eq .Application.Type "Springboot" }}selected{{ end }}>Springboot</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="healthCheckId" class="block text-sm font-medium text-gray-700 mb-1">Health Check (optional)</label>
+                            <div class="flex space-x-2">
+                                <select id="healthCheckId" name="healthcheck_id"
+                                    class="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    {{ $selected := .Application.HealthcheckId }}
+                                    {{ range .Healthchecks }}
+                                    <option value="{{ .Id }}"{{ if eq .Id $selected }}selected{{ end }}>{{ .Name }}</option>
+                                    {{ end }}
+                                </select>
+                                <a href="/healthchecks/create" target="_blank" 
+                                   class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                   </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-indigo-200">
+                    <a href="/applications/{{ .Application.Id }}/details" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600">
+                        Submit changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>
+{{ end }}

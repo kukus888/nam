@@ -1,6 +1,7 @@
 package data
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -65,13 +66,13 @@ type HealthcheckDTO struct {
 	AuthCredentials string `json:"auth_credentials"` // stored securely
 }
 
-func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
+func (dto HealthcheckDTO) ToHealthcheck() (*Healthcheck, error) {
 	httpHeader := http.Header{}
-	headerLines := strings.Split(dto.ReqHeader, "\n")
-	for _, line := range headerLines {
-		key := strings.Split(line, ":")[0]
-		value := strings.TrimSpace(strings.Split(line, ":")[1])
-		httpHeader[key] = []string{value}
+	if dto.ReqHeader != "" {
+		header, err := ParseHeadersFromString(dto.ReqHeader)
+		if err == nil {
+			httpHeader = *header
+		}
 	}
 	reqTimeout, _ := time.ParseDuration(strconv.Itoa(dto.ReqTimeout) + "s")
 	reqInterval, _ := time.ParseDuration(strconv.Itoa(dto.CheckInterval) + "s")
@@ -97,7 +98,24 @@ func (dto HealthcheckDTO) ToHealthcheck() Healthcheck {
 	} else {
 		hc.VerifySSL = false
 	}
-	return hc
+	return &hc, nil
+}
+
+func ParseHeadersFromString(headersStr string) (*http.Header, error) {
+	httpHeader := http.Header{}
+	defer func() (*http.Header, error) {
+		if r := recover(); r != nil {
+			return nil, errors.New("Invalid header format")
+		}
+		return nil, nil
+	}()
+	headerLines := strings.Split(headersStr, "\n")
+	for _, line := range headerLines {
+		key := strings.Split(line, ":")[0]
+		value := strings.TrimSpace(strings.Split(line, ":")[1])
+		httpHeader[key] = []string{value}
+	}
+	return &httpHeader, nil
 }
 
 type HealthcheckResult struct {

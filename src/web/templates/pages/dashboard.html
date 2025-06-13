@@ -13,7 +13,7 @@
     {{ template "template/components/error-notification" . }}
     {{ template "templates/navbar" }}
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {{ range .AppDefDAOs }}
         <div class="mb-4">
             <div hx-get="/htmx/health/application/definition_with_instances?live_reload=true&size=small&id={{ .Id }}"

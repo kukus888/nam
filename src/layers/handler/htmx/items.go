@@ -2,21 +2,18 @@ package htmx
 
 import (
 	"kukus/nam/v2/layers/data"
-	services "kukus/nam/v2/layers/service"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ItemView struct {
-	Database    *data.Database
-	ItemService services.ItemService
+	Database *data.Database
 }
 
 func NewItemView(database *data.Database) ItemView {
 	return ItemView{
-		Database:    database,
-		ItemService: services.NewItemService(database),
+		Database: database,
 	}
 }
 

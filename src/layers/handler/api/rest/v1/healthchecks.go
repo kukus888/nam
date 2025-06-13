@@ -43,7 +43,7 @@ func (ac *HealthcheckController) Init(routerGroup *gin.RouterGroup) {
 func (ac *HealthcheckController) GetAll(ctx *gin.Context) {
 	dtos, err := data.GetHealthChecksAll(ac.Service.Database.Pool)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(200, dtos)
@@ -57,7 +57,7 @@ func (ac *HealthcheckController) GetById(ctx *gin.Context) {
 	}
 	dtos, err := data.GetHealthCheckById(ac.Service.Database.Pool, uint(hcId))
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read application list", "trace": err.Error()})
 		return
 	} else if dtos == nil {
 		ctx.AbortWithStatus(404)
@@ -70,13 +70,16 @@ func (ac *HealthcheckController) GetById(ctx *gin.Context) {
 func (ac *HealthcheckController) NewHealthcheck(ctx *gin.Context) {
 	var dto data.HealthcheckDTO
 	if err := ctx.ShouldBindJSON(&dto); err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
 		return
 	}
-	hc := dto.ToHealthcheck()
+	hc, err := dto.ToHealthcheck()
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "Error converting DTO to DAO", "trace": err.Error()})
+	}
 	id, err := hc.DbInsert(ac.Service.Database.Pool)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to create Healthcheck", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to create Healthcheck", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(201, id)
@@ -90,7 +93,7 @@ func (ac *HealthcheckController) UpdateHealthcheck(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
 		return
 	}
-	dao := dto.ToHealthcheck()
+	dao, err := dto.ToHealthcheck()
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Error converting DTO to DAO", "trace": err.Error()})
 		return
