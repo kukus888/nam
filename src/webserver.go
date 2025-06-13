@@ -36,7 +36,7 @@ func InitWebServer(app *Application) {
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slogLevel,
 	}))
-	log.Info("Starting web server", "mode", App.Configuration.WebServer.Mode, "port", App.Configuration.WebServer.Port)
+	log.Info("Starting web server", "mode", App.Configuration.WebServer.Mode, "address", App.Configuration.WebServer.Address)
 	app.Engine.Use(gin.Recovery())
 	// Set up logging middleware
 	app.Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
@@ -79,7 +79,14 @@ func InitWebServer(app *Application) {
 	handlers.NewInstanceView(App.Database).Init(App.Engine.Group("/instances"))
 	handlers.NewHealthcheckView(App.Database).Init(App.Engine.Group("/healthchecks"))
 
-	app.Engine.Run(":" + fmt.Sprintf("%d", app.Configuration.WebServer.Port))
+	var err error
+	if app.Configuration.WebServer.TLS.Enabled {
+		slog.Debug("Starting web server with TLS")
+		err = app.Engine.RunTLS(app.Configuration.WebServer.Address, app.Configuration.WebServer.TLS.CertPath, app.Configuration.WebServer.TLS.KeyPath)
+	} else {
+		err = app.Engine.Run(app.Configuration.WebServer.Address)
+	}
+	panic(err.Error())
 }
 
 // Add these to your template functions

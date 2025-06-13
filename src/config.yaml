@@ -8,6 +8,10 @@ webserver:
   enabled: true
   port: 8080
   mode: debug # release, test
+  tls:
+    enabled: false
+    certpath: "cert.pem"
+    keypath: "key.pem"
 
 keys:
   cacerts: "cacert.pem"
