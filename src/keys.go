@@ -12,8 +12,9 @@ import (
 func ParseSecrets(AppConfig ApplicationConfiguration) (*tls.Config, error) {
 	// Setup
 	tlsConfig := &tls.Config{
-		RootCAs:      x509.NewCertPool(),
-		Certificates: make([]tls.Certificate, 0),
+		RootCAs:            x509.NewCertPool(),
+		Certificates:       make([]tls.Certificate, 0),
+		InsecureSkipVerify: true, // TODO: Properly control
 	}
 	// Parse keys
 	if AppConfig.Keys.CaCertsPath != "" {

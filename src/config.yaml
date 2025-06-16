@@ -6,11 +6,15 @@ logging:
 
 webserver:
   enabled: true
-  port: 8080
   mode: debug # release, test
+  address: "0.0.0.0:8080"
+  tls:
+    enabled: false
+    certpath: "cert.pem"
+    keypath: "key.pem"
 
 keys:
-  cacerts: "cacert.pem"
+  cacerts: ""
   clientcert: ""
   clientkey: ""
 

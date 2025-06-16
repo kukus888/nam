@@ -50,6 +50,7 @@ func (av ApplicationView) Init(routeGroup *gin.RouterGroup) {
 	// route /applications/:id
 	idGroup := routeGroup.Group("/:id")
 	{
+		idGroup.GET("/edit", av.GetPageApplicationEdit)
 		idGroup.GET("/details", av.GetPageApplicationDetails)
 		idGroup.GET("/instances/create", av.GetPageApplicationInstanceNew)
 	}
@@ -107,5 +108,28 @@ func (av ApplicationView) GetPageApplicationInstanceNew(ctx *gin.Context) {
 	ctx.HTML(200, "pages/applications/instances/create", gin.H{
 		"Application": app,
 		"Servers":     servers,
+	})
+}
+
+// Renders a page "Edit Application Definition"
+func (av ApplicationView) GetPageApplicationEdit(ctx *gin.Context) {
+	appId, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": "Reqest must contain application definition id", "trace": err.Error()})
+		return
+	}
+	app, err := data.GetApplicationDefinitionById(av.Database.Pool, uint64(appId))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get application definition id", "trace": err.Error()})
+		return
+	}
+	hcs, err := data.GetHealthChecksAll(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get health checks", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/applications/edit", gin.H{
+		"Application":  app,
+		"Healthchecks": hcs,
 	})
 }

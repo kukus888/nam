@@ -55,5 +55,11 @@ Group servers into farms (groups) for easier management.
 ### Embed web files into embed.FS
 
 ## Issues
-
-This section intentionally left blank.
+- Sometimes the automagic sync between healthcheck tempaltes does not work thourhg the database (INSERT)
+- Sometimes broken CSS
+    - Dashboard when theres a lot of instances
+    - health check history, weird amount of padding
+- Unable to edit application definitions
+- No cron to delete old healthcheck results
+- Unable to call healthcheck directly (have to wait for interval)
+- Not working /api/rest/v1/servers API

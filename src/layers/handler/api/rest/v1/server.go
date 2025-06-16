@@ -3,21 +3,18 @@ package v1
 import (
 	data "kukus/nam/v2/layers/data"
 	handlers "kukus/nam/v2/layers/handler"
-	services "kukus/nam/v2/layers/service"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ServerController struct {
-	Service services.ServerService
+	Database *data.Database
 }
 
 func NewServerController(db *data.Database) *ServerController {
 	return &ServerController{
-		Service: services.ServerService{
-			Database: db,
-		},
+		Database: db,
 	}
 }
 
@@ -35,15 +32,14 @@ func (sc *ServerController) Init(routerGroup *gin.RouterGroup) {
 		idGroup.PATCH("/", handlers.MethodNotImplemented)
 		idGroup.PUT("/", sc.UpdateById)
 		idGroup.DELETE("/", sc.RemoveById)
-		NewApplicationInstanceController(sc.Service.Database).Init(idGroup.Group("/instances"))
 	}
 }
 
 // GetAll Servers
 func (sc *ServerController) GetAll(ctx *gin.Context) {
-	dtos, err := sc.Service.GetAllServers()
+	dtos, err := data.GetServerAll(sc.Database.Pool)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read server list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read server list", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(200, dtos)
@@ -55,9 +51,9 @@ func (sc *ServerController) GetById(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of server"})
 	}
-	dtos, err := sc.Service.GetServerById(uint(serverId))
+	dtos, err := data.GetServerById(sc.Database.Pool, uint(serverId))
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to read server list", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to read server list", "trace": err.Error()})
 		return
 	} else if dtos == nil {
 		ctx.AbortWithStatus(404)
@@ -70,12 +66,12 @@ func (sc *ServerController) GetById(ctx *gin.Context) {
 func (sc *ServerController) NewServer(ctx *gin.Context) {
 	var server data.Server
 	if err := ctx.ShouldBindJSON(&server); err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
 		return
 	}
-	id, err := sc.Service.CreateServer(server)
+	id, err := server.DbInsert(sc.Database.Pool)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to create Server", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to create Server", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(201, id)
@@ -87,13 +83,12 @@ func (sc *ServerController) RemoveById(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of server"})
 	}
-	dao := data.Server{Id: uint(serverId)}
-	deletedId, err := dao.Delete(sc.Service.Database.Pool)
+	err = data.ServerDeleteById(sc.Database.Pool, uint(serverId))
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to remove server", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to remove server", "trace": err.Error()})
 		return
 	} else {
-		ctx.JSON(200, deletedId)
+		ctx.Status(200)
 	}
 }
 
@@ -101,12 +96,12 @@ func (sc *ServerController) RemoveById(ctx *gin.Context) {
 func (sc *ServerController) UpdateById(ctx *gin.Context) {
 	var server data.Server
 	if err := ctx.ShouldBindJSON(&server); err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err})
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
 		return
 	}
-	err := server.Update(sc.Service.Database.Pool)
+	err := server.Update(sc.Database.Pool)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to update Server", "trace": err})
+		ctx.JSON(500, gin.H{"error": "Unable to update Server", "trace": err.Error()})
 		return
 	}
 	ctx.JSON(200, server)

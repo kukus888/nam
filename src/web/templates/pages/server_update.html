@@ -13,8 +13,8 @@
         <div class="space-y-4">
             <!-- Server ID (read-only) -->
             <div class="grid grid-cols-1 gap-2">
-                <label class="block text-sm font-medium text-gray-700">Server ID</label>
-                <input type="number" value="{{ .Server.Id }}" name="id"
+                <label for="server_id" class="block text-sm font-medium text-gray-700">Server ID</label>
+                <input type="number" id="server_id" value="{{ .Server.Id }}" name="server_id"
                     class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     readonly>
 

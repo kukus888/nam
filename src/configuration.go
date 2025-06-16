@@ -60,8 +60,13 @@ type ApplicationConfiguration struct {
 		ClientKeyPath  string `yaml:"clientkey"`
 	} `yaml:"keys"`
 	WebServer struct {
-		Port    int    `yaml:"port"`    // Port to run the web server on
-		Mode    string `yaml:"mode"`    // Gin mode, e.g. "debug", "release", "test"
 		Enabled bool   `yaml:"enabled"` // Whether the web server is enabled
+		Address string `yaml:"address"` // Web server address, e.g. "0.0.0.0:8080"
+		Mode    string `yaml:"mode"`    // Gin mode, e.g. "debug", "release", "test"
+		TLS     struct {
+			Enabled  bool   `yaml:"enabled"`
+			CertPath string `yaml:"certpath"`
+			KeyPath  string `yaml:"keypath"`
+		} `yaml:"tls"`
 	} `yaml:"webserver"`
 }

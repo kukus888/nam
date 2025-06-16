@@ -2,79 +2,74 @@ package data
 
 import (
 	"context"
+	"errors"
 
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func (s Server) TableName() string {
-	return "server"
-}
-
-func (s Server) ApiName() string {
-	return "server"
-}
-
 // Inserts Server into Database. New Id is stored in the referenced Server struct.
 // Does not roll back transaction, this is merely a facade for an insert statement
-func (s Server) DbInsert(tx pgx.Tx) (*uint, error) {
+func (s Server) DbInsert(pool *pgxpool.Pool) (*uint, error) {
 	var id uint
-	err := tx.QueryRow(context.Background(), "INSERT INTO server (alias, hostname) VALUES ($1, $2) RETURNING id", s.Alias, s.Hostname).Scan(&id)
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		tx.Rollback(context.Background())
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+	err = tx.QueryRow(context.Background(), "INSERT INTO server (alias, hostname) VALUES ($1, $2) RETURNING id", s.Alias, s.Hostname).Scan(&id)
+	if err != nil {
 		return nil, err
 	}
 	return &id, tx.Commit(context.Background())
 }
 
-// Deletes specified Server. Checks for dependent ApplicationInstances
-func (s Server) Delete(pool *pgxpool.Pool) (*int, error) {
-	var affectedRows = 0
+func ServerDeleteById(pool *pgxpool.Pool, id uint) error {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	// Check if server exists
-	var server Server
-	err = pgxscan.Get(context.Background(), tx, &server, "SELECT * FROM server WHERE id = $1", s.Id)
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
+	defer tx.Rollback(context.Background())
+	// Delete ApplicationInstances first
+	instances, err := tx.Query(context.Background(), `
+		select * from application_instance ai 
+		where ai.server_id = $1
+	`, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil // No results found, done!
+	} else if err != nil {
+		return err
 	}
-	if server.Id == 0 {
-		tx.Rollback(context.Background())
-		return nil, nil
+	ais, err := pgx.CollectRows(instances, pgx.RowToStructByNameLax[ApplicationInstance])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil // No results found
+	} else if err != nil {
+		return err
 	}
-	// Check for dependent ApplicationInstances
-	var instances []ApplicationInstance
-	err = pgxscan.Select(context.Background(), tx, &instances, "SELECT * FROM application_instance WHERE server_id = $1", s.Id)
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
-	}
-	if len(instances) > 0 {
-		// Remove dependent ApplicationInstances
-		for _, instance := range instances {
-			err := DeleteApplicationInstanceById(pool, uint64(instance.Id))
+	if len(ais) > 0 {
+		for _, ai := range ais {
+			err = DeleteApplicationInstanceById(pool, uint64(ai.Id))
 			if err != nil {
-				tx.Rollback(context.Background())
-				return nil, err
+				return err
 			}
 		}
 	}
-	// Remove Server
-	com, err := tx.Exec(context.Background(), `DELETE FROM "server" s WHERE s.id = $1`, s.Id)
-	if err != nil {
-		tx.Rollback(context.Background())
-		return nil, err
+	// Delete the server
+	_, err = tx.Exec(context.Background(), `
+		delete from server s 
+		where s.id = $1
+	`, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil // No results found, done!
+	} else if err != nil {
+		return err
 	}
-	affectedRows += int(com.RowsAffected())
-	return &affectedRows, tx.Commit(context.Background())
+	return tx.Commit(context.Background())
 }
 
 func GetServerAll(pool *pgxpool.Pool) (*[]Server, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	defer tx.Rollback(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +86,7 @@ func GetServerAll(pool *pgxpool.Pool) (*[]Server, error) {
 
 func GetServerById(pool *pgxpool.Pool, id uint) (*Server, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	defer tx.Rollback(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +98,7 @@ func GetServerById(pool *pgxpool.Pool, id uint) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &res, nil
+	return &res, tx.Commit(context.Background())
 }
 
 func (server *Server) Update(pool *pgxpool.Pool) error {
@@ -110,11 +106,13 @@ func (server *Server) Update(pool *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	rows, err := tx.Query(context.Background(), `update "server" s set alias = $2, hostname = $3 where s.id = $1 returning *`, server.Id, server.Alias, server.Hostname)
+	defer tx.Rollback(context.Background())
+	if server.Id == 0 {
+		return errors.New("id is required for db update, got id = 0")
+	}
+	_, err = tx.Exec(context.Background(), `update server set alias = $2, hostname = $3 where id = $1`, server.Id, server.Alias, server.Hostname)
 	if err != nil {
-		tx.Rollback(context.Background())
 		return err
 	}
-	rows.Scan(&server)
 	return tx.Commit(context.Background())
 }
