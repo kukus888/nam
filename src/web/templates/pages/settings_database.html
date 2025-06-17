@@ -1,0 +1,46 @@
+{{ define "pages/settings/database" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings</title>
+    {{ template "template/head.includes" }}
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-8">
+        <!-- Secondary Navbar -->
+        {{ template "pages/settings/navbar.left" }}
+
+        <!-- Main Content Area -->
+        <main id="settings-content" class="flex-1">
+            <!-- 
+                By default, you can show a welcome or overview.
+                When a sidebar button is clicked, HTMX will replace this content.
+            -->
+            <div class="bg-white shadow rounded-xl py-4 px-6">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">Database settings</h1>
+                <div class="flex flex-row mb-2">
+                    <div class="w-1/4 p-1">Connection string</div>
+                    <div class="w-3/4 font-mono bg-gray-50 rounded-sm p-1">{{ .DbConfigConnString }}</div>
+                </div>
+                <div class="flex flex-row mb-2">
+                    <div class="w-1/4 p-1">Runtime parameters</div>
+                    <div class="w-3/4 font-mono bg-gray-50 rounded-sm p-1 flex flex-col">
+                        {{ range $key, $value := .DbConfigRuntimeParams }}
+                        <div>{{ $key }} -> {{ $value }}</div>
+                        {{ end }}
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+
+</html>
+{{ end }}

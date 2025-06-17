@@ -1,0 +1,29 @@
+{{ define "pages/settings/navbar.left" }}
+<nav class="w-64 flex-shrink-0">
+    <div class="bg-white rounded-xl shadow p-4 sticky top-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
+        <ul class="space-y-2">
+            <li>
+                <a href="/settings/database" class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                    Database
+                </a>
+            </li>
+            <li>
+                <a href="/settings" class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                    External Connectors
+                </a>
+            </li>
+            <li>
+                <a href="/settings" class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                    Resources
+                </a>
+            </li>
+            <li>
+                <a href="/settings" class="w-full text-left px-4 py-2 rounded-md hover:bg-indigo-50 focus:bg-indigo-100 transition-colors font-medium text-gray-700">
+                    Services
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+{{ end }}

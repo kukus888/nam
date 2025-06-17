@@ -6,17 +6,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type PageController struct {
+type PageHandler struct {
 	Database *data.Database
 }
 
-func NewPageController(database *data.Database) PageController {
-	return PageController{
+func NewPageHandler(database *data.Database) PageHandler {
+	return PageHandler{
 		Database: database,
 	}
 }
 
-func (pc PageController) Init(routeGroup *gin.RouterGroup) {
+func (pc PageHandler) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/", func(ctx *gin.Context) {
 		appDefDAOs, err := data.GetApplicationDefinitionsAll(pc.Database.Pool)
 		if err != nil {
@@ -26,9 +26,6 @@ func (pc PageController) Init(routeGroup *gin.RouterGroup) {
 		ctx.HTML(200, "pages/dashboard", gin.H{
 			"AppDefDAOs": appDefDAOs,
 		})
-	})
-	routeGroup.GET("/settings", func(ctx *gin.Context) {
-		ctx.HTML(200, "pages/settings", gin.H{})
 	})
 	routeGroup.GET("/servers", func(ctx *gin.Context) {
 		servers, err := data.GetServerAll(pc.Database.Pool)

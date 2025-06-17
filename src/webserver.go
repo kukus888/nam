@@ -92,7 +92,8 @@ func InitWebServer(app *Application) {
 	htmx.NewHtmxController(App.Database).Init(App.Engine.Group("/htmx"))
 
 	// Pages
-	handlers.NewPageController(App.Database).Init(App.Engine.Group("/"))
+	handlers.NewPageHandler(App.Database).Init(App.Engine.Group("/"))
+	handlers.NewPageSettingsHandler(App.Database).Init(App.Engine.Group("/settings"))
 	handlers.NewApplicationView(App.Database).Init(App.Engine.Group("/applications"))
 	handlers.NewInstanceView(App.Database).Init(App.Engine.Group("/instances"))
 	handlers.NewHealthcheckView(App.Database).Init(App.Engine.Group("/healthchecks"))
