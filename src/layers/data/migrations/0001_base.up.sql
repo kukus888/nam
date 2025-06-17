@@ -62,26 +62,6 @@ CREATE TABLE healthcheck (
     auth_credentials TEXT
 );
 
-CREATE OR REPLACE FUNCTION notify_healthcheck_change()
-RETURNS trigger AS $$
-BEGIN
-  PERFORM pg_notify('healthcheck_changes', TG_OP || ':' || COALESCE(NEW.id::text, OLD.id::text));
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS healthcheck_change_trigger ON healthcheck;
-CREATE TRIGGER healthcheck_change_trigger
-AFTER INSERT OR UPDATE OR DELETE ON healthcheck
-FOR EACH ROW
-EXECUTE FUNCTION notify_healthcheck_change();
-
-DROP TRIGGER IF EXISTS healthcheck_change_trigger ON application_instance;
-CREATE TRIGGER healthcheck_change_trigger
-AFTER INSERT OR UPDATE OR DELETE ON application_instance
-FOR EACH ROW
-EXECUTE FUNCTION notify_healthcheck_change();
-
 CREATE TABLE IF NOT EXISTS application_definition (
   id SERIAL PRIMARY KEY,
   healthcheck_id INTEGER REFERENCES healthcheck (id) NULL,
@@ -116,3 +96,23 @@ CREATE TABLE IF NOT EXISTS healthcheck_results (
 	res_time INTEGER NOT NULL, -- in milliseconds
 	error_message TEXT
 );
+
+CREATE OR REPLACE FUNCTION notify_healthcheck_change()
+RETURNS trigger AS $$
+BEGIN
+  PERFORM pg_notify('healthcheck_changes', TG_OP || ':' || COALESCE(NEW.id::text, OLD.id::text));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS healthcheck_change_trigger ON healthcheck;
+CREATE TRIGGER healthcheck_change_trigger
+AFTER INSERT OR UPDATE OR DELETE ON healthcheck
+FOR EACH ROW
+EXECUTE FUNCTION notify_healthcheck_change();
+
+DROP TRIGGER IF EXISTS healthcheck_change_trigger ON application_instance;
+CREATE TRIGGER healthcheck_change_trigger
+AFTER INSERT OR UPDATE OR DELETE ON application_instance
+FOR EACH ROW
+EXECUTE FUNCTION notify_healthcheck_change();

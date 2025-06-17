@@ -34,7 +34,7 @@ This will create a rundeck community cluster, as well as nginx for balancing, an
 # TODO
 
 ### DB migration
-Automagic DB migration on startup.
+Automagic DB migration on startup. Implemented, but need more docs.
 
 ### IBM MQ Integration
 Watch IBM MQ Queue Managers for health status.
@@ -50,7 +50,6 @@ Workaround: Add tagging system to tag components
 ### Rip all unused services out
 ### Cron job to delete old healthcheckrecords
 ### better build pipeline
-### In settings > database, create a page to run raw SQL commands
 
 ## Issues
 - Sometimes the automagic sync between healthcheck tempaltes does not work thourhg the database (INSERT)

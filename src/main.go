@@ -59,8 +59,12 @@ func main() {
 	if err := db.Pool.Ping(context.Background()); err != nil {
 		panic("Unable to connect to the database: " + err.Error())
 	}
+	// Try migrating the schema
+	if err = data.AutoMigrate(appCfg.Database.Dsn); err != nil {
+		panic("Unable to migrate database schema: " + err.Error())
+	}
 	App.Database = db
-	log.Info("Successfully initialised database connection")
+	log.Info("Successfully initialised database connection and migrated to latest schema")
 
 	if App.Configuration.WebServer.Enabled {
 		go InitWebServer(&App)
