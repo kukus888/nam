@@ -36,9 +36,6 @@ This will create a rundeck community cluster, as well as nginx for balancing, an
 ### DB migration
 Automagic DB migration on startup.
 
-### Configuration file
-Use configuration file, and perhaps environment variables to configure application.
-
 ### IBM MQ Integration
 Watch IBM MQ Queue Managers for health status.
 
@@ -48,11 +45,12 @@ Watch F5 Load Balancer for health status.
 ### Arrange servers into farms (groups)
 Group servers into farms (groups) for easier management.
 
+Workaround: Add tagging system to tag components
+
 ### Rip all unused services out
 ### Cron job to delete old healthcheckrecords
 ### better build pipeline
-### Create tags (to tag applications, servers, ...)
-### Embed web files into embed.FS
+### In settings > database, create a page to run raw SQL commands
 
 ## Issues
 - Sometimes the automagic sync between healthcheck tempaltes does not work thourhg the database (INSERT)

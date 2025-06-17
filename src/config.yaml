@@ -2,21 +2,21 @@ postgres:
   dsn: "postgres://postgres:heslo123@localhost:5432/postgres?application_name=nam"
 
 logging:
-  level: info
+  level: info # debug, info, error
 
 webserver:
   enabled: true
-  mode: debug # release, test
+  mode: debug # debug, release, test
   address: "0.0.0.0:8080"
   tls:
     enabled: false
-    certpath: "cert.pem"
-    keypath: "key.pem"
+    certpath: "cert.pem" # Server certificate
+    keypath: "key.pem" # Server key
 
-keys:
+keys: # used for calling healthchecks
   cacerts: ""
   clientcert: ""
   clientkey: ""
 
 services:
-  HealthcheckService: true
+  HealthcheckService: true # Whether to enable calling health checks or not on this instance
