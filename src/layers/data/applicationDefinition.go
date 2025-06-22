@@ -73,9 +73,13 @@ func GetApplicationDefinitionsFull(pool *pgxpool.Pool) (*[]ApplicationDefinition
 
 // Creates new ApplicationDefinition in DB
 // Returns the inserted ApplicationDefinition object
-func (appDef ApplicationDefinitionDAO) DbInsert(tx pgx.Tx) (*uint, error) {
+func (appDef ApplicationDefinitionDAO) DbInsert(pool *pgxpool.Pool) (*uint, error) {
 	var resId uint
 	var err error
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
 	if appDef.HealthcheckId == nil {
 		err = tx.QueryRow(context.Background(), "INSERT INTO application_definition (name, port, type) VALUES ($1, $2, $3) RETURNING id", appDef.Name, appDef.Port, appDef.Type).Scan(&resId)
 	} else {
@@ -85,7 +89,7 @@ func (appDef ApplicationDefinitionDAO) DbInsert(tx pgx.Tx) (*uint, error) {
 		tx.Rollback(context.Background())
 		return nil, err
 	}
-	return &resId, nil
+	return &resId, tx.Commit(context.Background())
 }
 
 func DeleteApplicationDefinitionById(pool *pgxpool.Pool, id uint64) error {
