@@ -17,14 +17,7 @@ func NewInstanceView(database *data.Database) InstanceView {
 	}
 }
 
-/*
- *	Component used for viewing Application instance pages
- */
-func (iv InstanceView) Init(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/:id/details", iv.GetPageApplicationInstanceDetails)
-}
-
-// Returns the details page for a specific application instance
+// Renders the details page for a specific application instance
 func (iv InstanceView) GetPageApplicationInstanceDetails(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil || id == 0 {

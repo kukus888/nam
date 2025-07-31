@@ -1,0 +1,35 @@
+{{ define "pages/403" }}
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>403 Forbidden - NAM</title>
+    {{ template "template/head.includes" }}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="flex-grow flex items-center justify-center">
+        <div class="bg-white shadow-lg rounded-lg p-10 max-w-lg w-full text-center">
+            <div class="mb-6">
+                <svg class="mx-auto h-16 w-16 text-indigo-500" fill="none" viewBox="0 0 64 64" stroke="currentColor">
+                    <circle cx="32" cy="32" r="30" stroke-width="4" class="text-indigo-200" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4"
+                        d="M32 44v-4M32 20v12" />
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">403</h1>
+            <p class="text-lg text-gray-700 mb-4">Forbidden</p>
+            <p class="text-sm text-gray-500 mb-8">
+                Sorry, you do not have permission to access this page.
+            </p>
+            <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Go to Dashboard
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+{{ end }}

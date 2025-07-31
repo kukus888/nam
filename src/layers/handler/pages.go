@@ -16,25 +16,24 @@ func NewPageHandler(database *data.Database) PageHandler {
 	}
 }
 
-func (pc PageHandler) Init(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/", func(ctx *gin.Context) {
-		appDefDAOs, err := data.GetApplicationDefinitionsAll(pc.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get healthcheck results", "trace": err.Error()})
-			return
-		}
-		ctx.HTML(200, "pages/dashboard", gin.H{
-			"AppDefDAOs": appDefDAOs,
-		})
+func (pc PageHandler) GetPageDashboard(ctx *gin.Context) {
+	appDefDAOs, err := data.GetApplicationDefinitionsAll(pc.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get application definitions", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/dashboard", gin.H{
+		"AppDefDAOs": appDefDAOs,
 	})
-	routeGroup.GET("/servers", func(ctx *gin.Context) {
-		servers, err := data.GetServerAll(pc.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get servers", "trace": err.Error()})
-			return
-		}
-		ctx.HTML(200, "pages/servers", gin.H{
-			"Servers": servers,
-		})
+}
+
+func (pc PageHandler) GetPageServers(ctx *gin.Context) {
+	servers, err := data.GetServerAll(pc.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get servers", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/servers", gin.H{
+		"Servers": servers,
 	})
 }

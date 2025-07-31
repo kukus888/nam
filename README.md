@@ -18,6 +18,29 @@ The NAM will output the logs to STDOUT.
 ## From release
 Exact same as from source, except we build the binary for you. Check out the releases section of this repo.
 
+# Setup
+
+NAM uses Role-Based Access Control (RBAC) by default. On the first run, there is no admin account. To create one, NAM provides a **one-time-use endpoint**. This endpoint is **automatically disabled** as soon as the first user is created (the first user will be the admin). After that, it cannot be accessed again.
+
+Adjust the following command for your environment:
+
+```bash
+curl http://localhost:8080/login/setup -d '{"username":"admin","password":"admin"}' -X POST
+```
+
+A successful response will look like:
+
+```json
+{"message":"Admin user created successfully","user_id":1}
+```
+
+# Usage
+## Start/Stop/Restart
+To start/stop/restart a service, use the following endpoint:
+```bash
+curl http://localhost:8080/service/start -d '{"service":"httpd"}' -X POST
+```
+You 
 
 # Podman development environment
 To setup podman environment, simply enter `dev-env` folder, and run:
@@ -62,3 +85,7 @@ Workaround: Add tagging system to tag components
 - No cron to delete old healthcheck results
 - Unable to call healthcheck directly (have to wait for interval)
 - Not working /api/rest/v1/servers API
+
+- No unified 5xx 4xx pages (make templated ones)
+- No role UI
+- Favicon based on what is on the page

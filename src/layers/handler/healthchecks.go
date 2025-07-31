@@ -17,34 +17,31 @@ func NewHealthcheckView(database *data.Database) HealthcheckView {
 	}
 }
 
-func (av HealthcheckView) Init(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/", func(ctx *gin.Context) {
-		hcs, err := data.GetHealthChecksAll(av.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		ctx.HTML(200, "pages/healthchecks", gin.H{
-			"Healthchecks": hcs,
-		})
-	})
-	routeGroup.GET("/create", func(ctx *gin.Context) {
-		hcs, err := data.GetHealthChecksAll(av.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		ctx.HTML(200, "pages/healthchecks/create", gin.H{
-			"Healthchecks": &hcs,
-		})
-	})
-	idGroup := routeGroup.Group("/:id")
-	{
-		idGroup.GET("/details", av.GetPageHealthcheckDetails)
-		idGroup.GET("/edit", av.GetPageHealthcheckEdit)
+// GetPageHealthchecks renders the page for listing all health checks.
+func (av HealthcheckView) GetPageHealthchecks(ctx *gin.Context) {
+	hcs, err := data.GetHealthChecksAll(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
 	}
+	ctx.HTML(200, "pages/healthchecks", gin.H{
+		"Healthchecks": hcs,
+	})
 }
 
+// GetPageHealthcheckCreate renders the page for creating a new health check.
+func (av HealthcheckView) GetPageHealthcheckCreate(ctx *gin.Context) {
+	hcs, err := data.GetHealthChecksAll(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/healthchecks/create", gin.H{
+		"Healthchecks": &hcs,
+	})
+}
+
+// GetPageHealthcheckDetails renders the details page for a specific health check.
 func (av HealthcheckView) GetPageHealthcheckDetails(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -61,28 +58,7 @@ func (av HealthcheckView) GetPageHealthcheckDetails(ctx *gin.Context) {
 	})
 }
 
-func (av HealthcheckView) GetPageHealthcheckInstanceNew(ctx *gin.Context) {
-	appId, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	app, err := data.GetApplicationDefinitionById(av.Database.Pool, uint64(appId))
-	if err != nil {
-		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	servers, err := data.GetServerAll(av.Database.Pool)
-	if err != nil {
-		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	ctx.HTML(200, "pages/applications/instances/create", gin.H{
-		"Application": app,
-		"Servers":     servers,
-	})
-}
-
+// GetPageHealthcheckEdit renders the page for editing an existing health check.
 func (av HealthcheckView) GetPageHealthcheckEdit(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {

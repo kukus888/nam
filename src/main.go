@@ -67,6 +67,7 @@ func main() {
 	log.Info("Successfully initialised database connection and migrated to latest schema")
 
 	if App.Configuration.WebServer.Enabled {
+		// Start web server
 		go InitWebServer(&App)
 	} else {
 		log.Warn("Web server is disabled in the configuration, skipping web server initialization")

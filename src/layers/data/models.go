@@ -168,3 +168,29 @@ type ApplicationInstanceFull struct {
 	ApplicationDefinition
 	Server
 }
+
+// User represents a user in the system, as stored in the database
+type User struct {
+	Id           uint64 `json:"id" db:"id"`
+	Username     string `json:"username" db:"username"`
+	PasswordHash string `json:"password_hash" db:"password_hash"`
+}
+
+// UserDTO is a Data Transfer Object for User, used for login
+type UserLoginDTO struct {
+	Username *string `json:"username"`
+	Password *string `json:"password"`
+}
+
+type Role struct {
+	Id          uint64 `json:"id" db:"id"`
+	Name        string `json:"name" db:"name"`
+	Description string `json:"description" db:"description"`
+}
+
+type RoleGroup struct {
+	Id          uint64 `json:"id" db:"id"`
+	Name        string `json:"name" db:"name"`
+	Description string `json:"description" db:"description"`
+	Roles       []Role `json:"roles" db:"roles"`
+}

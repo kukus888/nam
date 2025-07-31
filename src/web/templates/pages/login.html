@@ -1,0 +1,100 @@
+{{ define "pages/login" }}
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - NAM</title>
+    {{ template "template/head.includes" }}
+    <style>
+        body {
+            position: relative;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            left: -80px;
+            background: linear-gradient(to left, oklch(71.5% 0.143 215.221), oklch(71.5% 0.143 215.221), transparent 100%);
+            /*border-radius: 50%; oklch(71.5% 0.143 215.221)*/
+            opacity: 0.85;
+            filter: blur(0.5px);
+            pointer-events: none;
+            animation-name: move-particle;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+        @keyframes move-particle {
+            0% {
+                left: -80px;
+                opacity: 0.85;
+            }
+            90% {
+                opacity: 0.85;
+            }
+            100% {
+                left: 100vw;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-r from-indigo-600 to-purple-600 min-h-screen flex flex-col">
+    <div class="flex-grow flex items-center justify-center relative z-10">
+        <div class="max-w-md w-full bg-white shadow-lg rounded-lg p-8">
+            <div class="mb-6 text-center">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Sign in to NAM</h1>
+                <p class="text-sm text-gray-500">Enter your credentials to access your account.</p>
+            </div>
+            <form method="POST" hx-post="/login" hx-ext="submitjson" hx-on::after-request="handleResponse(event)">
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="username" name="username" type="text" required autofocus
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50" />
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="password" name="password" type="password" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-50" />
+                </div>
+                <div id="" class="hidden mb-4 text-red-600 text-sm text-center">
+                    <p id="error-message">Invalid username or password.</p>
+                </div>
+                <button type="submit"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+    <!-- Particle container -->
+    <div id="particle-container" class="absolute inset-0 w-full h-full z-0"></div>
+    <script>
+        function handleResponse(event) {
+            const response = event.detail.xhr.response;
+            if (!response.success) {
+                document.getElementById('error-message').textContent = response.error || 'Invalid username or password.';
+                document.querySelector('.mb-4.text-red-600').classList.remove('hidden');
+            }
+        }
+        // Generate particles with random properties
+        const container = document.getElementById('particle-container');
+        const particleCount = 48;
+        for (let i = 0; i < particleCount; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            // Randomize size, duration, delay, and vertical position
+            const size = Math.random() * 18 + 8; // 8px to 26px
+            const duration = Math.random() * 3 + 3; // 3s to 6s
+            const delay = Math.random() * 5; // 0s to 5s
+            const top = Math.random() * 90 + 2; // 2% to 92% vertical
+            p.style.width = `${2*size}px`;
+            p.style.height = `${size}px`;
+            p.style.top = `${top}%`;
+            p.style.animationDuration = `${duration}s`;
+            p.style.animationDelay = `${delay}s`;
+            container.appendChild(p);
+        }
+    </script>
+</body>
+</html>
+{{ end }}

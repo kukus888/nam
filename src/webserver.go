@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	data "kukus/nam/v2/layers/data"
 	handlers "kukus/nam/v2/layers/handler"
 	v1 "kukus/nam/v2/layers/handler/api/rest/v1"
 	"kukus/nam/v2/layers/handler/htmx"
+	services "kukus/nam/v2/layers/service"
 	"log/slog"
 	"net/http"
 	"os"
@@ -18,6 +20,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 //go:embed web
@@ -65,6 +69,7 @@ func InitWebServer(app *Application) {
 		},
 		Output: os.Stdout,
 	}))
+	app.Engine.NoRoute(handlers.NotFound)
 	// Set up resources
 	app.Engine.FuncMap["formatDuration"] = formatDuration
 	app.Engine.FuncMap["formatTime"] = formatTime
@@ -82,6 +87,8 @@ func InitWebServer(app *Application) {
 		app.Engine.LoadHTMLGlob("./web/templates/*/*.html")
 		app.Engine.Static("/static", "./web/static")
 	}
+	// Alias to shorten code
+	dbPool := App.Database.Pool
 	// REST
 	restV1group := App.Engine.Group("/api/rest/v1")
 	v1.NewApplicationController(App.Database).Init(restV1group.Group("/applications"))
@@ -92,11 +99,58 @@ func InitWebServer(app *Application) {
 	htmx.NewHtmxController(App.Database).Init(App.Engine.Group("/htmx"))
 
 	// Pages
-	handlers.NewPageHandler(App.Database).Init(App.Engine.Group("/"))
-	handlers.NewPageSettingsHandler(App.Database).Init(App.Engine.Group("/settings"))
-	handlers.NewApplicationView(App.Database).Init(App.Engine.Group("/applications"))
-	handlers.NewInstanceView(App.Database).Init(App.Engine.Group("/instances"))
-	handlers.NewHealthcheckView(App.Database).Init(App.Engine.Group("/healthchecks"))
+	handlers.NewLoginPageHandler(App.Database).Init(App.Engine.Group("/login"))
+	// Handlers for the main pages, protected by authentication middleware
+	rootGroup := App.Engine.Group("/")
+	rootGroup.Use(AuthMiddleware())
+
+	ph := handlers.NewPageHandler(App.Database)
+	rootGroup.GET("/", RequireRole(dbPool, "admin"), ph.GetPageDashboard)
+	rootGroup.GET("/dashboard", RequireRole(dbPool, "admin"), ph.GetPageDashboard)
+	{ // Servers
+		rootGroup.GET("/servers", RequireRole(dbPool, "admin"), ph.GetPageServers)
+	}
+	{ // Application Definitions
+		av := handlers.NewApplicationView(App.Database)
+		routeGroup := rootGroup.Group("/applications")
+		routeGroup.Use(RequireRole(dbPool, "admin"))
+		routeGroup.GET("/", av.GetPageApplications)
+		routeGroup.GET("/create", av.GetPageApplicationCreate)
+		idGroup := routeGroup.Group("/:id")
+		{ // Application ID specific routes
+			idGroup.GET("/details", av.GetPageApplicationDetails)
+			idGroup.GET("/edit", av.GetPageApplicationEdit)
+			idGroup.GET("/instances/create", av.GetPageApplicationCreate)
+		}
+	}
+	{ // Application instances
+		iv := handlers.NewInstanceView(App.Database)
+		routeGroup := rootGroup.Group("/instances")
+		routeGroup.Use(RequireRole(dbPool, "admin"))
+		idGroup := routeGroup.Group("/:id")
+		{ // Instance ID specific routes
+			idGroup.GET("/details", iv.GetPageApplicationInstanceDetails)
+		}
+	}
+	{ // Healthchecks
+		hcv := handlers.NewHealthcheckView(App.Database)
+		routeGroup := rootGroup.Group("/healthchecks")
+		routeGroup.Use(RequireRole(dbPool, "admin"))
+		routeGroup.GET("/", hcv.GetPageHealthchecks)
+		routeGroup.GET("/create", hcv.GetPageHealthcheckCreate)
+		idGroup := routeGroup.Group("/:id")
+		{ // Healthcheck ID specific routes
+			idGroup.GET("/details", hcv.GetPageHealthcheckDetails)
+			idGroup.GET("/edit", hcv.GetPageHealthcheckEdit)
+		}
+	}
+	{ // Settings
+		psh := handlers.NewPageSettingsHandler(App.Database)
+		routeGroup := rootGroup.Group("/settings")
+		routeGroup.Use(RequireRole(dbPool, "admin"))
+		routeGroup.GET("/", psh.GetPageSettings)
+		routeGroup.GET("/database", psh.GetPageDatabaseSettings)
+	}
 
 	var err error
 	if app.Configuration.WebServer.TLS.Enabled {
@@ -113,13 +167,6 @@ func LoadHTMLFromEmbedFS(engine *gin.Engine, embedFS embed.FS, pattern string) {
 	tmpl := template.Must(root, LoadAndAddToRoot(engine.FuncMap, root, embedFS, pattern))
 	engine.SetHTMLTemplate(tmpl)
 }
-
-// Method version
-// func (engine *gin.Engine) LoadHTMLFromFS(embedFS embed.FS, pattern string) {
-// 	root := template.New("")
-// 	tmpl := template.Must(root, LoadAndAddToRoot(engine.FuncMap, root, embedFS, pattern))
-// 	engine.SetHTMLTemplate(tmpl)
-// }
 
 func LoadAndAddToRoot(funcMap template.FuncMap, rootTemplate *template.Template, embedFS embed.FS, pattern string) error {
 	pattern = strings.ReplaceAll(pattern, ".", "\\.")
@@ -143,6 +190,64 @@ func LoadAndAddToRoot(funcMap template.FuncMap, rootTemplate *template.Template,
 		return nil
 	})
 	return err
+}
+
+// Middleware to check JWT token and set user context
+// This middleware should be used for routes that require authentication
+// Gets the token from the Authorization header, or from a cookie if not present
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		tokenString := c.GetHeader("Authorization")
+		if tokenString == "" {
+			cookie, err := c.Cookie("token")
+			if err == nil {
+				tokenString = cookie
+			} else {
+				handlers.Unauthorized(c) // No token provided
+				return
+			}
+		}
+
+		claims := &services.Claims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+			return services.GetJWTKeyProvider().Key, nil
+		})
+
+		if err != nil || !token.Valid {
+			handlers.Unauthorized(c) // Invalid token
+			return
+		}
+
+		c.Set("username", claims.Username)
+		c.Next()
+	}
+}
+
+// RBAC Middleware to check user roles for RBAC
+// db - the database connection pool
+// requiredRole - the role that the user must have to access the route
+// If the user does not have the required role, a 403 Forbidden response is returned
+func RequireRole(db *pgxpool.Pool, requiredRole string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		username, exists := c.Get("username")
+		if !exists {
+			handlers.Unauthorized(c)
+			return
+		}
+
+		user, err := data.GetUserByUsername(db, username.(string))
+		if err != nil || user == nil {
+			handlers.Unauthorized(c)
+			return
+		}
+
+		if !user.HasRole(requiredRole) {
+			handlers.Forbidden(c)
+			return
+		}
+
+		c.Next()
+	}
 }
 
 // Add these to your template functions

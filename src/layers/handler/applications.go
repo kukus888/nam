@@ -17,46 +17,60 @@ func NewApplicationView(database *data.Database) ApplicationView {
 	}
 }
 
-/*
- *	Component used for viewing Applications (Definitions and instances), their components, and pages
- */
-func (av ApplicationView) Init(routeGroup *gin.RouterGroup) {
-	routeGroup.GET("/", func(ctx *gin.Context) {
-		apps, err := data.GetApplicationDefinitionsAll(av.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		ctx.HTML(200, "pages/applications", gin.H{
-			"Applications": apps,
-		})
-	})
-	routeGroup.GET("/create", func(ctx *gin.Context) {
-		hcs, err := data.GetHealthChecksAll(av.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		servers, err := data.GetServerAll(av.Database.Pool)
-		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-			return
-		}
-		ctx.HTML(200, "pages/applications/create", gin.H{
-			"Healthchecks": &hcs,
-			"Servers":      &servers,
-		})
-	})
-	// route /applications/:id
-	idGroup := routeGroup.Group("/:id")
-	{
-		idGroup.GET("/edit", av.GetPageApplicationEdit)
-		idGroup.GET("/details", av.GetPageApplicationDetails)
-		idGroup.GET("/instances/create", av.GetPageApplicationInstanceNew)
+// GetPageApplications renders the page with a list of all applications
+func (av ApplicationView) GetPageApplications(ctx *gin.Context) {
+	apps, err := data.GetApplicationDefinitionsAll(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
 	}
-
+	ctx.HTML(200, "pages/applications", gin.H{
+		"Applications": apps,
+	})
 }
 
+// GetPageApplicationCreate renders the page to create a new application definition
+func (av ApplicationView) GetPageApplicationCreate(ctx *gin.Context) {
+	hcs, err := data.GetHealthChecksAll(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	servers, err := data.GetServerAll(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/applications/create", gin.H{
+		"Healthchecks": &hcs,
+		"Servers":      &servers,
+	})
+}
+
+// GetPageApplicationInstanceCreate renders the page to create a new application instance
+func (av ApplicationView) GetPageApplicationInstanceCreate(ctx *gin.Context) {
+	appId, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	app, err := data.GetApplicationDefinitionById(av.Database.Pool, uint64(appId))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	servers, err := data.GetServerAll(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/applications/instances/create", gin.H{
+		"Application": app,
+		"Servers":     servers,
+	})
+}
+
+// GetPageApplicationDetails renders the page to view details of an application definition
 func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -88,30 +102,7 @@ func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 	})
 }
 
-// Renders a page "New Application Instance"
-func (av ApplicationView) GetPageApplicationInstanceNew(ctx *gin.Context) {
-	appId, err := strconv.Atoi(ctx.Param("id"))
-	if err != nil {
-		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
-		return
-	}
-	app, err := data.GetApplicationDefinitionById(av.Database.Pool, uint64(appId))
-	if err != nil {
-		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	servers, err := data.GetServerAll(av.Database.Pool)
-	if err != nil {
-		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
-		return
-	}
-	ctx.HTML(200, "pages/applications/instances/create", gin.H{
-		"Application": app,
-		"Servers":     servers,
-	})
-}
-
-// Renders a page "Edit Application Definition"
+// Render the page to edit an application definition
 func (av ApplicationView) GetPageApplicationEdit(ctx *gin.Context) {
 	appId, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
