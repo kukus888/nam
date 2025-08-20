@@ -94,7 +94,10 @@ func InitWebServer(app *Application) {
 	v1.NewApplicationController(App.Database).Init(restV1group.Group("/applications"))
 	v1.NewServerController(App.Database).Init(restV1group.Group("/servers"))
 	v1.NewHealthcheckController(App.Database).Init(restV1group.Group("/healthchecks"))
-
+	userGroup := restV1group.Group("/users")
+	userGroup.Use(RequireRole(dbPool, "admin")) // Only admin can manage users
+	userHandler := v1.NewUserHandler(dbPool)
+	userGroup.POST("/create", userHandler.CreateUser)
 	// HTMX
 	htmx.NewHtmxController(App.Database).Init(App.Engine.Group("/htmx"))
 
@@ -150,6 +153,8 @@ func InitWebServer(app *Application) {
 		routeGroup.Use(RequireRole(dbPool, "admin"))
 		routeGroup.GET("/", psh.GetPageSettings)
 		routeGroup.GET("/database", psh.GetPageDatabaseSettings)
+		routeGroup.GET("/users", psh.GetPageUsers)
+		routeGroup.GET("/users/create", psh.GetPageUserCreate) // Placeholder for user creation page
 	}
 
 	var err error

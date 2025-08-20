@@ -1,35 +1,20 @@
-CREATE TABLE IF NOT EXISTS "user" (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS "role" (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
+    color VARCHAR(7) NOT NULL,
     description TEXT
 );
 
-CREATE TABLE IF NOT EXISTS "role_user_mapping" (
-    user_id SERIAL REFERENCES "user" (id),
-    role_id SERIAL REFERENCES "role" (id),
-    PRIMARY KEY (user_id, role_id)
-);
-
-CREATE TABLE IF NOT EXISTS rolegroup (
+CREATE TABLE IF NOT EXISTS "user" (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) UNIQUE NOT NULL,
-    description TEXT
+    username VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role_id SERIAL REFERENCES "role" (id)
 );
 
-CREATE TABLE IF NOT EXISTS "rolegroup_role_mapping" (
-    rolegroup_id SERIAL REFERENCES "rolegroup" (id),
-    role_id SERIAL REFERENCES "role" (id),
-    PRIMARY KEY (rolegroup_id, role_id)
-);
-
-CREATE TABLE IF NOT EXISTS "rolegroup_user_mapping" (
-    rolegroup_id SERIAL REFERENCES "rolegroup" (id),
-    user_id SERIAL REFERENCES "user" (id),
-    PRIMARY KEY (rolegroup_id, user_id)
-);
+insert into "role" (name, color, description)
+values
+	('Admin', 'purple', 'Access to everything.'),
+	('Operator', 'blue', 'Access to write and edit, but not all settings.'),
+	('Viewer', 'green', 'Access to view only.');

@@ -3,6 +3,7 @@ package handlers
 import (
 	"kukus/nam/v2/layers/data"
 	services "kukus/nam/v2/layers/service"
+	"slices"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,7 +41,7 @@ func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 			ctx.JSON(404, gin.H{"error": "User not found"})
 			return
 		}
-		if err := services.VerifyPassword(userDao.PasswordHash, *User.Password); err != nil {
+		if err := data.VerifyPassword(userDao.PasswordHash, *User.Password); err != nil {
 			ctx.JSON(401, gin.H{"error": "Invalid credentials"})
 			return
 		}
@@ -64,27 +65,22 @@ func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 			ctx.JSON(400, gin.H{"error": "Admin user already exists"})
 			return
 		}
-		var User data.UserLoginDTO
+		var User data.UserDTO
 		if err := ctx.ShouldBindJSON(&User); err != nil {
 			ctx.JSON(400, gin.H{"error": "Invalid input"})
 			return
 		}
-		if *User.Username == "" || *User.Password == "" {
-			ctx.JSON(400, gin.H{"error": "Username and password are required"})
+		roles, err := data.GetAllRoles(pc.Database.Pool)
+		if err != nil {
+			ctx.JSON(500, gin.H{"error": "Unable to get role list", "trace": err.Error()})
 			return
 		}
-		hashedPassword, err := services.HashPassword(*User.Password)
+		adminRoleId := slices.IndexFunc(roles, func(r data.Role) bool {
+			return r.Name == "Admin"
+		})
+		id, err := data.CreateUser(pc.Database.Pool, User, uint64(roles[adminRoleId].Id))
 		if err != nil {
-			ctx.JSON(500, gin.H{"error": "Error hashing password", "trace": err.Error()})
-			return
-		}
-		user := data.User{
-			Username:     *User.Username,
-			PasswordHash: hashedPassword,
-		}
-		id, err := user.DbInsert(pc.Database.Pool)
-		if err != nil {
-			ctx.JSON(500, gin.H{"error": "Database error", "trace": err.Error()})
+			ctx.JSON(500, gin.H{"error": "Unable to create user", "trace": err.Error()})
 			return
 		}
 		ctx.JSON(200, gin.H{"message": "Admin user created successfully", "user_id": id})

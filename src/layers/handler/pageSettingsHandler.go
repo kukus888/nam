@@ -29,3 +29,21 @@ func (pc PageSettingsHandler) GetPageDatabaseSettings(ctx *gin.Context) {
 		"DbConfigRuntimeParams": connConfig.RuntimeParams,
 	})
 }
+
+func (pc PageSettingsHandler) GetPageUsers(ctx *gin.Context) {
+	usersFull, err := data.GetAllUsersFull(pc.Database.Pool)
+	if err != nil {
+		ctx.HTML(500, "pages/settings/users", gin.H{"error": "Unable to get user list", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/settings/users", gin.H{"users": usersFull})
+}
+
+func (pc PageSettingsHandler) GetPageUserCreate(ctx *gin.Context) {
+	roles, err := data.GetAllRoles(pc.Database.Pool)
+	if err != nil {
+		ctx.HTML(500, "pages/settings/users/create", gin.H{"error": "Unable to get role list", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/settings/users/create", gin.H{"roles": roles})
+}

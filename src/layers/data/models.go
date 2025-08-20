@@ -173,7 +173,23 @@ type ApplicationInstanceFull struct {
 type User struct {
 	Id           uint64 `json:"id" db:"id"`
 	Username     string `json:"username" db:"username"`
+	Email        string `json:"email" db:"email"`
 	PasswordHash string `json:"password_hash" db:"password_hash"`
+	RoleId       uint64 `json:"role_id" db:"role_id"`
+}
+
+// UserDTO is a DTO for crating users
+type UserDTO struct {
+	Username string `json:"username" db:"username"`
+	Email    string `json:"email" db:"email"`
+	Password string `json:"password" db:"password"`
+}
+
+func (u UserDTO) ToUser() (*User, error) {
+	return &User{
+		Username: u.Username,
+		Email:    u.Email,
+	}, nil
 }
 
 // UserDTO is a Data Transfer Object for User, used for login
@@ -182,15 +198,21 @@ type UserLoginDTO struct {
 	Password *string `json:"password"`
 }
 
+// UserFull represents a user with all their details (joins role)
+type UserFull struct {
+	Id              uint64 `json:"id" db:"user_id"`
+	Username        string `json:"username" db:"username"`
+	Email           string `json:"email" db:"email"`
+	PasswordHash    string `json:"password_hash" db:"password_hash"`
+	RoleId          uint64 `json:"role_id" db:"role_id"`
+	RoleName        string `json:"role_name" db:"role_name"`
+	RoleColor       string `json:"role_color" db:"role_color"` // Name of the color for the role, tailwind.css
+	RoleDescription string `json:"role_description" db:"role_description"`
+}
+
 type Role struct {
 	Id          uint64 `json:"id" db:"id"`
 	Name        string `json:"name" db:"name"`
+	Color       string `json:"color" db:"color"` // Name of the color for the role, tailwind.css
 	Description string `json:"description" db:"description"`
-}
-
-type RoleGroup struct {
-	Id          uint64 `json:"id" db:"id"`
-	Name        string `json:"name" db:"name"`
-	Description string `json:"description" db:"description"`
-	Roles       []Role `json:"roles" db:"roles"`
 }

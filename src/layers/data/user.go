@@ -3,10 +3,58 @@ package data
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+func CreateUser(pool *pgxpool.Pool, user UserDTO, roleId uint64) (*uint64, error) {
+	if user.Username == "" || user.Email == "" || user.Password == "" {
+		return nil, fmt.Errorf("Username, email and password are required")
+	}
+	hashedPassword, err := HashPassword(user.Password)
+	if err != nil {
+		return nil, fmt.Errorf("Error hashing password: %w", err)
+	}
+	// Create user in the database
+	u := User{
+		Username:     user.Username,
+		Email:        user.Email,
+		PasswordHash: hashedPassword,
+		RoleId:       roleId,
+	}
+	id, err := u.DbInsert(pool)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating user: %w", err)
+	}
+	// Update roles
+	return id, nil
+}
+
+// Gets all users, and joins with the permissions table
+func GetAllUsersFull(pool *pgxpool.Pool) (*[]UserFull, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+		select u.id as user_id, u.username, u.email, r.id as role_id, r.name as role_name, r.color as role_color, r.description as role_description
+		from "user" u inner join "role" r on u.role_id = r.id;
+	`)
+	if err != nil {
+		return nil, err
+	}
+
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[UserFull])
+	if err != nil {
+		return nil, err
+	}
+
+	return &users, tx.Commit(context.Background())
+}
 
 func (user User) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
@@ -16,9 +64,9 @@ func (user User) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 	defer tx.Rollback(context.Background())
 
 	err = tx.QueryRow(context.Background(), `
-		INSERT INTO "user" (username, password_hash) 
-		VALUES ($1, $2) RETURNING id;
-	`, user.Username, user.PasswordHash).Scan(&user.Id)
+		INSERT INTO "user" (username, password_hash, email, role_id) 
+		VALUES ($1, $2, $3, $4) RETURNING id;
+	`, user.Username, user.PasswordHash, user.Email, user.RoleId).Scan(&user.Id)
 	if err != nil {
 		return nil, err
 	}

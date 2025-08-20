@@ -8,6 +8,69 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Assigns new role to the user, rewriting the old one
+func AssignRoleIdToUser(pool *pgxpool.Pool, userId, roleId uint64) error {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	// Check if the user doesnt have any roles assigned
+	var existingRoleId uint64
+	err = tx.QueryRow(context.Background(), `
+		SELECT role_id FROM user_role_mapping WHERE user_id = $1;
+	`, userId).Scan(&existingRoleId)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		_, err = tx.Exec(context.Background(), `
+			INSERT INTO user_role_mapping (user_id, role_id) 
+			VALUES ($1, $2);
+		`, userId, roleId)
+		if err != nil {
+			return err
+		}
+	} else {
+		// Overwrite the role mapping
+		_, err = tx.Exec(context.Background(), `
+			UPDATE user_role_mapping SET role_id = $1 WHERE user_id = $2;
+		`, roleId, userId)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit(context.Background())
+}
+
+func GetAllRoles(pool *pgxpool.Pool) ([]Role, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+	rows, err := tx.Query(context.Background(), "SELECT id, name, color, description FROM role")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var roles []Role
+	for rows.Next() {
+		var role Role
+		if err := rows.Scan(&role.Id, &role.Name, &role.Color, &role.Description); err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+
 func (role Role) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {

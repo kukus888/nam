@@ -1,0 +1,151 @@
+{{ define "pages/settings/users/create" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add User - Settings</title>
+    {{ template "template/head.includes" }}
+    <style>
+        .profile-picker svg {
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: box-shadow 0.2s;
+            box-shadow: 0 0 0 2px transparent;
+        }
+
+        .profile-picker svg.selected {
+            box-shadow: 0 0 0 2px #6366F1;
+            background: #EEF2FF;
+        }
+
+        .profile-picker svg:hover {
+            box-shadow: 0 0 0 2px #A5B4FC;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-8">
+        <!-- Secondary Navbar -->
+        {{ template "pages/settings/navbar.left" }}
+
+        <!-- Main Content Area -->
+        <main id="settings-content" class="flex-1 min-w-0 max-w-4xl mx-auto">
+            <div class="bg-white shadow rounded-xl py-6 px-10">
+                <div class="flex items-center mb-6">
+                    <a href="/settings/users"
+                        class="mr-4 inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                    </a>
+                    <h1 class="text-2xl font-bold text-gray-900">Add New User</h1>
+                </div>
+                <form method="POST" hx-post="/api/rest/v1/users/create"
+                    hx-redirect="/settings/users" hx-ext="submitjson"
+                    hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText);">
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Username -->
+                        <div class="row-1 col-1">
+                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <input id="username" name="username" type="text" required autofocus
+                                class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        </div>
+                        <!-- Email -->
+                        <div class="row-2 col-1">
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input id="email" name="email" type="email" required
+                                class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        </div>
+                        <!-- Profile Picture Picker -->
+                        <div class="row-start-1 col-start-2 row-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                            <div class="profile-picker grid grid-cols-5 gap-4 justify-center mb-6">
+                                <input type="hidden" name="profile_picture" id="profile_picture" value="bird" />
+                                <!-- Bird (side view, red) -->
+                                <svg data-avatar="bird" class="w-16 h-16 bg-red-100 p-2 selected" viewBox="0 0 64 64"
+                                    fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#FEE2E2" />
+                                    <path d="M16 44 Q28 24 48 36 Q38 28 32 44 Q28 48 16 44 Z" fill="#EF4444" />
+                                    <circle cx="46" cy="36" r="2" fill="#B91C1C" />
+                                </svg>
+                                ...existing code...
+                            </div>
+                        </div>
+                        <!-- Role -->
+                        <div class="row-3 col-1">
+                            <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+                            <select id="role" name="role" required
+                                class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Select role...</option>
+                                {{ range .roles }}
+                                <option value="{{ .Id }}">{{ .Name }}</option>
+                                {{ end }}
+                            </select>
+                        </div>
+                        <!-- Roles explanation -->
+                        <div class="col-2 row-3 row-span-2 mt-6">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h2 class="text-sm font-semibold text-blue-700 mb-2">User Roles & Permissions</h2>
+                                <ul class="text-sm text-gray-700 space-y-1">
+                                    {{ range .roles }}
+                                    <li>
+                                        <span
+                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-{{ .Color }}-100 text-{{ .Color }}-800">
+                                            {{ .Name }}
+                                        </span>
+                                        {{ .Description }}
+                                    </li>
+                                    {{ end }}
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- Password and confirm-->
+                        <div class="row-4 col-1 row-span-2">
+                            <div>
+                                <!-- Password -->
+                                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                                <input id="password" name="password" type="password" required
+                                    class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                <!-- Confirm password -->
+                                <div class="mt-4">
+                                    <label for="confirm_password"
+                                        class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                                    <input id="confirm_password" name="confirm_password" type="password" required
+                                        class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end mt-6">
+                        <button type="submit"
+                            class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Create User
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script>
+        // Avatar picker logic
+        document.querySelectorAll('.profile-picker svg').forEach(function (svg) {
+            svg.addEventListener('click', function () {
+                document.querySelectorAll('.profile-picker svg').forEach(function (s) {
+                    s.classList.remove('selected');
+                });
+                svg.classList.add('selected');
+                document.getElementById('profile_picture').value = svg.getAttribute('data-avatar');
+            });
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}

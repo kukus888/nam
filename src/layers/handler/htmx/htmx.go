@@ -19,7 +19,4 @@ func NewHtmxController(database *data.Database) HtmxController {
 func (hc HtmxController) Init(routeGroup *gin.RouterGroup) {
 	NewApplicationView(hc.Database).Init(routeGroup.Group("/applications"))
 	NewHtmxHealthHandler(hc.Database.Pool).Init(routeGroup.Group("/health"))
-
-	NewItemView(hc.Database).Init(routeGroup.Group("/items"))
-
 }
