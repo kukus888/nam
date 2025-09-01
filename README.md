@@ -25,7 +25,7 @@ NAM uses Role-Based Access Control (RBAC) by default. On the first run, there is
 Adjust the following command for your environment:
 
 ```bash
-curl http://localhost:8080/login/setup -d '{"username":"admin","password":"admin"}' -X POST
+curl http://localhost:8080/login/setup -d '{"username":"admin","password":"admin","email":"admin@nam.local"}' -X POST
 ```
 
 A successful response will look like:
@@ -33,14 +33,6 @@ A successful response will look like:
 ```json
 {"message":"Admin user created successfully","user_id":1}
 ```
-
-# Usage
-## Start/Stop/Restart
-To start/stop/restart a service, use the following endpoint:
-```bash
-curl http://localhost:8080/service/start -d '{"service":"httpd"}' -X POST
-```
-You 
 
 # Podman development environment
 To setup podman environment, simply enter `dev-env` folder, and run:
@@ -50,11 +42,15 @@ podman compose up -d
 This will create a rundeck community cluster, as well as nginx for balancing, and two test subjects (simple http web server and openssh server).
 
 `web` - Returns `200 OK` on `GET /` and errors on other endpoints.
+
 `openssh-server` - Server for playing with ssh. Default login is `admin:password`; `ssh admin@127.0.0.1 -p 2222`
 
 [CGO_ENABLE](https://github.com/go101/go101/wiki/CGO-Environment-Setup)
 
 # TODO
+
+## Maintenance mode
+Turn maintenance mode on/off on specific application instances
 
 ### IBM MQ Integration
 Watch IBM MQ Queue Managers for health status.

@@ -11,11 +11,11 @@ import (
 
 func CreateUser(pool *pgxpool.Pool, user UserDTO, roleId uint64) (*uint64, error) {
 	if user.Username == "" || user.Email == "" || user.Password == "" {
-		return nil, fmt.Errorf("Username, email and password are required")
+		return nil, fmt.Errorf("username, email and password are required")
 	}
 	hashedPassword, err := HashPassword(user.Password)
 	if err != nil {
-		return nil, fmt.Errorf("Error hashing password: %w", err)
+		return nil, fmt.Errorf("error hashing password: %w", err)
 	}
 	// Create user in the database
 	u := User{
@@ -26,7 +26,7 @@ func CreateUser(pool *pgxpool.Pool, user UserDTO, roleId uint64) (*uint64, error
 	}
 	id, err := u.DbInsert(pool)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating user: %w", err)
+		return nil, fmt.Errorf("error creating user: %w", err)
 	}
 	// Update roles
 	return id, nil
@@ -56,6 +56,7 @@ func GetAllUsersFull(pool *pgxpool.Pool) (*[]UserFull, error) {
 	return &users, tx.Commit(context.Background())
 }
 
+// Helper insert function. Use CreateUser instead
 func (user User) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -99,6 +100,32 @@ func GetUserByUsername(pool *pgxpool.Pool, username string) (*User, error) {
 	return &user, tx.Commit(context.Background())
 }
 
+func GetUserById(pool *pgxpool.Pool, id int) (*User, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+		SELECT * FROM "user" WHERE id = $1;
+	`, id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No user found
+	} else if err != nil {
+		return nil, err
+	}
+
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[User])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No user found
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &user, tx.Commit(context.Background())
+}
+
 func GetUserCount(pool *pgxpool.Pool) (int, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
@@ -120,4 +147,62 @@ func GetUserCount(pool *pgxpool.Pool) (int, error) {
 func (user User) HasRole(role string) bool {
 	return true // Placeholder for role checking logic
 	// TODO: Implement role checking logic based on the user's roles
+}
+
+// Removes this user from the database
+func (user User) Delete(pool *pgxpool.Pool) error {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(context.Background(), `
+		DELETE FROM "user" WHERE id = $1;
+	`, user.Id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(context.Background())
+}
+
+// Updates all the users information, except password, in database
+func (user User) UpdateWithoutPassword(pool *pgxpool.Pool) error {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(context.Background(), `
+		UPDATE "user" SET username = $1, email = $2, role_id = $3, color = $4 WHERE id = $5;
+	`, user.Username, user.Email, user.RoleId, user.Color, user.Id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(context.Background())
+}
+
+func (user User) UpdatePassword(pool *pgxpool.Pool, newPassword string) error {
+	hash, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(context.Background(), `
+		UPDATE "user" SET password_hash = $1 WHERE id = $2;
+	`, hash, user.Id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit(context.Background())
 }

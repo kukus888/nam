@@ -1,0 +1,305 @@
+{{ define "pages/settings/users/edit" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit User - Settings</title>
+    {{ template "template/head.includes" }}
+    <style>
+        .profile-picker svg {
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: box-shadow 0.2s;
+            box-shadow: 0 0 0 2px transparent;
+        }
+
+        .profile-picker svg.selected {
+            box-shadow: 0 0 0 2px #6366F1;
+            background: #EEF2FF;
+        }
+
+        .profile-picker svg:hover {
+            box-shadow: 0 0 0 2px #A5B4FC;
+        }
+
+        .password-section {
+            border-top: 1px solid #e5e7eb;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-8">
+        <!-- Secondary Navbar -->
+        {{ template "pages/settings/navbar.left" }}
+
+        <!-- Main Content Area -->
+        <main id="settings-content" class="flex-1 min-w-0 max-w-4xl mx-auto">
+            <div class="bg-white shadow rounded-xl py-6 px-10">
+                <div class="flex items-center mb-6">
+                    <a href="/settings/users"
+                        class="mr-4 inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                    </a>
+                    <h1 class="text-2xl font-bold text-gray-900">Edit User: {{ .user.Username }}</h1>
+                </div>
+
+                <!-- User Information Form -->
+                <form method="POST" hx-put="/api/rest/v1/users/{{ .user.Id }}"
+                    hx-redirect="/settings/users" hx-ext="submitjson"
+                    hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText);">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- Invisible input for id -->
+                        <input type="hidden" name="id" value="{{ .user.Id }}" />
+                        <!-- Username -->
+                        <div class="row-1 col-1">
+                            <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                            <input id="username" name="username" type="text" required autofocus value="{{ .user.Username }}"
+                                class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="row-2 col-1">
+                            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input id="email" name="email" type="email" required value="{{ .user.Email }}"
+                                class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                        </div>
+
+                        <!-- Profile Picture Picker -->
+                        <div class="row-start-1 col-start-2 row-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                            <div class="profile-picker grid grid-cols-5 gap-4 justify-center mb-6">
+                                <input type="hidden" name="color" id="profile_picture" value="{{ .user.Color }}" />
+                                
+                                <!-- Bird (side view, red) -->
+                                <svg data-avatar="bird" class="w-16 h-16 bg-red-100 p-2 {{ if eq .user.Color "bird" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#FEE2E2" />
+                                    <path d="M16 44 Q28 24 48 36 Q38 28 32 44 Q28 48 16 44 Z" fill="#EF4444" />
+                                    <circle cx="46" cy="36" r="2" fill="#B91C1C" />
+                                </svg>
+
+                                <!-- Cat (orange) -->
+                                <svg data-avatar="cat" class="w-16 h-16 bg-orange-100 p-2 {{ if eq .user.Color "cat" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#FED7AA" />
+                                    <path d="M20 20 L24 12 L28 20 M36 20 L40 12 L44 20" stroke="#EA580C" stroke-width="2" fill="none" />
+                                    <circle cx="32" cy="32" r="12" fill="#FB923C" />
+                                    <circle cx="28" cy="28" r="2" fill="#1F2937" />
+                                    <circle cx="36" cy="28" r="2" fill="#1F2937" />
+                                    <path d="M26 36 Q32 40 38 36" stroke="#1F2937" stroke-width="2" fill="none" />
+                                </svg>
+
+                                <!-- Dog (brown) -->
+                                <svg data-avatar="dog" class="w-16 h-16 bg-yellow-100 p-2 {{ if eq .user.Color "dog" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#FEF3C7" />
+                                    <ellipse cx="20" cy="25" rx="6" ry="10" fill="#92400E" />
+                                    <ellipse cx="44" cy="25" rx="6" ry="10" fill="#92400E" />
+                                    <circle cx="32" cy="35" r="15" fill="#D97706" />
+                                    <circle cx="28" cy="30" r="2" fill="#1F2937" />
+                                    <circle cx="36" cy="30" r="2" fill="#1F2937" />
+                                    <ellipse cx="32" cy="36" rx="3" ry="2" fill="#1F2937" />
+                                    <path d="M26 42 Q32 46 38 42" stroke="#1F2937" stroke-width="2" fill="none" />
+                                </svg>
+
+                                <!-- Robot (blue) -->
+                                <svg data-avatar="robot" class="w-16 h-16 bg-blue-100 p-2 {{ if eq .user.Color "robot" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#DBEAFE" />
+                                    <rect x="20" y="20" width="24" height="24" rx="4" fill="#3B82F6" />
+                                    <circle cx="26" cy="28" r="2" fill="#1E40AF" />
+                                    <circle cx="38" cy="28" r="2" fill="#1E40AF" />
+                                    <rect x="28" y="34" width="8" height="2" fill="#1E40AF" />
+                                    <rect x="30" y="16" width="4" height="4" rx="2" fill="#6B7280" />
+                                </svg>
+
+                                <!-- Person (green) -->
+                                <svg data-avatar="person" class="w-16 h-16 bg-green-100 p-2 {{ if eq .user.Color "person" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#D1FAE5" />
+                                    <circle cx="32" cy="24" r="8" fill="#10B981" />
+                                    <path d="M18 48 Q18 36 32 36 Q46 36 46 48" fill="#10B981" />
+                                </svg>
+
+                                <!-- Bear (dark brown) -->
+                                <svg data-avatar="bear" class="w-16 h-16 bg-amber-100 p-2 {{ if eq .user.Color "bear" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#FEF3C7" />
+                                    <circle cx="22" cy="22" r="6" fill="#92400E" />
+                                    <circle cx="42" cy="22" r="6" fill="#92400E" />
+                                    <circle cx="32" cy="32" r="14" fill="#A16207" />
+                                    <circle cx="28" cy="28" r="2" fill="#1F2937" />
+                                    <circle cx="36" cy="28" r="2" fill="#1F2937" />
+                                    <ellipse cx="32" cy="34" rx="2" ry="1" fill="#1F2937" />
+                                    <path d="M28 38 Q32 40 36 38" stroke="#1F2937" stroke-width="2" fill="none" />
+                                </svg>
+
+                                <!-- Fox (red-orange) -->
+                                <svg data-avatar="fox" class="w-16 h-16 bg-rose-100 p-2 {{ if eq .user.Color "fox" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#FFE4E6" />
+                                    <path d="M20 20 L26 12 L32 20 L38 12 L44 20 L38 26 L32 20 L26 26 Z" fill="#F59E0B" />
+                                    <circle cx="32" cy="30" r="10" fill="#F97316" />
+                                    <circle cx="28" cy="26" r="2" fill="#1F2937" />
+                                    <circle cx="36" cy="26" r="2" fill="#1F2937" />
+                                    <ellipse cx="32" cy="30" rx="2" ry="1" fill="#1F2937" />
+                                    <path d="M28 34 Q32 36 36 34" stroke="#1F2937" stroke-width="2" fill="none" />
+                                </svg>
+
+                                <!-- Penguin (black/white) -->
+                                <svg data-avatar="penguin" class="w-16 h-16 bg-slate-100 p-2 {{ if eq .user.Color "penguin" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#F1F5F9" />
+                                    <ellipse cx="32" cy="35" rx="12" ry="16" fill="#1F2937" />
+                                    <ellipse cx="32" cy="35" rx="8" ry="12" fill="#FFFFFF" />
+                                    <circle cx="28" cy="26" r="2" fill="#1F2937" />
+                                    <circle cx="36" cy="26" r="2" fill="#1F2937" />
+                                    <path d="M30 30 L34 30" stroke="#F59E0B" stroke-width="2" />
+                                </svg>
+
+                                <!-- Lion (golden) -->
+                                <svg data-avatar="lion" class="w-16 h-16 bg-yellow-100 p-2 {{ if eq .user.Color "lion" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#FEF3C7" />
+                                    <circle cx="32" cy="32" r="18" fill="#F59E0B" stroke="#D97706" stroke-width="3" />
+                                    <circle cx="32" cy="32" r="10" fill="#FBBF24" />
+                                    <circle cx="28" cy="28" r="2" fill="#1F2937" />
+                                    <circle cx="36" cy="28" r="2" fill="#1F2937" />
+                                    <ellipse cx="32" cy="34" rx="2" ry="1" fill="#1F2937" />
+                                    <path d="M28 38 Q32 40 36 38" stroke="#1F2937" stroke-width="2" fill="none" />
+                                </svg>
+
+                                <!-- Owl (purple) -->
+                                <svg data-avatar="owl" class="w-16 h-16 bg-purple-100 p-2 {{ if eq .user.Color "owl" }}selected{{ end }}" viewBox="0 0 64 64" fill="none">
+                                    <rect width="64" height="64" rx="16" fill="#F3E8FF" />
+                                    <path d="M24 16 L32 24 L40 16 L44 20 L40 28 L32 36 L24 28 L20 20 Z" fill="#8B5CF6" />
+                                    <circle cx="28" cy="26" r="4" fill="#FFFFFF" />
+                                    <circle cx="36" cy="26" r="4" fill="#FFFFFF" />
+                                    <circle cx="28" cy="26" r="2" fill="#1F2937" />
+                                    <circle cx="36" cy="26" r="2" fill="#1F2937" />
+                                    <path d="M30 32 L32 34 L34 32" stroke="#F59E0B" stroke-width="2" fill="none" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Role -->
+                        <div class="row-3 col-1">
+                            <label for="role" class="block text-sm font-medium text-gray-700">Role</label>
+                            <select id="role" name="role_id" required
+                                class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                {{ range .roles }}
+                                <option value="{{ .Id }}" {{ if eq .Id $.user.RoleId }}selected{{ end }}>{{ .Name }}</option>
+                                {{ end }}
+                            </select>
+                        </div>
+
+                        <!-- Roles explanation -->
+                        <div class="col-2 row-3 row-span-2 mt-6">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <h2 class="text-sm font-semibold text-blue-700 mb-2">User Roles & Permissions</h2>
+                                <ul class="text-sm text-gray-700 space-y-1">
+                                    {{ range .roles }}
+                                    <li>
+                                        <span
+                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-{{ .Color }}-100 text-{{ .Color }}-800">
+                                            {{ .Name }}
+                                        </span>
+                                        {{ .Description }}
+                                    </li>
+                                    {{ end }}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end mt-6">
+                        <button type="submit"
+                            class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Update User
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Password Change Section -->
+                <div class="password-section">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Change Password</h2>
+                    <form method="POST" hx-put="/api/rest/v1/users/{{ .user.Id }}/password"
+                        hx-ext="submitjson" hx-redirect="/settings/users"
+                        hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText);">
+                        
+                        <!-- Invisible input for id -->
+                        <input type="hidden" name="id" value="{{ .user.Id }}" />
+
+                        <div id="password-form" class="grid grid-cols-2 gap-4">
+                            <!-- New Password -->
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-gray-700">New Password</label>
+                                <input id="password" name="password" type="password" required
+                                    class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                            </div>
+                            
+                            <!-- Confirm New Password -->
+                            <div>
+                                <label for="password_confirm" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                                <input id="password_confirm" name="password_confirm" type="password" required
+                                    class="mt-1 block w-full pl-3 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-4">
+                            <button type="submit"
+                                class="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                Change Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Account Actions Section -->
+                <div class="password-section">
+                    <h2 class="text-lg font-medium text-gray-900 mb-4">Account Actions</h2>
+                    <div class="flex space-x-4">
+                        <!-- Delete User -->
+                        <button hx-delete="/api/rest/v1/users/{{ .user.Id }}"
+                            hx-confirm="Are you sure you want to permanently delete this user? This action cannot be undone."
+                            hx-on::after-request="if(event.detail.successful) window.location.href='/settings/users';"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Delete User
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Avatar picker logic
+        document.querySelectorAll('.profile-picker svg').forEach(function (svg) {
+            svg.addEventListener('click', function () {
+                document.querySelectorAll('.profile-picker svg').forEach(function (s) {
+                    s.classList.remove('selected');
+                });
+                svg.classList.add('selected');
+                document.getElementById('profile_picture').value = svg.getAttribute('data-avatar');
+            });
+        });
+
+        // Password confirmation validation
+        document.getElementById('password_confirm').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirm = this.value;
+            
+            if (password !== confirm) {
+                this.setCustomValidity('Passwords do not match');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}

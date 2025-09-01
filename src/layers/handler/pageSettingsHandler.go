@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"kukus/nam/v2/layers/data"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -46,4 +47,24 @@ func (pc PageSettingsHandler) GetPageUserCreate(ctx *gin.Context) {
 		return
 	}
 	ctx.HTML(200, "pages/settings/users/create", gin.H{"roles": roles})
+}
+
+func (pc PageSettingsHandler) GetPageUserEdit(ctx *gin.Context) {
+	id := ctx.Param("id")
+	userId, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.HTML(400, "pages/settings/users/edit", gin.H{"error": "Invalid user ID", "trace": err.Error()})
+		return
+	}
+	user, err := data.GetUserById(pc.Database.Pool, userId)
+	if err != nil {
+		ctx.HTML(500, "pages/settings/users/edit", gin.H{"error": "Unable to get user", "trace": err.Error()})
+		return
+	}
+	roles, err := data.GetAllRoles(pc.Database.Pool)
+	if err != nil {
+		ctx.HTML(500, "pages/settings/users/edit", gin.H{"error": "Unable to get role list", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/settings/users/edit", gin.H{"user": user, "roles": roles})
 }

@@ -176,12 +176,19 @@ type User struct {
 	Email        string `json:"email" db:"email"`
 	PasswordHash string `json:"password_hash" db:"password_hash"`
 	RoleId       uint64 `json:"role_id" db:"role_id"`
+	Color        string `json:"color" db:"color"`
 }
 
-// UserDTO is a DTO for crating users
+// UserDTO is a DTO for creating users
 type UserDTO struct {
 	Username string `json:"username" db:"username"`
 	Email    string `json:"email" db:"email"`
+	Password string `json:"password" db:"password"`
+	RoleId   uint64 `json:"role_id" db:"role_id"`
+}
+
+type UserChangePasswordDTO struct {
+	Id       uint64 `json:"id" db:"id"`
 	Password string `json:"password" db:"password"`
 }
 

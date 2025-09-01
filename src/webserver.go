@@ -9,7 +9,7 @@ import (
 	"io/fs"
 	data "kukus/nam/v2/layers/data"
 	handlers "kukus/nam/v2/layers/handler"
-	v1 "kukus/nam/v2/layers/handler/api/rest/v1"
+	apiRestV1 "kukus/nam/v2/layers/handler/api/rest/v1"
 	"kukus/nam/v2/layers/handler/htmx"
 	services "kukus/nam/v2/layers/service"
 	"log/slog"
@@ -91,13 +91,20 @@ func InitWebServer(app *Application) {
 	dbPool := App.Database.Pool
 	// REST
 	restV1group := App.Engine.Group("/api/rest/v1")
-	v1.NewApplicationController(App.Database).Init(restV1group.Group("/applications"))
-	v1.NewServerController(App.Database).Init(restV1group.Group("/servers"))
-	v1.NewHealthcheckController(App.Database).Init(restV1group.Group("/healthchecks"))
-	userGroup := restV1group.Group("/users")
-	userGroup.Use(RequireRole(dbPool, "admin")) // Only admin can manage users
-	userHandler := v1.NewUserHandler(dbPool)
-	userGroup.POST("/create", userHandler.CreateUser)
+	restV1group.Use(AuthMiddleware())
+	apiRestV1.NewApplicationController(App.Database).Init(restV1group.Group("/applications"))
+	apiRestV1.NewServerController(App.Database).Init(restV1group.Group("/servers"))
+	apiRestV1.NewHealthcheckController(App.Database).Init(restV1group.Group("/healthchecks"))
+	{
+		userHandler := apiRestV1.NewUserHandler(dbPool)
+		userGroup := restV1group.Group("/users")
+		userGroup.Use(RequireRole(dbPool, "admin")) // Only admin can manage users
+		userGroup.POST("/create", userHandler.CreateUser)
+		userGroup.DELETE("/:id", userHandler.DeleteUser)
+		userGroup.PUT("/:id", userHandler.UpdateUser)
+		userGroup.PUT("/:id/password", userHandler.UpdatePassword)
+	}
+
 	// HTMX
 	htmx.NewHtmxController(App.Database).Init(App.Engine.Group("/htmx"))
 
@@ -155,6 +162,7 @@ func InitWebServer(app *Application) {
 		routeGroup.GET("/database", psh.GetPageDatabaseSettings)
 		routeGroup.GET("/users", psh.GetPageUsers)
 		routeGroup.GET("/users/create", psh.GetPageUserCreate) // Placeholder for user creation page
+		routeGroup.GET("/users/:id/edit", psh.GetPageUserEdit)
 	}
 
 	var err error
