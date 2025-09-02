@@ -23,7 +23,7 @@ func NewDatabase(dsn string) (*Database, error) {
 }
 
 // Returns size of database, in bytes, or an error if there was one
-func (db *Database) GetDabaseSize() (*int64, error) {
+func (db *Database) GetDatabaseSize() (*int64, error) {
 	var dbSize int64
 	err := db.Pool.QueryRow(context.Background(), "SELECT pg_database_size('$1')", db.Pool.Config().ConnConfig.Database).Scan(&dbSize)
 	if err != nil {

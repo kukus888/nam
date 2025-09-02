@@ -1,5 +1,5 @@
 postgres:
-  dsn: "postgres://postgres:heslo123@localhost:5432/postgres?application_name=nam&sslmode=disable"
+  dsn: "postgres://postgres:heslo123@localhost:5432/postgres?application_name=nam&sslmode=disable&pool_max_conns=10"
 
 logging:
   level: info # debug, info, error
