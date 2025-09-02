@@ -82,6 +82,7 @@ func (ac *HealthcheckController) NewHealthcheck(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to create Healthcheck", "trace": err.Error()})
 		return
 	}
+	ctx.Header("HX-Redirect", "/healthchecks")
 	ctx.JSON(201, id)
 }
 
@@ -103,6 +104,7 @@ func (ac *HealthcheckController) UpdateHealthcheck(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to update Healthcheck", "trace": err.Error()})
 		return
 	}
+	ctx.Header("HX-Redirect", "/healthchecks")
 	ctx.JSON(200, dto)
 }
 
@@ -118,5 +120,6 @@ func (ac *HealthcheckController) Delete(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to delete Healthcheck", "trace": err.Error()})
 		return
 	}
+	ctx.Header("HX-Redirect", "/healthchecks")
 	ctx.JSON(204, gin.H{"message": "Healthcheck deleted successfully"})
 }

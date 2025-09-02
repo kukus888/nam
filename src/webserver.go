@@ -75,6 +75,8 @@ func InitWebServer(app *Application) {
 	app.Engine.FuncMap["formatTime"] = formatTime
 	app.Engine.FuncMap["formatTimeRFC3339Nano"] = formatTimeRFC3339Nano
 	app.Engine.FuncMap["sub1"] = sub1
+	app.Engine.FuncMap["add"] = func(a, b int) int { return a + b }
+	app.Engine.FuncMap["deref"] = deref
 
 	if App.Configuration.WebServer.Mode == "release" {
 		LoadHTMLFromEmbedFS(app.Engine, webResources, "*")
@@ -117,8 +119,13 @@ func InitWebServer(app *Application) {
 	ph := handlers.NewPageHandler(App.Database)
 	rootGroup.GET("/", RequireRole(dbPool, "admin"), ph.GetPageDashboard)
 	rootGroup.GET("/dashboard", RequireRole(dbPool, "admin"), ph.GetPageDashboard)
+	rootGroup.GET("/dashboard/component", RequireRole(dbPool, "admin"), ph.GetDashboardComponent)
+	rootGroup.GET("/dashboard/data", RequireRole(dbPool, "admin"), ph.GetDashboardDataAPI)
 	{ // Servers
-		rootGroup.GET("/servers", RequireRole(dbPool, "admin"), ph.GetPageServers)
+		psh := handlers.NewPageServerHandler(App.Database)
+		rootGroup.GET("/servers", RequireRole(dbPool, "admin"), psh.GetPageServers)
+		rootGroup.GET("/servers/create", RequireRole(dbPool, "admin"), psh.GetPageServerCreate)
+		rootGroup.GET("/servers/:id/edit", RequireRole(dbPool, "admin"), psh.GetPageServerEdit)
 	}
 	{ // Application Definitions
 		av := handlers.NewApplicationView(App.Database)
@@ -130,7 +137,7 @@ func InitWebServer(app *Application) {
 		{ // Application ID specific routes
 			idGroup.GET("/details", av.GetPageApplicationDetails)
 			idGroup.GET("/edit", av.GetPageApplicationEdit)
-			idGroup.GET("/instances/create", av.GetPageApplicationCreate)
+			idGroup.GET("/instances/create", av.GetPageApplicationInstanceCreate)
 		}
 	}
 	{ // Application instances
@@ -286,4 +293,9 @@ func formatTimeRFC3339Nano(t time.Time) string {
 
 func sub1(x int) int {
 	return x - 1
+}
+
+// Dereference a pointer to a boolean value
+func deref(b *bool) bool {
+	return *b
 }

@@ -74,6 +74,7 @@ func (sc *ServerController) NewServer(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to create Server", "trace": err.Error()})
 		return
 	}
+	ctx.Header("HX-Redirect", "/servers")
 	ctx.JSON(201, id)
 }
 
@@ -88,6 +89,7 @@ func (sc *ServerController) RemoveById(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to remove server", "trace": err.Error()})
 		return
 	} else {
+		ctx.Header("HX-Redirect", "/servers")
 		ctx.Status(200)
 	}
 }
@@ -104,5 +106,6 @@ func (sc *ServerController) UpdateById(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to update Server", "trace": err.Error()})
 		return
 	}
+	ctx.Header("HX-Redirect", "/servers")
 	ctx.JSON(200, server)
 }

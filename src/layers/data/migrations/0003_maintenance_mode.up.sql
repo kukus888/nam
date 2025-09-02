@@ -1,0 +1,1 @@
+ALTER TABLE "application_instance" ADD COLUMN "maintenance_mode" BOOLEAN NOT NULL DEFAULT FALSE;

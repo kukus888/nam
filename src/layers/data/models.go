@@ -153,6 +153,7 @@ type ApplicationDefinitionDAO struct {
 type ApplicationInstance struct {
 	Id                      uint   `json:"id" db:"id"`
 	Name                    string `json:"name" db:"name"`
+	MaintenanceMode         bool   `json:"maintenance_mode" db:"maintenance_mode"`
 	TopologyNodeID          uint   `json:"topology_node_id" db:"topology_node_id"`
 	ApplicationDefinitionID uint   `json:"application_definition_id"`
 	ServerID                uint   `json:"server_id" db:"server_id"`
@@ -162,9 +163,10 @@ type ApplicationInstance struct {
 // Joined with ApplicationDefinition and Server
 // This struct is used to return full information about the application instance
 type ApplicationInstanceFull struct {
-	Id             uint   `json:"id" db:"application_instance_id"`
-	Name           string `json:"name" db:"application_instance_name"`
-	TopologyNodeID uint   `json:"topology_node_id" db:"topology_node_id"`
+	Id              uint   `json:"id" db:"application_instance_id"`
+	Name            string `json:"name" db:"application_instance_name"`
+	MaintenanceMode bool   `json:"maintenance_mode" db:"maintenance_mode"`
+	TopologyNodeID  uint   `json:"topology_node_id" db:"topology_node_id"`
 	ApplicationDefinition
 	Server
 }
@@ -176,7 +178,6 @@ type User struct {
 	Email        string `json:"email" db:"email"`
 	PasswordHash string `json:"password_hash" db:"password_hash"`
 	RoleId       uint64 `json:"role_id" db:"role_id"`
-	Color        string `json:"color" db:"color"`
 }
 
 // UserDTO is a DTO for creating users

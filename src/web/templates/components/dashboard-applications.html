@@ -1,0 +1,199 @@
+{{ define "components/dashboard-applications" }}
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    {{ range . }}
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <!-- Application Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <a href="/applications/{{ .Id }}/details" class="flex items-center space-x-3 hover:text-indigo-600">
+                        <!-- Application Icon -->
+                        <div class="flex-shrink-0">
+                            {{ if eq .Type "JBoss" }}
+                            <img class="h-8 w-8" src="/static/icons/jboss.svg" alt="{{ .Type }}">
+                            {{ else if eq .Type "Springboot" }}
+                            <img class="h-8 w-8" src="/static/icons/spring.svg" alt="{{ .Type }}">
+                            {{ else }}
+                            <img class="h-8 w-8" src="/static/icons/golang.svg" alt="{{ .Type }}">
+                            {{ end }}
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ .Name }}</h3>
+                            <p class="text-sm text-gray-500">{{ .Type }} • Port {{ .Port }}</p>
+                        </div>
+                    </a>
+                </div>
+                <!-- Overall Health Status Badge -->
+                <div class="flex-shrink-0">
+                    {{ if eq .HealthStatus "healthy" }}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <svg class="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3"/>
+                        </svg>
+                        Healthy
+                    </span>
+                    {{ else if eq .HealthStatus "degraded" }}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <svg class="mr-1.5 h-2 w-2 text-yellow-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3"/>
+                        </svg>
+                        Degraded
+                    </span>
+                    {{ else if eq .HealthStatus "unhealthy" }}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <svg class="mr-1.5 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3"/>
+                        </svg>
+                        Unhealthy
+                    </span>
+                    {{ else }}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <svg class="mr-1.5 h-2 w-2 text-gray-400" fill="currentColor" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3"/>
+                        </svg>
+                        Unknown
+                    </span>
+                    {{ end }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Summary -->
+        <div class="px-6 py-3 bg-gray-50">
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">{{ .TotalCount }} instances</span>
+                <div class="flex space-x-4">
+                    {{ if gt .HealthyCount 0 }}
+                    <span class="text-green-600">{{ .HealthyCount }} healthy</span>
+                    {{ end }}
+                    {{ if gt .UnhealthyCount 0 }}
+                    <span class="text-red-600">{{ .UnhealthyCount }} unhealthy</span>
+                    {{ end }}
+                    {{ if gt .MaintenanceCount 0 }}
+                    <span class="text-yellow-600">{{ .MaintenanceCount }} maintenance</span>
+                    {{ end }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Instances List -->
+        <div class="px-6 py-4 space-y-3">
+            {{ if eq (len .Instances) 0 }}
+            <div class="text-center py-4">
+                <p class="text-sm text-gray-500">No instances deployed</p>
+                <a href="/applications/{{ .Id }}/details" class="mt-2 inline-flex items-center text-sm text-indigo-600 hover:text-indigo-500">
+                    Add Instance
+                    <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                </a>
+            </div>
+            {{ else }}
+            {{ range .Instances }}
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div class="flex items-center space-x-3">
+                    <!-- Instance Health Indicator -->
+                    <div class="flex-shrink-0">
+                        {{ if .MaintenanceMode }}
+                        <div class="h-3 w-3 rounded-full bg-yellow-400" title="Maintenance Mode"></div>
+                        {{ else if eq .IsHealthy nil }}
+                        <div class="h-3 w-3 rounded-full bg-gray-400" title="No Health Data"></div>
+                        {{ else if .IsHealthy }}
+                        {{ $healthy := deref .IsHealthy }}
+                        {{ if eq $healthy true }}
+                        <div class="h-3 w-3 rounded-full bg-green-400" title="Healthy"></div>
+                        {{ else }}
+                        <div class="h-3 w-3 rounded-full bg-red-400" title="Unhealthy"></div>
+                        {{ end }}
+                        {{ else }}
+                        <div class="h-3 w-3 rounded-full bg-gray-400" title="No Health Data"></div>
+                        {{ end }}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <a href="/instances/{{ .Id }}/details" class="text-sm font-medium text-gray-900 hover:text-indigo-600">
+                            {{ .Name }}
+                        </a>
+                        <p class="text-xs text-gray-500 truncate">{{ .ServerAlias }} ({{ .ServerHostname }})</p>
+                        {{ if and .LastCheckTime (not .MaintenanceMode) }}
+                        <p class="text-xs text-gray-400">Last check: {{ .LastCheckTime.Format "15:04:05" }}</p>
+                        {{ end }}
+                    </div>
+                </div>
+                <div class="flex-shrink-0 text-right">
+                    {{ if .MaintenanceMode }}
+                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                        Maintenance
+                    </span>
+                    {{ else if eq .IsHealthy nil }}
+                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                        No Data
+                    </span>
+                    {{ else if .IsHealthy }}
+                    {{ $healthy := deref .IsHealthy }}
+                    {{ if eq $healthy true }}
+                    <div class="text-right">
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                            Healthy
+                        </span>
+                        {{ if .ResponseTime }}
+                        <p class="text-xs text-gray-400 mt-1">{{ .ResponseTime }}ms</p>
+                        {{ end }}
+                    </div>
+                    {{ else }}
+                    <div class="text-right">
+                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                            Failed
+                        </span>
+                        {{ if .ErrorMessage }}
+                        <p class="text-xs text-gray-400 mt-1 max-w-20 truncate" title="{{ .ErrorMessage }}">{{ .ErrorMessage }}</p>
+                        {{ end }}
+                    </div>
+                    {{ end }}
+                    {{ else }}
+                    <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                        No Data
+                    </span>
+                    {{ end }}
+                </div>
+            </div>
+            {{ end }}
+            {{ end }}
+        </div>
+
+        <!-- Quick Actions Footer -->
+        <div class="px-6 py-3 bg-gray-50 border-t border-gray-200">
+            <div class="flex justify-between items-center">
+                <a href="/applications/{{ .Id }}/details" class="text-sm text-indigo-600 hover:text-indigo-500">
+                    View Details
+                </a>
+                {{ if gt (len .Instances) 0 }}
+                <button class="text-sm text-gray-600 hover:text-gray-500" 
+                        onclick="toggleInstances({{ .Id }})"
+                        id="toggle-{{ .Id }}">
+                    Show All
+                </button>
+                {{ end }}
+            </div>
+        </div>
+    </div>
+    {{ end }}
+</div>
+
+{{ if eq (len .) 0 }}
+<div class="text-center py-12">
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">No applications found</h3>
+    <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or create a new application.</p>
+    <div class="mt-6">
+        <a href="/applications/create" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Create Application
+        </a>
+    </div>
+</div>
+{{ end }}
+{{ end }}

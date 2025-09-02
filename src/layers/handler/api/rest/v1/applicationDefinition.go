@@ -89,6 +89,7 @@ func (ac *RestApiApplicationController) NewApplication(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to create ApplicationDefinition", "trace": err.Error()})
 		return
 	}
+	ctx.Header("HX-Redirect", "/applications")
 	ctx.JSON(201, id)
 }
 
@@ -104,5 +105,6 @@ func (ac *RestApiApplicationController) UpdateApplicationDefinition(ctx *gin.Con
 		ctx.JSON(500, gin.H{"error": "Unable to update ApplicationDefinition", "trace": err.Error()})
 		return
 	}
+	ctx.Header("HX-Redirect", "/applications")
 	ctx.Status(204) // No Content
 }

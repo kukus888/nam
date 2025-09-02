@@ -54,7 +54,7 @@
                         <dt class="text-sm font-medium text-gray-500">Health Check ID</dt>
                         <dd class="mt-1 text-sm text-gray-900">
                             {{ if .Application.HealthcheckId }}
-                            <a href="/healthchecks/details/{{ .Application.HealthcheckId }}"
+                            <a href="/healthchecks/{{ .Application.HealthcheckId }}/details"
                                 class="text-indigo-600 hover:text-indigo-900">
                                 {{ .Application.HealthcheckId }}
                             </a>
@@ -133,7 +133,8 @@
                                         </svg>
                                     </a>
                                     <!-- DELETE -->
-                                    <button hx-delete="/api/rest/v1/applications/{{ $.Application.Id }}/instances/{{ .Id }}"
+                                    <button
+                                        hx-delete="/api/rest/v1/applications/{{ $.Application.Id }}/instances/{{ .Id }}"
                                         hx-confirm="Are you sure you want to remove this instance?"
                                         hx-target="closest tr" hx-swap="outerHTML swap:1s"
                                         hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)"
@@ -200,123 +201,7 @@
                 {{ end }}
             </div>
         </div>
-
-        <!-- Health Check History -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div class="px-4 py-5 sm:px-6 bg-indigo-50 flex justify-between items-center">
-                <div>
-                    <h2 class="text-lg leading-6 font-medium text-gray-900">Health Check History</h2>
-                    <p class="mt-1 max-w-2xl text-sm text-gray-500">Recent health check results across all instances.
-                    </p>
-                </div>
-                <div>
-                    <select id="historyFilter"
-                        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                        hx-get="/api/applications/{{ .Application.Id }}/history" hx-target="#historyTable"
-                        hx-trigger="change">
-                        <option value="all">All Instances</option>
-                        {{ range .Instances }}
-                        <option value="{{ .Id }}">{{ .Name }} - {{ .Server.Alias }}</option>
-                        {{ end }}
-                    </select>
-                </div>
-            </div>
-            <div class="border-t border-gray-200">
-                <div id="historyTable" class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Instance
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Status
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Response Time
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Timestamp
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Details
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200"
-                            hx-get="/api/applications/{{ .Application.Id }}/history?filter=all" hx-trigger="load">
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
-                                    Loading history...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
     </div>
-
-    <!-- Modal for health check details -->
-    <div id="healthCheckModal"
-        class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-y-auto">
-            <div class="px-4 py-5 sm:px-6 bg-indigo-50 flex justify-between items-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Health Check Details</h3>
-                <button id="closeModal" class="text-gray-500 hover:text-gray-700">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="px-4 py-5 sm:p-6" id="modalContent">
-                <!-- Content will be loaded here -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Modal functionality
-            const modal = document.getElementById('healthCheckModal');
-            const closeModal = document.getElementById('closeModal');
-
-            // Close modal when clicking the close button
-            closeModal.addEventListener('click', function () {
-                modal.classList.add('hidden');
-            });
-
-            // Close modal when clicking outside
-            window.addEventListener('click', function (event) {
-                if (event.target === modal) {
-                    modal.classList.add('hidden');
-                }
-            });
-
-            // Function to open modal with health check details
-            window.showHealthCheckDetails = function (checkId) {
-                const modalContent = document.getElementById('modalContent');
-                modalContent.innerHTML = '<div class="text-center"><svg class="animate-spin h-8 w-8 mx-auto text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="mt-2 text-sm text-gray-500">Loading details...</p></div>';
-                modal.classList.remove('hidden');
-
-                // Fetch health check details
-                fetch(`/api/health-checks/${checkId}/details`)
-                    .then(response => response.text())
-                    .then(html => {
-                        modalContent.innerHTML = html;
-                    })
-                    .catch(error => {
-                        modalContent.innerHTML = `<div class="text-center text-red-500">Error loading details: ${error.message}</div>`;
-                    });
-            };
-        });
-    </script>
 </body>
 
 </html>

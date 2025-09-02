@@ -1,0 +1,1 @@
+ALTER TABLE "application_instance" DROP COLUMN "maintenance_mode";
