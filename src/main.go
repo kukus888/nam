@@ -27,6 +27,7 @@ var App Application
 func main() {
 	// Load flags
 	configFile := flag.String("config", "config.yaml", "Path to the configuration file")
+	dbVersions := flag.String("db", "versions", "Database migration tool: versions, drop, newschema, raw")
 	flag.Parse()
 
 	// Load the application configuration and start vital components. Failure to start results in a panic.
@@ -42,6 +43,19 @@ func main() {
 		panic("Unable to parse secrets! " + err.Error())
 	}
 	App.TlsConfig = tlsConfig
+
+	// Pivot to db migration micro-tool
+	if *dbVersions != "" {
+		switch *dbVersions {
+		case "versions":
+			data.DbMigrationTool(appCfg.Database.Dsn)
+		case "drop":
+			data.DropEverything(appCfg.Database.Dsn)
+		case "newschema":
+			data.NewSchema(appCfg.Database.Dsn)
+		}
+		os.Exit(0) // Exit after running the migration tool
+	}
 
 	// Init logging
 	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
