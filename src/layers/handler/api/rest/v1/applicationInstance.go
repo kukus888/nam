@@ -33,6 +33,10 @@ func (aic *ApplicationInstanceController) Init(routerGroup *gin.RouterGroup) {
 		idGroup.PATCH("/", handlers.MethodNotImplemented)
 		idGroup.PUT("/", handlers.MethodNotImplemented)
 		idGroup.DELETE("/", aic.DeleteInstance)
+		maintenanceGroup := idGroup.Group("/maintenance")
+		{
+			maintenanceGroup.POST("/", aic.ToggleMaintenance)
+		}
 	}
 }
 
@@ -94,4 +98,19 @@ func (aic *ApplicationInstanceController) DeleteInstance(ctx *gin.Context) {
 		return
 	}
 	ctx.Status(200)
+}
+
+// Toggle maintenance mode
+func (aic *ApplicationInstanceController) ToggleMaintenance(ctx *gin.Context) {
+	var req data.ApplicationInstance
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(400, gin.H{"error": "Invalid JSON", "trace": err.Error()})
+		return
+	}
+	err := data.ToggleApplicationInstanceMaintenance(aic.DatabasePool, uint64(req.Id), req.MaintenanceMode)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Unable to toggle maintenance mode", "trace": err.Error()})
+		return
+	}
+	ctx.Status(204)
 }

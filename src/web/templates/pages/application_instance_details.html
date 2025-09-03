@@ -39,6 +39,16 @@
                         <dt class="text-sm font-medium text-gray-500">Instance ID</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ .Instance.Id }}</dd>
                     </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500">Maintenance Mode</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 accent-indigo-500"
+                                    {{ if .Instance.MaintenanceMode }}checked{{ end }} disabled>
+                                <span class="ml-2 text-sm">{{ if .Instance.MaintenanceMode }}Maintenance{{ else }}Active{{ end }}</span>
+                            </label>
+                        </dd>
+                    </div>
                 </dl>
             </div>
         </div>
@@ -63,12 +73,13 @@
             </div>
             <div class="px-4 py-5 sm:p-6 flex flex-row border-t border-gray-200">
                 <!-- Timeline -->
-                <div class="shrink-0 overflow-y-auto inline-flex flex-col place-items-start justify-between mr-2 h-100" id="timeline">
+                <div class="shrink-0 overflow-y-auto inline-flex flex-col place-items-start justify-between mr-2 h-100"
+                    id="timeline">
                     {{ $selected := index .HealthcheckResults 0 }}
                     {{ range $i, $result := .HealthcheckResults }}
-                    <button class="relative z-10 flex flex-row items-center group focus:bg-indigo-200 focus:ring-2 focus:ring-indigo-400 pl-1 py-1 mx-2 pr-2"
-                        data-index="{{ $i }}"
-                        hx-get="/htmx/health/healthcheck/result?id={{ $result.Id }}&size=large"
+                    <button
+                        class="relative z-10 flex flex-row items-center group focus:bg-indigo-200 focus:ring-2 focus:ring-indigo-400 pl-1 py-1 mx-2 pr-2"
+                        data-index="{{ $i }}" hx-get="/htmx/health/healthcheck/result?id={{ $result.Id }}&size=large"
                         hx-target="#healthcheckDetails" hx-swap="innerHTML">
                         <span
                             class="block w-4 h-4 rounded-full border-2 {{ if $result.IsSuccessful }}border-green-500 bg-green-100{{ else }}border-red-500 bg-red-100{{ end }} group-focus:ring-2 group-focus:ring-indigo-400"></span>

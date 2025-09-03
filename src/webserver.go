@@ -133,6 +133,7 @@ func InitWebServer(app *Application) {
 		routeGroup.Use(RequireRole(dbPool, "admin"))
 		routeGroup.GET("/", av.GetPageApplications)
 		routeGroup.GET("/create", av.GetPageApplicationCreate)
+		routeGroup.GET("/maintenance", av.GetPageApplicationMaintenance)
 		idGroup := routeGroup.Group("/:id")
 		{ // Application ID specific routes
 			idGroup.GET("/details", av.GetPageApplicationDetails)

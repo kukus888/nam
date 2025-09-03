@@ -5,25 +5,32 @@ import (
 	"errors"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Fetches appropriate ApplicationInstance struct from DB
 func GetApplicationInstanceById(pool *pgxpool.Pool, id uint64) (*ApplicationInstance, error) {
-	tx, err := pool.Begin(context.Background())
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(context.Background())
-	var inst []ApplicationInstance
-	err = pgxscan.Select(context.Background(), tx, &inst, "SELECT id, name, server_id, application_definition_id, topology_node_id FROM application_instance WHERE id = $1", id)
-	if err != nil {
+
+	rows, err := tx.Query(context.Background(), "SELECT * FROM application_instance WHERE id = $1", id)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No results found
+	} else if err != nil {
 		return nil, err
 	}
-	if len(inst) == 0 {
-		return nil, nil // No instance found
+
+	res, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByNameLax[ApplicationInstance])
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil // No results found
+	} else if err != nil {
+		return nil, err
 	}
-	return &inst[0], tx.Commit(context.Background())
+	return &res, tx.Commit(context.Background())
 }
 
 // Fetches appropriate ApplicationInstanceFull struct from DB, which includes server and application definition details
@@ -37,7 +44,7 @@ func GetApplicationInstanceFullById(pool *pgxpool.Pool, id uint64) (*Application
 	var inst []ApplicationInstanceFull
 	err = pgxscan.Select(context.Background(), tx, &inst, `
 		SELECT 
-			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id,
+			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id, ai.maintenance_mode AS maintenance_mode,
 			s.alias AS server_alias, s.hostname AS server_hostname,
 			ad.name AS application_definition_name, ad.port AS application_definition_port, ad.type AS application_definition_type, ad.healthcheck_id AS healthcheck_id
 		FROM application_instance ai
@@ -61,7 +68,7 @@ func GetAllApplicationInstancesFull(pool *pgxpool.Pool) (*[]ApplicationInstanceF
 	var inst []ApplicationInstanceFull
 	err = pgxscan.Select(context.Background(), tx, &inst, `
 		SELECT 
-			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id,
+			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id, ai.maintenance_mode AS maintenance_mode,
 			s.alias AS server_alias, s.hostname AS server_hostname,
 			ad.name AS application_definition_name, ad.port AS application_definition_port, ad.type AS application_definition_type, ad.healthcheck_id AS healthcheck_id
 		FROM application_instance ai
@@ -84,7 +91,7 @@ func GetApplicationInstancesFullByApplicationDefinitionId(pool *pgxpool.Pool, id
 	var inst []ApplicationInstanceFull
 	err = pgxscan.Select(context.Background(), tx, &inst, `
 		SELECT 
-			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id,
+			ai.id AS application_instance_id, ai.name AS application_instance_name, ai.server_id AS server_id, ai.application_definition_id AS application_definition_id, ai.topology_node_id AS topology_node_id, ai.maintenance_mode AS maintenance_mode,
 			s.alias AS server_alias, s.hostname AS server_hostname,
 			ad.name AS application_definition_name, ad.port AS application_definition_port, ad.type AS application_definition_type, ad.healthcheck_id AS healthcheck_id
 		FROM application_instance ai
@@ -162,6 +169,20 @@ func DeleteApplicationInstanceById(pool *pgxpool.Pool, id uint64) error {
 		return err
 	}
 	_, err = tx.Exec(context.Background(), "DELETE FROM topology_node WHERE id = $1", topologyNodeId)
+	if err != nil {
+		return err
+	}
+	return tx.Commit(context.Background())
+}
+
+func ToggleApplicationInstanceMaintenance(pool *pgxpool.Pool, id uint64, maintenanceMode bool) error {
+	tx, err := pool.Begin(context.Background())
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(context.Background())
+
+	_, err = tx.Exec(context.Background(), "UPDATE application_instance SET maintenance_mode = $1 WHERE id = $2", maintenanceMode, id)
 	if err != nil {
 		return err
 	}

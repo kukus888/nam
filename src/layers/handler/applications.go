@@ -124,3 +124,14 @@ func (av ApplicationView) GetPageApplicationEdit(ctx *gin.Context) {
 		"Healthchecks": hcs,
 	})
 }
+
+func (av ApplicationView) GetPageApplicationMaintenance(ctx *gin.Context) {
+	instances, err := data.GetAllApplicationInstancesFull(av.Database.Pool)
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/applications/maintenance", gin.H{
+		"Instances": instances,
+	})
+}
