@@ -3,3 +3,4 @@ src/__*
 src/nam.static.linux64.bin
 src/nam.dynamic.linux64.bin
 dev-env-kubernetes/*
+src/web/templates/pages/secrets.html

@@ -97,7 +97,7 @@ func InitWebServer(app *Application) {
 	apiRestV1.NewApplicationController(App.Database).Init(restV1group.Group("/applications"))
 	apiRestV1.NewServerController(App.Database).Init(restV1group.Group("/servers"))
 	apiRestV1.NewHealthcheckController(App.Database).Init(restV1group.Group("/healthchecks"))
-	{
+	{ // Users
 		userHandler := apiRestV1.NewUserHandler(dbPool)
 		userGroup := restV1group.Group("/users")
 		userGroup.Use(RequireRole(dbPool, "admin")) // Only admin can manage users
@@ -105,6 +105,19 @@ func InitWebServer(app *Application) {
 		userGroup.DELETE("/:id", userHandler.DeleteUser)
 		userGroup.PUT("/:id", userHandler.UpdateUser)
 		userGroup.PUT("/:id/password", userHandler.UpdatePassword)
+	}
+	{ // Secrets
+		cryptoService := services.NewCryptoService("nam-secrets-salt-2025", []byte("nam-secrets-salt-2025"))
+		secretService := services.NewSecretsService(App.Database.Pool, log, cryptoService)
+		secretHandler := apiRestV1.NewSecretsHandler(secretService)
+		secretGroup := restV1group.Group("/secrets")
+		secretGroup.Use(RequireRole(dbPool, "admin"))
+		secretGroup.POST("/", secretHandler.CreateSecret)         // Create new secret
+		secretGroup.GET("/types", secretHandler.GetSecretTypes)   // Get available secret types
+		secretGroup.GET("/:id", secretHandler.GetSecret)          // Get secret metadata
+		secretGroup.GET("/:id/data", secretHandler.GetSecretData) // Get decrypted secret data (sensitive!)
+		secretGroup.PUT("/:id", secretHandler.UpdateSecret)       // Update secret
+		secretGroup.DELETE("/:id", secretHandler.DeleteSecret)    // Delete secret
 	}
 
 	// HTMX
@@ -171,6 +184,10 @@ func InitWebServer(app *Application) {
 		routeGroup.GET("/users", psh.GetPageUsers)
 		routeGroup.GET("/users/create", psh.GetPageUserCreate) // Placeholder for user creation page
 		routeGroup.GET("/users/:id/edit", psh.GetPageUserEdit)
+	}
+	{ // Secrets Management
+		psh := handlers.NewPageSecretsHandler(App.Database)
+		rootGroup.GET("/secrets", RequireRole(dbPool, "admin"), psh.GetPageSecrets)
 	}
 
 	var err error
@@ -240,6 +257,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("username", claims.Username)
+		c.Set("user", claims.UserID)
 		c.Next()
 	}
 }
