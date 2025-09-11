@@ -83,7 +83,7 @@ func (h *UserHandler) UpdatePassword(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"error": "Invalid user ID or password"})
 		return
 	}
-	user, err := data.GetUserById(h.Database, int(userDelta.Id))
+	user, err := data.GetUserById(h.Database, userDelta.Id)
 	if err != nil {
 		ctx.JSON(404, gin.H{"error": "User not found", "trace": err.Error()})
 		return
@@ -104,7 +104,7 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 		ctx.JSON(400, gin.H{"error": "Invalid user ID", "trace": err.Error()})
 		return
 	}
-	user, err := data.GetUserById(h.Database, userId)
+	user, err := data.GetUserById(h.Database, uint64(userId))
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": "Failed to get user", "trace": err.Error()})
 		return

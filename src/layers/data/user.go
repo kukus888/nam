@@ -100,7 +100,7 @@ func GetUserByUsername(pool *pgxpool.Pool, username string) (*User, error) {
 	return &user, tx.Commit(context.Background())
 }
 
-func GetUserById(pool *pgxpool.Pool, id int) (*User, error) {
+func GetUserById(pool *pgxpool.Pool, id uint64) (*User, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
