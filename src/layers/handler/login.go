@@ -45,8 +45,7 @@ func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 			ctx.JSON(401, gin.H{"error": "Invalid credentials"})
 			return
 		}
-		// TODO: JWT token
-		// TODO: Set Authorization header with token
+		// Set JWT token
 		token, err := services.GenerateToken(*userDao)
 		if err != nil {
 			ctx.JSON(500, gin.H{"error": "Error generating token", "trace": err.Error()})

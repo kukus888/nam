@@ -27,7 +27,7 @@ var App Application
 func main() {
 	// Load flags
 	configFile := flag.String("config", "config.yaml", "Path to the configuration file")
-	dbVersions := flag.String("db", "versions", "Database migration tool: versions, drop, newschema, raw")
+	dbVersions := flag.String("db", "", "Database migration tool: versions, drop, newschema, raw")
 	flag.Parse()
 
 	// Load the application configuration and start vital components. Failure to start results in a panic.

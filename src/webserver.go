@@ -91,13 +91,14 @@ func InitWebServer(app *Application) {
 	}
 	// Alias to shorten code
 	dbPool := App.Database.Pool
+	cryptoService := services.NewCryptoService("nam-secrets-salt-2025", []byte("nam-secrets-salt-2025"))
 	// REST
 	restV1group := App.Engine.Group("/api/rest/v1")
 	restV1group.Use(AuthMiddleware())
 	apiRestV1.NewApplicationController(App.Database).Init(restV1group.Group("/applications"))
 	apiRestV1.NewServerController(App.Database).Init(restV1group.Group("/servers"))
 	apiRestV1.NewHealthcheckController(App.Database).Init(restV1group.Group("/healthchecks"))
-	{
+	{ // Users
 		userHandler := apiRestV1.NewUserHandler(dbPool)
 		userGroup := restV1group.Group("/users")
 		userGroup.Use(RequireRole(dbPool, "admin")) // Only admin can manage users
@@ -105,6 +106,15 @@ func InitWebServer(app *Application) {
 		userGroup.DELETE("/:id", userHandler.DeleteUser)
 		userGroup.PUT("/:id", userHandler.UpdateUser)
 		userGroup.PUT("/:id/password", userHandler.UpdatePassword)
+	}
+	{ // Secrets
+		secretService := services.NewSecretsService(App.Database.Pool, log, cryptoService)
+		secretHandler := apiRestV1.NewSecretsHandler(secretService)
+		secretGroup := restV1group.Group("/secrets")
+		secretGroup.Use(RequireRole(dbPool, "admin"))
+		secretGroup.POST("/", secretHandler.CreateSecret)      // Create new secret
+		secretGroup.PUT("/:id", secretHandler.UpdateSecret)    // Update secret
+		secretGroup.DELETE("/:id", secretHandler.DeleteSecret) // Delete secret
 	}
 
 	// HTMX
@@ -171,6 +181,14 @@ func InitWebServer(app *Application) {
 		routeGroup.GET("/users", psh.GetPageUsers)
 		routeGroup.GET("/users/create", psh.GetPageUserCreate) // Placeholder for user creation page
 		routeGroup.GET("/users/:id/edit", psh.GetPageUserEdit)
+	}
+	{ // Secrets Management
+		psh := handlers.NewPageSecretsHandler(App.Database, cryptoService)
+		secretGroup := rootGroup.Group("/secrets")
+		secretGroup.Use(RequireRole(dbPool, "admin"))
+		secretGroup.GET("/", psh.GetPageSecrets)
+		secretGroup.GET("/:id/edit", psh.GetPageEditSecret)
+		secretGroup.GET("/:id/details", psh.GetPageViewSecret)
 	}
 
 	var err error
@@ -240,6 +258,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("username", claims.Username)
+		c.Set("user", claims.UserID)
 		c.Next()
 	}
 }
