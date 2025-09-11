@@ -48,53 +48,6 @@ func (h *SecretsHandler) CreateSecret(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": *id, "message": "Secret created successfully"})
 }
 
-// GetSecret retrieves a secret by ID (returns metadata only, not the actual secret data)
-func (h *SecretsHandler) GetSecret(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid secret ID"})
-		return
-	}
-
-	secret, err := h.secretsService.GetSecret(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Secret not found", "trace": err.Error()})
-		return
-	}
-
-	// Return metadata only for security
-	secret.Data = nil
-	c.JSON(http.StatusOK, secret)
-}
-
-// GetSecretData retrieves the decrypted secret data (sensitive operation)
-func (h *SecretsHandler) GetSecretData(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid secret ID"})
-		return
-	}
-
-	secret, err := h.secretsService.GetSecret(id)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Secret not found", "trace": err.Error()})
-		return
-	}
-
-	response := gin.H{
-		"id":          secret.Id,
-		"name":        secret.Name,
-		"type":        secret.Type,
-		"description": secret.Description,
-		"metadata":    secret.Metadata,
-		"data":        secret.Data,
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
 // UpdateSecret updates an existing secret
 func (h *SecretsHandler) UpdateSecret(c *gin.Context) {
 	idStr := c.Param("id")
@@ -123,6 +76,7 @@ func (h *SecretsHandler) UpdateSecret(c *gin.Context) {
 		return
 	}
 
+	c.Header("HX-Redirect", "/secrets/"+idStr+"/details")
 	c.JSON(http.StatusOK, gin.H{"message": "Secret updated successfully"})
 }
 

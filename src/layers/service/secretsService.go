@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"log/slog"
+	"time"
 
 	"kukus/nam/v2/layers/data"
 
@@ -27,23 +28,21 @@ func NewSecretsService(db *pgxpool.Pool, logger *slog.Logger, crypto *CryptoServ
 
 // CreateSecret creates and stores a new encrypted secret
 func (s *SecretsService) CreateSecret(dto *data.SecretDTO, userId *uint64) (*uint64, error) {
-	// Encrypt and set the secret data
-	encryptedData, err := s.crypto.Encrypt([]byte(dto.Data))
-	if err != nil {
-		return nil, fmt.Errorf("failed to encrypt secret: %w", err)
-	}
-	secret, err := dto.ToSecret(encryptedData)
+	do, err := dto.ToSecret()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret from DTO: %w", err)
 	}
+	secretDAO, err := s.crypto.EncryptSecret(do)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encrypt secret: %w", err)
+	}
 
 	// Set audit fields
-	secret.CreatedBy = userId
-	secret.UpdatedBy = userId
+	secretDAO.CreatedBy = userId
+	secretDAO.UpdatedBy = userId
 
 	// Insert into database
-	dao := dto.ToSecretDAO(encryptedData)
-	id, err := dao.DbInsert(s.db)
+	id, err := secretDAO.DbInsert(s.db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to store secret: %w", err)
 	}
@@ -100,37 +99,33 @@ func (s *SecretsService) DeleteSecret(id uint64) error {
 
 // UpdateSecret updates an existing secret
 func (s *SecretsService) UpdateSecret(id uint64, dto *data.SecretDTO, userId *uint64) error {
-	panic("Not implemented yet")
-	/*
-		// Validate the secret data
-		if err := dto.Data.Validate(); err != nil {
-			return fmt.Errorf("invalid secret data: %w", err)
-		}
+	// Get existing secret, check if exists
+	existingSecret, err := data.GetSecretById(s.db, id)
+	if err != nil || existingSecret == nil {
+		return fmt.Errorf("secret not found: %w", err)
+	}
 
-		// Get existing secret
-		secret, err := data.GetSecretById(s.db, id)
-		if err != nil {
-			return fmt.Errorf("secret not found: %w", err)
-		}
+	do, err := dto.ToSecret()
+	if err != nil {
+		return fmt.Errorf("failed to create secret from DTO: %w", err)
+	}
+	// Encrypt and set the new secret data
+	secretDAO, err := s.crypto.EncryptSecret(do)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt secret: %w", err)
+	}
 
-		// Update fields
-		secret.Name = dto.Name
-		secret.Description = dto.Description
-		secret.Type = string(dto.Type)
-		secret.Metadata = dto.Metadata
-		secret.UpdatedBy = userId
+	// Set audit fields
+	secretDAO.CreatedBy = existingSecret.CreatedBy // Preserve original creator
+	secretDAO.CreatedAt = existingSecret.CreatedAt // Preserve original creation time
+	secretDAO.UpdatedBy = userId
+	secretDAO.UpdatedAt = time.Now()
 
-		// Encrypt and set the new secret data
-		if err := secret.SetSecretData(dto.Data); err != nil {
-			return fmt.Errorf("failed to encrypt secret: %w", err)
-		}
+	// Update in database
+	if err := data.UpdateSecret(s.db, id, secretDAO); err != nil {
+		return fmt.Errorf("failed to update secret: %w", err)
+	}
 
-		// Update in database
-		if err := data.UpdateSecret(s.db, id, secret); err != nil {
-			return fmt.Errorf("failed to update secret: %w", err)
-		}
-
-		s.logger.Info("Secret updated", "id", id, "name", dto.Name, "type", dto.Type)
-		return nil
-	*/
+	s.logger.Info("Secret updated", "id", id, "name", dto.Name, "type", dto.Type)
+	return nil
 }

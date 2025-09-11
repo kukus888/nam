@@ -40,38 +40,64 @@ type Secret struct {
 
 // SecretDTO for creating/updating secrets
 type SecretDTO struct {
+	Id          uint64                 `json:"id"`
 	Type        string                 `json:"type" binding:"required"`
 	Name        string                 `json:"name" binding:"required"`
 	Description string                 `json:"description"`
 	Data        string                 `json:"data" binding:"required"` // Decrypted data
 	Metadata    map[string]interface{} `json:"metadata"`
+	CreatedAt   time.Time              `json:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at"`
+	CreatedBy   *uint64                `json:"created_by"`
+	UpdatedBy   *uint64                `json:"updated_by"`
 }
 
-func (s *SecretDTO) ToSecretDAO(encryptedData []byte) *SecretDAO {
+func (s *Secret) ToSecretDAO(encryptedData []byte) *SecretDAO {
 	secret := &SecretDAO{
+		Id:          s.Id,
 		Type:        s.Type,
 		Name:        s.Name,
 		Description: s.Description,
 		Metadata:    s.Metadata,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		CreatedAt:   s.CreatedAt,
+		UpdatedAt:   s.UpdatedAt,
+		CreatedBy:   s.CreatedBy,
+		UpdatedBy:   s.UpdatedBy,
 		Data:        encryptedData,
 	}
 
 	return secret
 }
 
-func (s *SecretDTO) ToSecret(encryptedData []byte) (*Secret, error) {
+func (s *SecretDTO) ToSecret() (*Secret, error) {
 	secret := &Secret{
+		Id:          s.Id,
 		Type:        s.Type,
 		Name:        s.Name,
 		Description: s.Description,
 		Metadata:    s.Metadata,
-		Data:        encryptedData,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		Data:        []byte(s.Data),
+		CreatedAt:   s.CreatedAt,
+		UpdatedAt:   s.UpdatedAt,
+		CreatedBy:   s.CreatedBy,
+		UpdatedBy:   s.UpdatedBy,
 	}
 	return secret, nil
+}
+
+func (s *Secret) ToDTO() *SecretDTO {
+	return &SecretDTO{
+		Id:          s.Id,
+		Type:        s.Type,
+		Name:        s.Name,
+		Description: s.Description,
+		Data:        string(s.Data),
+		Metadata:    s.Metadata,
+		CreatedAt:   s.CreatedAt,
+		UpdatedAt:   s.UpdatedAt,
+		CreatedBy:   s.CreatedBy,
+		UpdatedBy:   s.UpdatedBy,
+	}
 }
 
 // Database operations for secrets

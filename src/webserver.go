@@ -91,6 +91,7 @@ func InitWebServer(app *Application) {
 	}
 	// Alias to shorten code
 	dbPool := App.Database.Pool
+	cryptoService := services.NewCryptoService("nam-secrets-salt-2025", []byte("nam-secrets-salt-2025"))
 	// REST
 	restV1group := App.Engine.Group("/api/rest/v1")
 	restV1group.Use(AuthMiddleware())
@@ -107,16 +108,13 @@ func InitWebServer(app *Application) {
 		userGroup.PUT("/:id/password", userHandler.UpdatePassword)
 	}
 	{ // Secrets
-		cryptoService := services.NewCryptoService("nam-secrets-salt-2025", []byte("nam-secrets-salt-2025"))
 		secretService := services.NewSecretsService(App.Database.Pool, log, cryptoService)
 		secretHandler := apiRestV1.NewSecretsHandler(secretService)
 		secretGroup := restV1group.Group("/secrets")
 		secretGroup.Use(RequireRole(dbPool, "admin"))
-		secretGroup.POST("/", secretHandler.CreateSecret)         // Create new secret
-		secretGroup.GET("/:id", secretHandler.GetSecret)          // Get secret metadata
-		secretGroup.GET("/:id/data", secretHandler.GetSecretData) // Get decrypted secret data (sensitive!)
-		secretGroup.PUT("/:id", secretHandler.UpdateSecret)       // Update secret
-		secretGroup.DELETE("/:id", secretHandler.DeleteSecret)    // Delete secret
+		secretGroup.POST("/", secretHandler.CreateSecret)      // Create new secret
+		secretGroup.PUT("/:id", secretHandler.UpdateSecret)    // Update secret
+		secretGroup.DELETE("/:id", secretHandler.DeleteSecret) // Delete secret
 	}
 
 	// HTMX
@@ -185,8 +183,12 @@ func InitWebServer(app *Application) {
 		routeGroup.GET("/users/:id/edit", psh.GetPageUserEdit)
 	}
 	{ // Secrets Management
-		psh := handlers.NewPageSecretsHandler(App.Database)
-		rootGroup.GET("/secrets", RequireRole(dbPool, "admin"), psh.GetPageSecrets)
+		psh := handlers.NewPageSecretsHandler(App.Database, cryptoService)
+		secretGroup := rootGroup.Group("/secrets")
+		secretGroup.Use(RequireRole(dbPool, "admin"))
+		secretGroup.GET("/", psh.GetPageSecrets)
+		secretGroup.GET("/:id/edit", psh.GetPageEditSecret)
+		secretGroup.GET("/:id/details", psh.GetPageViewSecret)
 	}
 
 	var err error

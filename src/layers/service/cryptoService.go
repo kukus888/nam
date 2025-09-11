@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"kukus/nam/v2/layers/data"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -46,6 +47,16 @@ func (c *CryptoService) Encrypt(plaintext []byte) ([]byte, error) {
 	return ciphertext, nil
 }
 
+// EncryptSecret encrypts the data in a Secret and returns a SecretDAO with encrypted data
+func (c *CryptoService) EncryptSecret(secret *data.Secret) (*data.SecretDAO, error) {
+	encryptedData, err := c.Encrypt(secret.Data)
+	if err != nil {
+		return nil, err
+	}
+	secretDAO := secret.ToSecretDAO(encryptedData)
+	return secretDAO, nil
+}
+
 // Decrypt decrypts data using AES-256-GCM
 func (c *CryptoService) Decrypt(ciphertext []byte) ([]byte, error) {
 	block, err := aes.NewCipher(c.masterKey)
@@ -72,24 +83,22 @@ func (c *CryptoService) Decrypt(ciphertext []byte) ([]byte, error) {
 	return plaintext, nil
 }
 
-// EncryptSecretData encrypts secret data and returns encrypted bytes
-func (c *CryptoService) EncryptSecretData(secretData string) ([]byte, error) {
-	plaintext := []byte(secretData)
-
-	encrypted, err := c.Encrypt(plaintext)
+// DecryptDAO decrypts the data in a SecretDAO and returns a Secret with plaintext data
+func (c *CryptoService) DecryptDAO(dao *data.SecretDAO) (*data.Secret, error) {
+	plaintext, err := c.Decrypt(dao.Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to encrypt secret data: %w", err)
+		return nil, err
 	}
-
-	return encrypted, nil
-}
-
-// DecryptSecretData decrypts bytes and returns the appropriate SecretData type
-func (c *CryptoService) DecryptSecretData(encryptedData []byte) ([]byte, error) {
-	plaintext, err := c.Decrypt(encryptedData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt secret data: %w", err)
-	}
-
-	return plaintext, nil
+	return &data.Secret{
+		Id:          dao.Id,
+		Type:        dao.Type,
+		Name:        dao.Name,
+		Description: dao.Description,
+		Data:        plaintext,
+		Metadata:    dao.Metadata,
+		CreatedAt:   dao.CreatedAt,
+		UpdatedAt:   dao.UpdatedAt,
+		CreatedBy:   dao.CreatedBy,
+		UpdatedBy:   dao.UpdatedBy,
+	}, nil
 }
