@@ -113,7 +113,6 @@ func InitWebServer(app *Application) {
 		secretGroup := restV1group.Group("/secrets")
 		secretGroup.Use(RequireRole(dbPool, "admin"))
 		secretGroup.POST("/", secretHandler.CreateSecret)         // Create new secret
-		secretGroup.GET("/types", secretHandler.GetSecretTypes)   // Get available secret types
 		secretGroup.GET("/:id", secretHandler.GetSecret)          // Get secret metadata
 		secretGroup.GET("/:id/data", secretHandler.GetSecretData) // Get decrypted secret data (sensitive!)
 		secretGroup.PUT("/:id", secretHandler.UpdateSecret)       // Update secret

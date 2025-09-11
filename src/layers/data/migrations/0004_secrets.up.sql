@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS secrets (
     type VARCHAR(50) NOT NULL, -- 'private_key', 'certificate', 'password', 'api_key', 'ssh_key', etc.
     name VARCHAR(255) NOT NULL UNIQUE, -- Human readable name/identifier
     description TEXT,
-    data BYTEA NOT NULL, -- SOPS encrypted data
+    data BYTEA NOT NULL, -- encrypted data
     metadata JSONB DEFAULT '{}', -- Additional metadata (key algorithm, cert expiry, etc.)
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -23,7 +23,7 @@ func NewPageSecretsHandler(database *data.Database) *PageSecretsHandler {
 func (h *PageSecretsHandler) GetPageSecrets(c *gin.Context) {
 	secrets, err := data.GetAllSecrets(h.database.Pool)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve secrets", "trace": err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Unable to retrieve secrets from database", "trace": err.Error()})
 		return
 	}
 	c.HTML(http.StatusOK, "pages/secrets", gin.H{"Secrets": secrets})

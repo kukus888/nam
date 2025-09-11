@@ -37,11 +37,6 @@ func (s *SecretsService) CreateSecret(dto *data.SecretDTO, userId *uint64) (*uin
 		return nil, fmt.Errorf("failed to create secret from DTO: %w", err)
 	}
 
-	// Validate the secret data
-	if err := secret.Data.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid secret data: %w", err)
-	}
-
 	// Set audit fields
 	secret.CreatedBy = userId
 	secret.UpdatedBy = userId
@@ -58,7 +53,7 @@ func (s *SecretsService) CreateSecret(dto *data.SecretDTO, userId *uint64) (*uin
 }
 
 // GetSecret retrieves and decrypts a secret by ID
-func (s *SecretsService) GetSecret(id uint64) (*data.Secret, data.SecretData, error) {
+func (s *SecretsService) GetSecret(id uint64) (*data.Secret, error) {
 	panic("Not implemented yet")
 	/*
 		secret, err := data.GetSecretById(s.db, id)
@@ -83,21 +78,6 @@ func (s *SecretsService) GetSecretsMetadata() ([]data.SecretDAO, error) {
 	secrets, err := data.GetAllSecrets(s.db)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve secrets: %w", err)
-	}
-
-	// Clear the encrypted data for security (only return metadata)
-	for i := range secrets {
-		secrets[i].Data = nil
-	}
-
-	return secrets, nil
-}
-
-// GetSecretsByType returns all secrets of a specific type (metadata only, no decrypted data)
-func (s *SecretsService) GetSecretsByType(secretType data.SecretType) ([]data.Secret, error) {
-	secrets, err := data.GetSecretsByType(s.db, secretType)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve secrets by type: %w", err)
 	}
 
 	// Clear the encrypted data for security (only return metadata)

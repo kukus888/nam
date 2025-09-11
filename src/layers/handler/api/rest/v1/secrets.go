@@ -57,7 +57,7 @@ func (h *SecretsHandler) GetSecret(c *gin.Context) {
 		return
 	}
 
-	secret, _, err := h.secretsService.GetSecret(id)
+	secret, err := h.secretsService.GetSecret(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Secret not found", "trace": err.Error()})
 		return
@@ -77,7 +77,7 @@ func (h *SecretsHandler) GetSecretData(c *gin.Context) {
 		return
 	}
 
-	secret, secretData, err := h.secretsService.GetSecret(id)
+	secret, err := h.secretsService.GetSecret(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Secret not found", "trace": err.Error()})
 		return
@@ -89,7 +89,7 @@ func (h *SecretsHandler) GetSecretData(c *gin.Context) {
 		"type":        secret.Type,
 		"description": secret.Description,
 		"metadata":    secret.Metadata,
-		"data":        secretData,
+		"data":        secret.Data,
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -142,20 +142,4 @@ func (h *SecretsHandler) DeleteSecret(c *gin.Context) {
 
 	c.Header("HX-Redirect", "/secrets")
 	c.JSON(http.StatusOK, gin.H{"message": "Secret deleted successfully"})
-}
-
-// GetSecretTypes returns the available secret types
-func (h *SecretsHandler) GetSecretTypes(c *gin.Context) {
-	types := []gin.H{
-		{"type": string(data.SecretTypePassword), "description": "Username/password combinations"},
-		{"type": string(data.SecretTypePrivateKey), "description": "Private keys (RSA, ECDSA, Ed25519)"},
-		{"type": string(data.SecretTypeCertificate), "description": "SSL/TLS certificates with optional private keys"},
-		{"type": string(data.SecretTypeAPIKey), "description": "API keys and tokens"},
-		{"type": string(data.SecretTypeSSHKey), "description": "SSH private/public key pairs"},
-		{"type": string(data.SecretTypeToken), "description": "Authentication tokens"},
-		{"type": string(data.SecretTypeConfig), "description": "Configuration files with sensitive data"},
-		{"type": string(data.SecretTypeGeneric), "description": "Generic key-value secret data"},
-	}
-
-	c.JSON(http.StatusOK, gin.H{"types": types})
 }

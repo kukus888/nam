@@ -5,10 +5,8 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
-	"kukus/nam/v2/layers/data"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -75,11 +73,8 @@ func (c *CryptoService) Decrypt(ciphertext []byte) ([]byte, error) {
 }
 
 // EncryptSecretData encrypts secret data and returns encrypted bytes
-func (c *CryptoService) EncryptSecretData(secretData data.SecretData) ([]byte, error) {
-	plaintext, err := secretData.ToBytes()
-	if err != nil {
-		return nil, fmt.Errorf("failed to serialize secret data: %w", err)
-	}
+func (c *CryptoService) EncryptSecretData(secretData string) ([]byte, error) {
+	plaintext := []byte(secretData)
 
 	encrypted, err := c.Encrypt(plaintext)
 	if err != nil {
@@ -90,19 +85,11 @@ func (c *CryptoService) EncryptSecretData(secretData data.SecretData) ([]byte, e
 }
 
 // DecryptSecretData decrypts bytes and returns the appropriate SecretData type
-func (c *CryptoService) DecryptSecretData(encryptedData []byte, secretType data.SecretType) (data.SecretData, error) {
+func (c *CryptoService) DecryptSecretData(encryptedData []byte) ([]byte, error) {
 	plaintext, err := c.Decrypt(encryptedData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt secret data: %w", err)
 	}
 
-	// Create the appropriate secret data type
-	secretData := data.SecretTypeFactory(secretType)
-
-	// Unmarshal into the specific type
-	if err := json.Unmarshal(plaintext, secretData); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal secret data: %w", err)
-	}
-
-	return secretData, nil
+	return plaintext, nil
 }
