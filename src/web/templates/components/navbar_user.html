@@ -1,0 +1,12 @@
+{{ define "component/navbar_user" }}
+<div class="ml-3 relative">
+    <a href="/profile" class="flex items-center space-x-2">
+        <span class="text-gray-700 font-medium">{{ .Username }}</span>
+        <svg data-avatar="person" class="w-8 h-8 text-{{ .Color }}-200 fill-{{ .Color }}-500" viewBox="0 0 64 64" fill="none">
+            <rect width="64" height="64" rx="16" fill="currentColor" />
+            <circle cx="32" cy="24" r="8" />
+            <path d="M18 48 Q18 36 32 36 Q46 36 46 48" />
+        </svg>
+    </a>
+</div>
+{{ end }}

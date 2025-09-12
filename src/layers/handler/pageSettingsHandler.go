@@ -56,7 +56,7 @@ func (pc PageSettingsHandler) GetPageUserEdit(ctx *gin.Context) {
 		ctx.HTML(400, "pages/settings/users/edit", gin.H{"error": "Invalid user ID", "trace": err.Error()})
 		return
 	}
-	user, err := data.GetUserById(pc.Database.Pool, userId)
+	user, err := data.GetUserById(pc.Database.Pool, uint64(userId))
 	if err != nil {
 		ctx.HTML(500, "pages/settings/users/edit", gin.H{"error": "Unable to get user", "trace": err.Error()})
 		return

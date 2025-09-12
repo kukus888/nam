@@ -176,14 +176,17 @@ type User struct {
 	Id           uint64 `json:"id" db:"id"`
 	Username     string `json:"username" db:"username"`
 	Email        string `json:"email" db:"email"`
+	Color        string `json:"color" db:"color"` // Name of the color for the user, tailwind.css
 	PasswordHash string `json:"password_hash" db:"password_hash"`
 	RoleId       uint64 `json:"role_id" db:"role_id"`
 }
 
 // UserDTO is a DTO for creating users
 type UserDTO struct {
+	Id       uint64 `json:"id" db:"id"`
 	Username string `json:"username" db:"username"`
 	Email    string `json:"email" db:"email"`
+	Color    string `json:"color" db:"color"`
 	Password string `json:"password" db:"password"`
 	RoleId   uint64 `json:"role_id" db:"role_id"`
 }

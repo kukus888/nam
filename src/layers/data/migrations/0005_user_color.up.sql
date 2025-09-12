@@ -1,0 +1,1 @@
+alter table "user" add color VARCHAR(20) not null default 'indigo';

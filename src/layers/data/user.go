@@ -100,7 +100,7 @@ func GetUserByUsername(pool *pgxpool.Pool, username string) (*User, error) {
 	return &user, tx.Commit(context.Background())
 }
 
-func GetUserById(pool *pgxpool.Pool, id int) (*User, error) {
+func GetUserById(pool *pgxpool.Pool, id uint64) (*User, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	if err != nil {
 		return nil, err
@@ -176,8 +176,8 @@ func (user User) UpdateWithoutPassword(pool *pgxpool.Pool) error {
 	defer tx.Rollback(context.Background())
 
 	_, err = tx.Exec(context.Background(), `
-		UPDATE "user" SET username = $1, email = $2, role_id = $3 WHERE id = $4;
-	`, user.Username, user.Email, user.RoleId, user.Id)
+		UPDATE "user" SET username = $1, email = $2, role_id = $3, color = $4 WHERE id = $5;
+	`, user.Username, user.Email, user.RoleId, user.Color, user.Id)
 	if err != nil {
 		return err
 	}
