@@ -116,6 +116,12 @@ func InitWebServer(app *Application) {
 			secretGroup.PUT("/:id", secretHandler.UpdateSecret)    // Update secret
 			secretGroup.DELETE("/:id", secretHandler.DeleteSecret) // Delete secret
 		}
+		{ // Profile
+			profileHandler := apiRestV1.NewProfileHandler(dbPool)
+			profileGroup := restV1group.Group("/profile")
+			profileGroup.PUT("/", profileHandler.UpdateUser)
+			profileGroup.PUT("/password", profileHandler.UpdatePassword)
+		}
 	}
 	{ // HTMX
 		htmxGroup := App.Engine.Group("/htmx")
@@ -134,6 +140,7 @@ func InitWebServer(app *Application) {
 	rootGroup.GET("/dashboard", RequireRole(dbPool, "admin"), ph.GetPageDashboard)
 	rootGroup.GET("/dashboard/component", RequireRole(dbPool, "admin"), ph.GetDashboardComponent)
 	rootGroup.GET("/dashboard/data", RequireRole(dbPool, "admin"), ph.GetDashboardDataAPI)
+	rootGroup.GET("/profile", ph.GetProfilePage)
 	{ // Servers
 		psh := handlers.NewPageServerHandler(App.Database)
 		rootGroup.GET("/servers", RequireRole(dbPool, "admin"), psh.GetPageServers)
