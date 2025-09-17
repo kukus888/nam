@@ -24,7 +24,7 @@ func (iv InstanceView) GetPageApplicationInstanceDetails(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Invalid instance id", "trace": err.Error()})
 		return
 	}
-	appInstance, err := data.GetApplicationInstanceById(iv.Database.Pool, uint64(id))
+	appInstance, err := data.GetApplicationInstanceFullById(iv.Database.Pool, uint64(id))
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "", "trace": err.Error()})
 		return

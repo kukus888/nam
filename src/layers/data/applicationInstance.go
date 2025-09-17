@@ -175,6 +175,7 @@ func DeleteApplicationInstanceById(pool *pgxpool.Pool, id uint64) error {
 	return tx.Commit(context.Background())
 }
 
+// Toggles maintenance mode for the specified application instance
 func ToggleApplicationInstanceMaintenance(pool *pgxpool.Pool, id uint64, maintenanceMode bool) error {
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
