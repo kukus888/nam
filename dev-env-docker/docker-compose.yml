@@ -36,69 +36,6 @@ services:
     ports:
       - 2222:2222
     restart: unless-stopped
-  # slim rundeck container to run database setup.
-  # We do this first to prevent collisions between the two nodes when doing the first setup.
-  rundeck-migration:
-    image: rundeck/rundeck:5.8.0
-    networks:
-      - default
-    environment:
-      RUNDECK_EXEC_CMD: "java -jar rundeck.war -m"
-      RUNDECK_DATABASE_DRIVER: org.mariadb.jdbc.Driver
-      RUNDECK_DATABASE_USERNAME: rundeck
-      RUNDECK_DATABASE_PASSWORD: rundeck
-      RUNDECK_DATABASE_URL: jdbc:mysql://dbase/rundeck?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
-
-
-  # main cluster
-  rundeck:
-    deploy:
-      replicas: 2 # If this is changed, remember to adjust nginx configuration at nginx.conf
-    image: rundeck/rundeck:5.8.0
-    networks:
-      - default
-    depends_on:
-      rundeck-migration:
-        condition: service_completed_successfully
-    environment:
-      RUNDECK_GRAILS_URL: http://localhost
-      RUNDECK_DATABASE_DRIVER: org.mariadb.jdbc.Driver
-      RUNDECK_DATABASE_USERNAME: rundeck
-      RUNDECK_DATABASE_PASSWORD: rundeck
-      RUNDECK_DATABASE_URL: jdbc:mysql://dbase/rundeck?autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true
-      RUNDECK_SECURITY_DBLOGIN_ENABLED: 'true'
-      RUNDECK_SECURITY_DBLOGIN_CREATEADMINUSERANDROLES: 'true'
-      RUNDECK_SECURITY_DBLOGIN_ADMINUSERNAME: admin
-      RUNDECK_SECURITY_DBLOGIN_ADMINPASSWORD: admin
-      RUNDECK_PLUGIN_CLUSTER_REMOTEEXECUTION_ENABLED: 'false'
-      RUNDECK_FEATURE_ENTERPRISEACL_ENABLED: 'false'
-      RUNDECK_FEATURE_ENTERPRISEACLTRANSFER_ENABLED: 'false'
-      RUNDECK_SERVER_ADDRESS: 0.0.0.0
-      RUNDECK_GUI_STARTPAGE: jobs
-    healthcheck:
-      test: "curl -f http://localhost:4440"
-      interval: 5s
-      timeout: 10s
-      retries: 50
-      start_period: 180s
-    ports:
-      - 4440
-    volumes:
-      - logdata:/home/rundeck/var/logs:rw
-      - ./nodes.yaml:/home/rundeck/nodes.yaml:ro
-
-  dbase:
-    image: mysql:8
-    ports:
-      - 3306:3306
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: rundeck
-      MYSQL_USER: rundeck
-      MYSQL_PASSWORD: rundeck
-    volumes:
-      - dbdata_mysql:/var/lib/mysql
-  
   postgres:
     image: postgres
     restart: always
@@ -111,5 +48,4 @@ services:
 
 volumes:
   logdata:
-  dbdata_mysql:
   pgdata:

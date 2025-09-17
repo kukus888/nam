@@ -100,11 +100,4 @@ func main() {
 		fmt.Println("HealthcheckService status:", status)
 		time.Sleep(1 * time.Minute)
 	}
-	// Rundeck POC
-	/*rdckCli := NewRundeckClient("http://localhost", "cN3EWNUG8rT4n5YAQLtwOPSX2gWpSuzQ")
-	info, err := rdckCli.GetSystemInfo()
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Rundeck System Info: %+v\n", info)*/
 }
