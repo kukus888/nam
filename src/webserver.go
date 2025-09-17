@@ -267,6 +267,16 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Check if the token is expiring soon (5 minutes)
+		if time.Until(claims.ExpiresAt.Time) < 5*time.Minute {
+			newTokenString, err := services.RegenerateToken(claims)
+			if err == nil {
+				// Set the new token in the cookie
+				c.SetCookie("token", newTokenString, 3600, "/", "", false, true)
+			}
+		}
+
+		// Set user information in the context
 		c.Set("username", claims.Username)
 		c.Set("user_id", claims.UserID)
 

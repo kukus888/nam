@@ -26,3 +26,10 @@ func GenerateToken(user data.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(GetJWTKeyProvider().Key)
 }
+
+func RegenerateToken(claims *Claims) (string, error) {
+	expirationTime := time.Now().Add(1 * time.Hour)
+	claims.ExpiresAt = jwt.NewNumericDate(expirationTime)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(GetJWTKeyProvider().Key)
+}
