@@ -1,0 +1,1 @@
+alter table "healthcheck" add protocol VARCHAR(20) not null default 'http';

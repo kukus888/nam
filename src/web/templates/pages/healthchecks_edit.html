@@ -216,8 +216,8 @@
                     <p class="mt-1 text-sm text-gray-500">SSL and authentication settings.</p>
                 </div>
                 <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
-                    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-                        <div class="sm:col-span-3">
+                    <div class="grid grid-cols-2 grid-rows-2 gap-y-6 gap-x-4 sm:grid-cols-6 sm:grid-rows-1">
+                        <div class="sm:col-span-2">
                             <div class="flex items-start">
                                 <div class="flex items-center h-5">
                                     <input id="verify_ssl" name="verify_ssl" type="checkbox" {{ if
@@ -230,7 +230,20 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="sm:col-span-3">
+                        <div class="sm:col-span-2">
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="use_https" name="use_https" type="checkbox" {{ if
+                                        eq .Healthcheck.Protocol "https" }}checked{{ end }}
+                                        class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="use_https" class="font-medium text-gray-700">Use HTTPS</label>
+                                    <p class="text-gray-500">Enable HTTPS for the healthcheck</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sm:col-span-2">
                             <label for="auth_type" class="block text-sm font-medium text-gray-700">Authentication
                                 Type</label>
                             <div class="mt-1">

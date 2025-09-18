@@ -19,7 +19,7 @@ func (hr HealthcheckResult) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 	defer tx.Rollback(context.Background())
 
 	err = tx.QueryRow(context.Background(), `
-		INSERT INTO healthcheck_result (
+		INSERT INTO healthcheck_results (
 			healthcheck_id, application_instance_id, is_successful,
 			time_start, time_end, res_status, res_body,
 			res_time, error_message

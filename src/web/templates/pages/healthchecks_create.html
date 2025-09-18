@@ -16,6 +16,7 @@
         <h1 class="text-3xl font-bold mb-6">Create New Health Check</h1>
 
         <form hx-post="/api/rest/v1/healthchecks" hx-ext="submitjson" hx-swap="outerHTML"
+            hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)"
             class="bg-white shadow-md rounded-lg p-6">
             <div class="space-y-6">
                 <!-- Basic Details Section -->
@@ -188,7 +189,14 @@
                 <div>
                     <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">SSL/TLS Settings</h2>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="useHTTPS" name="use_https" value="true"
+                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="useHTTPS" class="ml-2 block text-sm text-gray-700">
+                                Use HTTPS
+                            </label>
+                        </div>
                         <div class="flex items-center">
                             <input type="checkbox" id="verifySSL" name="verify_ssl" value="true"
                                 class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">

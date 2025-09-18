@@ -190,34 +190,6 @@ type HealthcheckTarget struct {
 	Url                   string `db:"url"`
 }
 
-// GetHealthcheckTargets retrieves all healthcheck targets from the database
-// Joins ApplicationDefinition, Healthcheck and Servers table
-func GetHealthcheckTargets(pool *pgxpool.Pool, hcId uint) (*[]HealthcheckTarget, error) {
-	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback(context.Background())
-
-	rows, err := tx.Query(context.Background(), `
-		select h.id as hc_id, s.hostname as hostname, ad.port as port, h.url as url, ai.id as application_instance_id 
-		from healthcheck h
-		left join application_definition ad on ad.healthcheck_id = h.id
-		inner join application_instance ai on application_definition_id = ad.id
-		left join "server" s on s.id = ai.server_id
-		where h.id = $1;
-	`, hcId)
-	if err != nil {
-		return nil, err
-	}
-
-	hc, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[HealthcheckTarget])
-	if err != nil {
-		return nil, err
-	}
-	return &hc, tx.Commit(context.Background())
-}
-
 // Performs health check, returns the result
 func (hc *Healthcheck) PerformCheck(url string, tlsConfig *tls.Config) (*HealthcheckResult, error) {
 	tr := &http.Transport{
@@ -242,6 +214,7 @@ func (hc *Healthcheck) PerformCheck(url string, tlsConfig *tls.Config) (*Healthc
 	result.ResTime = int(result.TimeEnd.Sub(result.TimeStart).Milliseconds())
 	if err != nil {
 		result.ErrorMessage = err.Error()
+		return result, err
 	} else {
 		result.ResStatus = resp.StatusCode
 		// Read response body

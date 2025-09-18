@@ -27,6 +27,7 @@ type Healthcheck struct {
 	RetryCount     int           `json:"retry_count" db:"retry_count"`       // Number of retries before marking as unhealthy
 	RetryInterval  time.Duration `json:"retry_interval" db:"retry_interval"` // Time between retries
 	ExpectedStatus int           `json:"expected_status" db:"expected_status"`
+	Protocol       string        `json:"protocol" db:"protocol"` // http, https
 
 	// Response validation
 	ExpectedResponseBody string `json:"expected_response_body" db:"expected_response_body"` // Expected response content
@@ -52,6 +53,8 @@ type HealthcheckDTO struct {
 	CheckInterval int    `json:"check_interval" binding:"required"`
 	RetryCount    int    `json:"retry_count"`    // Number of retries before marking as unhealthy
 	RetryInterval int    `json:"retry_interval"` // Time between retries
+	Protocol      string `json:"protocol"`
+	UseHttps      bool   `json:"use_https"`
 
 	// Response validation
 	ExpectedStatus       int     `json:"expected_status" binding:"required"`
@@ -97,6 +100,11 @@ func (dto HealthcheckDTO) ToHealthcheck() (*Healthcheck, error) {
 		hc.VerifySSL = true
 	} else {
 		hc.VerifySSL = false
+	}
+	if dto.UseHttps {
+		hc.Protocol = "https"
+	} else {
+		hc.Protocol = "http"
 	}
 	return &hc, nil
 }

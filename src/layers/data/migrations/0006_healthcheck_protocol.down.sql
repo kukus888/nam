@@ -1,0 +1,1 @@
+alter table "healthcheck" drop protocol;
