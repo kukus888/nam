@@ -88,10 +88,10 @@ func main() {
 	}
 
 	// Init Services
-	slog.Debug("Initializing services")
+	log.Debug("Initializing services")
 	App.Services = services.NewServiceManager(*log)
 	if enabled, found := App.Configuration.Services["HealthcheckService"]; enabled && found {
-		slog.Info("HealthcheckService is enabled, initializing")
+		log.Info("HealthcheckService is enabled, initializing")
 		healthcheckService := services.NewHealthcheckService(App.Database, log.With("component", "HealthcheckService"), App.TlsConfig)
 		App.Services.RegisterService(healthcheckService)
 	}
