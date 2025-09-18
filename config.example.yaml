@@ -1,0 +1,22 @@
+postgres:
+  dsn: "postgres://user:password@localhost:5432/postgres?application_name=nam&sslmode=disable" # DSN for connecting to postgres
+
+logging:
+  level: info # Log level. Available levels are: debug, info, error
+
+webserver:
+  enabled: true # Whether to enable webserver (with APIs) or not
+  mode: debug # A mode in which to run webserver. Available modes are: debug, release
+  address: "0.0.0.0:8080" # Address to bind to
+  tls:
+    enabled: false # Whether to enable TLS or not
+    certpath: "cert.pem" # Server certificate path
+    keypath: "key.pem" # Server key path
+
+keys: # Keys used for calling healthchecks, see github issue #8
+  cacerts: ""
+  clientcert: ""
+  clientkey: ""
+
+services: # Here is a map of services to enable/disable
+  HealthcheckService: true # Whether to enable calling health checks or not on this instance
