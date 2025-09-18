@@ -36,7 +36,7 @@ func InitWebServer(app *Application) {
 	switch App.Configuration.WebServer.Mode {
 	case "debug", "test":
 		gin.SetMode(gin.DebugMode)
-		app.Engine = gin.Default()
+		app.Engine = gin.New()
 		slogLevel = slog.LevelDebug
 	case "release":
 		gin.SetMode(gin.ReleaseMode)
