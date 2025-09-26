@@ -2,7 +2,6 @@ package v1
 
 import (
 	data "kukus/nam/v2/layers/data"
-	handlers "kukus/nam/v2/layers/handler"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -12,27 +11,9 @@ type RestApiApplicationController struct {
 	Database *data.Database
 }
 
-func NewApplicationController(db *data.Database) *RestApiApplicationController {
+func NewApplicationDefinitionController(db *data.Database) *RestApiApplicationController {
 	return &RestApiApplicationController{
 		Database: db,
-	}
-}
-
-// Initializes new Controller on declared RouterGroup, with specified resources
-func (ac *RestApiApplicationController) Init(routerGroup *gin.RouterGroup) {
-	routerGroup.POST("/", ac.NewApplication)
-	routerGroup.GET("/", ac.GetAll)
-	routerGroup.PATCH("/", handlers.MethodNotAllowed)
-	routerGroup.PUT("/", handlers.MethodNotAllowed)
-	routerGroup.DELETE("/", handlers.MethodNotAllowed)
-	idGroup := routerGroup.Group("/:appId")
-	{
-		idGroup.POST("/", handlers.MethodNotAllowed)
-		idGroup.GET("/", ac.GetById)
-		idGroup.PATCH("/", handlers.MethodNotImplemented)
-		idGroup.PUT("/", ac.UpdateApplicationDefinition)
-		idGroup.DELETE("/", ac.DeleteById)
-		NewApplicationInstanceController(ac.Database).Init(idGroup.Group("/instances"))
 	}
 }
 

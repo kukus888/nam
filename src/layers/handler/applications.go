@@ -70,6 +70,29 @@ func (av ApplicationView) GetPageApplicationInstanceCreate(ctx *gin.Context) {
 	})
 }
 
+// GetPageApplicationVariables renders the page to view and edit variables for an application definition
+func (av ApplicationView) GetPageApplicationVariables(ctx *gin.Context) {
+	appId, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": "Reqest must contain application definition id", "trace": err.Error()})
+		return
+	}
+	app, err := data.GetApplicationDefinitionById(av.Database.Pool, uint64(appId))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get application definition id", "trace": err.Error()})
+		return
+	}
+	variables, err := data.GetApplicationDefinitionVariablesByApplicationDefinitionId(av.Database.Pool, uint64(app.Id))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get application definition variables", "trace": err.Error()})
+		return
+	}
+	ctx.HTML(200, "pages/applications/variables", gin.H{
+		"Application": app,
+		"Variables":   variables,
+	})
+}
+
 // GetPageApplicationDetails renders the page to view details of an application definition
 func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 	id, err := strconv.Atoi(ctx.Param("id"))

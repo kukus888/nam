@@ -2,7 +2,6 @@ package v1
 
 import (
 	data "kukus/nam/v2/layers/data"
-	handlers "kukus/nam/v2/layers/handler"
 	services "kukus/nam/v2/layers/service"
 	"strconv"
 
@@ -18,24 +17,6 @@ func NewHealthcheckController(db *data.Database) *HealthcheckController {
 		Service: services.HealthcheckService{
 			Database: db,
 		},
-	}
-}
-
-// Initializes new Controller on declared RouterGroup, with specified resources
-func (ac *HealthcheckController) Init(routerGroup *gin.RouterGroup) {
-	routerGroup.POST("/", ac.NewHealthcheck)
-	routerGroup.GET("/", ac.GetAll)
-	routerGroup.PATCH("/", handlers.MethodNotAllowed)
-	routerGroup.PUT("/", handlers.MethodNotAllowed)
-	routerGroup.DELETE("/", handlers.MethodNotAllowed)
-	idGroup := routerGroup.Group("/:hcId")
-	{
-		idGroup.POST("/", handlers.MethodNotAllowed)
-		idGroup.GET("/", ac.GetById)
-		idGroup.PATCH("/", handlers.MethodNotImplemented)
-		idGroup.PUT("/", ac.UpdateHealthcheck)
-		idGroup.DELETE("/", ac.Delete)
-		NewApplicationInstanceController(ac.Service.Database).Init(idGroup.Group("/instances"))
 	}
 }
 

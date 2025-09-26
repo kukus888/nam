@@ -1,0 +1,1 @@
+drop table if exists application_definition_variable;

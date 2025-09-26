@@ -6,8 +6,16 @@ import (
 
 // Generic HTTP 401 Unauthorized response
 func Unauthorized(ctx *gin.Context) {
-	ctx.HTML(401, "pages/401", gin.H{})
-	ctx.Abort()
+	// Check if user is authenticated
+	if _, ok := ctx.Get("username"); !ok {
+		// User is not authenticated
+		ctx.Header("HX-Redirect", "/login")
+		ctx.Redirect(302, "/login")
+	} else {
+		// User is authenticated but not authorized
+		ctx.HTML(403, "pages/403", gin.H{})
+		ctx.Abort()
+	}
 }
 
 // Generic HTTP 403 Forbidden response

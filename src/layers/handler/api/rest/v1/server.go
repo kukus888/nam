@@ -2,7 +2,6 @@ package v1
 
 import (
 	data "kukus/nam/v2/layers/data"
-	handlers "kukus/nam/v2/layers/handler"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -15,23 +14,6 @@ type ServerController struct {
 func NewServerController(db *data.Database) *ServerController {
 	return &ServerController{
 		Database: db,
-	}
-}
-
-// Initializes new Controller on declared RouterGroup, with specified resources
-func (sc *ServerController) Init(routerGroup *gin.RouterGroup) {
-	routerGroup.POST("/", sc.NewServer)
-	routerGroup.GET("/", sc.GetAll)
-	routerGroup.PATCH("/", handlers.MethodNotAllowed)
-	routerGroup.PUT("/", handlers.MethodNotAllowed)
-	routerGroup.DELETE("/", handlers.MethodNotAllowed)
-	idGroup := routerGroup.Group("/:serverId")
-	{
-		idGroup.POST("/", handlers.MethodNotAllowed)
-		idGroup.GET("/", sc.GetById)
-		idGroup.PATCH("/", handlers.MethodNotImplemented)
-		idGroup.PUT("/", sc.UpdateById)
-		idGroup.DELETE("/", sc.RemoveById)
 	}
 }
 

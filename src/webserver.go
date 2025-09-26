@@ -95,9 +95,67 @@ func InitWebServer(app *Application) {
 	{ // REST
 		restV1group := App.Engine.Group("/api/rest/v1")
 		restV1group.Use(AuthMiddleware())
-		apiRestV1.NewApplicationController(App.Database).Init(restV1group.Group("/applications"))
-		apiRestV1.NewServerController(App.Database).Init(restV1group.Group("/servers"))
-		apiRestV1.NewHealthcheckController(App.Database).Init(restV1group.Group("/healthchecks"))
+		{ // Servers
+			serverController := apiRestV1.NewServerController(App.Database)
+			serverGroup := restV1group.Group("/servers")
+			serverGroup.Use(RequireRole(dbPool, "admin"))
+			serverGroup.POST("/", serverController.NewServer)
+			serverGroup.GET("/", serverController.GetAll)
+			serverIdGroup := serverGroup.Group("/:serverId")
+			{ // Server ID specific routes
+				serverIdGroup.GET("/", serverController.GetById)
+				serverIdGroup.PUT("/", serverController.UpdateById)
+				serverIdGroup.DELETE("/", serverController.RemoveById)
+			}
+		}
+		{ // Healthchecks
+			hcController := apiRestV1.NewHealthcheckController(App.Database)
+			hcGroup := restV1group.Group("/healthchecks")
+			hcGroup.Use(RequireRole(dbPool, "admin"))
+			hcGroup.POST("/", hcController.NewHealthcheck)
+			hcGroup.GET("/", hcController.GetAll)
+			hcIdGroup := hcGroup.Group("/:hcId")
+			{ // Healthcheck ID specific routes
+				hcIdGroup.GET("/", hcController.GetById)
+				hcIdGroup.PUT("/", hcController.UpdateHealthcheck)
+				hcIdGroup.DELETE("/", hcController.Delete)
+			}
+		}
+		{ // Application Definitions
+			appDefController := apiRestV1.NewApplicationDefinitionController(App.Database)
+			appDefGroup := restV1group.Group("/applications")
+			appDefGroup.Use(RequireRole(dbPool, "admin"))
+			appDefGroup.POST("/", appDefController.NewApplication)
+			appDefGroup.GET("/", appDefController.GetAll)
+			appDefIdGroup := appDefGroup.Group("/:appId")
+			{ // Application ID specific routes
+				appDefIdGroup.GET("/", appDefController.GetById)
+				appDefIdGroup.PUT("/", appDefController.UpdateApplicationDefinition)
+				appDefIdGroup.DELETE("/", appDefController.DeleteById)
+				{ // Application Definition Variables
+					appDefVarController := apiRestV1.NewAppDefVariablesController(App.Database)
+					appDefVarGroup := appDefIdGroup.Group("/variables")
+					appDefVarGroup.POST("/", appDefVarController.CreateVariable)
+					{
+						appDefVarIdGroup := appDefVarGroup.Group("/:varId")
+						appDefVarIdGroup.PUT("/", appDefVarController.UpdateVariable)
+						appDefVarIdGroup.DELETE("/", appDefVarController.DeleteVariable)
+					}
+				}
+				{ // Application Instances
+					appInsGroup := appDefIdGroup.Group("/instances")
+					appInsController := apiRestV1.NewApplicationInstanceController(App.Database)
+					appInsGroup.POST("/", appInsController.CreateInstance)
+					appInsGroup.GET("/", appInsController.GetAllInstances)
+					appInsIdGroup := appInsGroup.Group("/:instanceId")
+					{ // Instance ID specific routes
+						appInsIdGroup.GET("/", appInsController.GetById)
+						appInsIdGroup.DELETE("/", appInsController.DeleteInstance)
+						appInsIdGroup.POST("/maintenance", appInsController.ToggleMaintenance)
+					}
+				}
+			}
+		}
 		{ // Users
 			userHandler := apiRestV1.NewUserHandler(dbPool)
 			userGroup := restV1group.Group("/users")
@@ -158,6 +216,7 @@ func InitWebServer(app *Application) {
 		{ // Application ID specific routes
 			idGroup.GET("/details", av.GetPageApplicationDetails)
 			idGroup.GET("/edit", av.GetPageApplicationEdit)
+			idGroup.GET("/variables", av.GetPageApplicationVariables)
 			idGroup.GET("/instances/create", av.GetPageApplicationInstanceCreate)
 		}
 	}

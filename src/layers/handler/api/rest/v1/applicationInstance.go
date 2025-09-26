@@ -2,7 +2,6 @@ package v1
 
 import (
 	data "kukus/nam/v2/layers/data"
-	handlers "kukus/nam/v2/layers/handler"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -16,27 +15,6 @@ type ApplicationInstanceController struct {
 func NewApplicationInstanceController(db *data.Database) *ApplicationInstanceController {
 	return &ApplicationInstanceController{
 		DatabasePool: db.Pool,
-	}
-}
-
-// Initializes new Controller on declared RouterGroup, with specified resources
-func (aic *ApplicationInstanceController) Init(routerGroup *gin.RouterGroup) {
-	routerGroup.POST("/", aic.CreateInstance)
-	routerGroup.GET("/", aic.GetAllInstances)
-	routerGroup.PATCH("/", handlers.MethodNotAllowed)
-	routerGroup.PUT("/", handlers.MethodNotAllowed)
-	routerGroup.DELETE("/", handlers.MethodNotAllowed)
-	idGroup := routerGroup.Group("/:instanceId")
-	{
-		idGroup.POST("/", handlers.MethodNotAllowed)
-		idGroup.GET("/", aic.GetById)
-		idGroup.PATCH("/", handlers.MethodNotImplemented)
-		idGroup.PUT("/", handlers.MethodNotImplemented)
-		idGroup.DELETE("/", aic.DeleteInstance)
-		maintenanceGroup := idGroup.Group("/maintenance")
-		{
-			maintenanceGroup.POST("/", aic.ToggleMaintenance)
-		}
 	}
 }
 
