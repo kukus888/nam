@@ -22,7 +22,7 @@
                         {{ .Instance.Name }}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        Application instance running on {{ .Instance.Server.Alias }}
+                        Instance of <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">{{ .Instance.ApplicationDefinition.Name }}</span> running on <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">{{ .Instance.Server.Alias }}</span>
                     </p>
                     <div class="mt-2 flex items-center space-x-2">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -34,11 +34,23 @@
                         </span>
                     </div>
                 </div>
-                <div class="flex items-center space-x-2 text-sm text-gray-500">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span id="last-refresh">Just now</span>
+                <div class="flex items-center space-x-3">
+                    <a href="/applications/{{ .Instance.ApplicationDefinition.Id }}/details"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>
+                        View Application
+                    </a>
+                    <button hx-delete="/api/rest/v1/applications/{{ .Instance.ApplicationDefinition.Id }}/instances/{{ .Instance.Id }}"
+                        hx-confirm="Are you sure you want to delete this instance? This action cannot be undone."
+                        hx-on::after-request="if(event.detail.successful) { window.location.href = '/applications/{{ .Instance.ApplicationDefinition.Id }}/details'; } else { showErrorMessage(event.detail.xhr.responseText); }"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Delete
+                    </button>
                 </div>
             </div>
         </div>
@@ -130,232 +142,343 @@
             </div>
         </div>
 
-        <!-- Actions Section -->
-        <div class="bg-white shadow rounded-lg mb-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Actions</h2>
-                <p class="mt-1 text-sm text-gray-500">Manage this application instance</p>
-            </div>
-            <div class="px-6 py-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <!-- Toggle Maintenance Mode -->
-                    <button 
-                        name="maintenance_mode"
-                        value="{{ if .Instance.MaintenanceMode }}false{{ else }}true{{ end }}"
-                        hx-post="/api/rest/v1/applications/{{ .Instance.ApplicationDefinition.Id }}/instances/{{ .Instance.Id }}/maintenance"
-                        hx-headers='{"Content-Type": "application/json"}'
-                        hx-vals='js:{"id":{{ .Instance.Id }},"name":"{{ .Instance.Name }}","topology_node_id":{{ .Instance.TopologyNodeID }},"server_id":{{ .Instance.Server.Id }}}'
-                        hx-swap="none" 
-                        hx-ext="submitjson"
-                        hx-on::after-request="if(event.detail.successful) { location.reload(); } else { showErrorMessage(event.detail.xhr.responseText); }"
-                        class="inline-flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-                            {{ if .Instance.MaintenanceMode }}bg-green-600 hover:bg-green-700{{ else }}bg-yellow-600 hover:bg-yellow-700{{ end }} 
-                            focus:outline-none focus:ring-2 focus:ring-offset-2 
-                            {{ if .Instance.MaintenanceMode }}focus:ring-green-500{{ else }}focus:ring-yellow-500{{ end }} 
-                            transition-colors duration-200">
-                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {{ if .Instance.MaintenanceMode }}
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"></path>
-                            {{ else }}
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5l-6.928-12c-.77-.833-2.002-.833-2.772 0l-6.928 12c-.77.833.192 2.5 1.732 2.5z"></path>
-                            {{ end }}
-                        </svg>
-                        {{ if .Instance.MaintenanceMode }}Exit Maintenance{{ else }}Enter Maintenance{{ end }}
-                    </button>
 
-                    <!-- Restart Instance (Example Action) -->
-                    <button 
-                        class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-                        onclick="alert('Restart functionality coming soon!')">
-                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Restart Instance
-                    </button>
 
-                    <!-- Run Health Check (Example Action) -->
-                    <button 
-                        class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
-                        onclick="alert('Manual health check functionality coming soon!')">
-                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Run Health Check
-                    </button>
-
-                    <!-- Delete Instance -->
-                    <button 
-                        hx-delete="/api/rest/v1/applications/{{ .Instance.ApplicationDefinition.Id }}/instances/{{ .Instance.Id }}"
-                        hx-confirm="Are you sure you want to delete this instance? This action cannot be undone."
-                        hx-on::after-request="if(event.detail.successful) { window.location.href = '/applications/{{ .Instance.ApplicationDefinition.Id }}'; } else { showErrorMessage(event.detail.xhr.responseText); }"
-                        class="inline-flex items-center justify-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
-                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                        Delete Instance
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Application Instance Information Card -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-medium text-gray-900">Instance Details</h2>
-                <p class="mt-1 text-sm text-gray-500">Complete information about this application instance</p>
-            </div>
-            <div class="px-6 py-6">
-                <dl class="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Instance Name</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-medium">{{ .Instance.Name }}</dd>
+        <!-- Main Content Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Main Content -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Quick Actions -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-medium text-gray-900">Quick Actions</h2>
+                        <p class="mt-1 text-sm text-gray-500">Manage this application instance</p>
                     </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Instance ID</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Instance.Id }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Topology Node ID</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Instance.TopologyNodeID }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Application Definition</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-medium">{{ .Instance.ApplicationDefinition.Name }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Application Type</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Instance.ApplicationDefinition.Type }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Port</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Instance.ApplicationDefinition.Port }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Server Alias</dt>
-                        <dd class="mt-1 text-sm text-gray-900 font-medium">{{ .Instance.Server.Alias }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Server Hostname</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ .Instance.Server.Hostname }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-sm font-medium text-gray-500">Maintenance Mode</dt>
-                        <dd class="mt-1">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                {{ if .Instance.MaintenanceMode }}bg-yellow-100 text-yellow-800{{ else }}bg-green-100 text-green-800{{ end }}">
-                                {{ if .Instance.MaintenanceMode }}Enabled{{ else }}Disabled{{ end }}
-                            </span>
-                        </dd>
-                    </div>
-                </dl>
-            </div>
-        </div>
-        <!-- Health Check Status -->
-        <div hx-get="/htmx/health/application/instance?live_reload=true&size=large&id={{ .Instance.Id }}"
-            hx-swap="outerHTML" hx-trigger="load" class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
-            <div class="px-6 py-4 flex items-center justify-center">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                <span class="ml-3 text-gray-500">Loading health status...</span>
-            </div>
-        </div>
-
-        <!-- Health Check History -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                <div>
-                    <h2 class="text-lg font-medium text-gray-900">Health Check History</h2>
-                    <p class="mt-1 text-sm text-gray-500">Recent health check results for this instance</p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="bg-gray-100 px-3 py-1 rounded-full">
-                        <span class="text-sm font-medium text-gray-700">{{ len .HealthcheckResults }} Total Results</span>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                        <label for="results-per-page" class="text-sm text-gray-500">Show:</label>
-                        <select id="results-per-page" class="text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="10">10</option>
-                            <option value="25" selected>25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                    <button 
-                        hx-get="/htmx/health/application/instance?live_reload=true&size=large&id={{ .Instance.Id }}"
-                        hx-target="#health-status"
-                        hx-swap="outerHTML"
-                        class="inline-flex items-center p-2 border border-transparent rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div class="px-6 py-6">
-                {{ if .HealthcheckResults }}
-                <div class="flex flex-row space-x-6">
-                    <!-- Timeline -->
-                    <div class="flex-shrink-0 w-56">
-                        <div class="flex flex-col h-96">
-                            <!-- Timeline Header -->
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-sm font-medium text-gray-900">Timeline</h3>
-                                <div class="flex items-center space-x-2">
-                                    <button id="timeline-prev" class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                                        </svg>
-                                    </button>
-                                    <span id="timeline-page-info" class="text-xs text-gray-500">1 of 1</span>
-                                    <button id="timeline-next" class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Timeline Container -->
-                            <div class="flex-1 overflow-y-auto">
-                                <div class="space-y-2" id="timeline">
-                                    <!-- Timeline items will be populated by JavaScript -->
-                                </div>
-                            </div>
-                            
-                            <!-- Timeline Summary -->
-                            <div class="mt-4 pt-4 border-t border-gray-200">
-                                <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div class="flex items-center space-x-1">
-                                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                                        <span class="text-gray-600">Success: <span id="success-count">0</span></span>
-                                    </div>
-                                    <div class="flex items-center space-x-1">
-                                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                                        <span class="text-gray-600">Failed: <span id="failed-count">0</span></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Details Panel -->
-                    <div class="flex-1 min-w-0">
-                        <div id="healthcheckDetails" class="bg-gray-50 rounded-lg p-6 h-96 overflow-y-auto">
-                            <div class="text-center text-gray-500 h-full flex flex-col justify-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    <div class="px-6 py-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Toggle Maintenance Mode -->
+                            <button 
+                                name="maintenance_mode"
+                                value="{{ if .Instance.MaintenanceMode }}false{{ else }}true{{ end }}"
+                                hx-post="/api/rest/v1/applications/{{ .Instance.ApplicationDefinition.Id }}/instances/{{ .Instance.Id }}/maintenance"
+                                hx-headers='{"Content-Type": "application/json"}'
+                                hx-vals='js:{"id":{{ .Instance.Id }},"name":"{{ .Instance.Name }}","topology_node_id":{{ .Instance.TopologyNodeID }},"server_id":{{ .Instance.Server.Id }}}'
+                                hx-swap="none" 
+                                hx-ext="submitjson"
+                                hx-on::after-request="if(event.detail.successful) { location.reload(); } else { showErrorMessage(event.detail.xhr.responseText); }"
+                                class="inline-flex items-center justify-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+                                    {{ if .Instance.MaintenanceMode }}bg-green-600 hover:bg-green-700 focus:ring-green-500{{ else }}bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500{{ end }} 
+                                    focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {{ if .Instance.MaintenanceMode }}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"></path>
+                                    {{ else }}
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5l-6.928-12c-.77-.833-2.002-.833-2.772 0l-6.928 12c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    {{ end }}
                                 </svg>
-                                <p class="text-sm">Select a health check result from the timeline to view detailed information.</p>
-                            </div>
+                                {{ if .Instance.MaintenanceMode }}Exit Maintenance{{ else }}Enter Maintenance{{ end }}
+                            </button>
+
+                            <!-- Edit Variables -->
+                            <a href="/instances/{{ .Instance.Id }}/variables"
+                                class="inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                Edit Variables
+                            </a>
+
+                            <!-- Run Action -->
+                            <button 
+                                class="inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                                onclick="alert('Run action functionality coming soon!')">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+                                    <polygon fill="currentColor" points="10,8 16,12 10,16"></polygon>
+                                </svg>
+                                Run action
+                            </button>
+
+                            <!-- Run Health Check -->
+                            <button 
+                                class="inline-flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
+                                onclick="alert('Manual health check functionality coming soon!')">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Run Health Check
+                            </button>
                         </div>
                     </div>
                 </div>
-                {{ else }}
-                <div class="text-center py-12">
-                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">No health check results</h3>
-                    <p class="mt-1 text-sm text-gray-500">Health check results will appear here once checks have been performed.</p>
+
+                <!-- Instance Details -->
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-medium text-gray-900">Instance Details</h2>
+                        <p class="mt-1 text-sm text-gray-500">Complete information about this application instance</p>
+                    </div>
+                    <div class="px-6 py-6">
+                        <dl class="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Instance Name</dt>
+                                <dd class="mt-1 text-sm text-gray-900 font-medium">{{ .Instance.Name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Instance ID</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Instance.Id }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Topology Node ID</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Instance.TopologyNodeID }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Application Definition</dt>
+                                <dd class="mt-1 text-sm text-gray-900 font-medium">
+                                    <a href="/applications/{{ .Instance.ApplicationDefinition.Id }}/details"
+                                        class="text-indigo-600 hover:text-indigo-900">
+                                        {{ .Instance.ApplicationDefinition.Name }}
+                                    </a>
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Application Type</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Instance.ApplicationDefinition.Type }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Port</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Instance.ApplicationDefinition.Port }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Server Alias</dt>
+                                <dd class="mt-1 text-sm text-gray-900 font-medium">{{ .Instance.Server.Alias }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Server Hostname</dt>
+                                <dd class="mt-1 text-sm text-gray-900">{{ .Instance.Server.Hostname }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Maintenance Mode</dt>
+                                <dd class="mt-1">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {{ if .Instance.MaintenanceMode }}bg-yellow-100 text-yellow-800{{ else }}bg-green-100 text-green-800{{ end }}">
+                                        {{ if .Instance.MaintenanceMode }}Enabled{{ else }}Disabled{{ end }}
+                                    </span>
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+
+
+
+                <!-- Health Check Status -->
+                <div hx-get="/htmx/health/application/instance?live_reload=true&size=large&id={{ .Instance.Id }}"
+                    hx-swap="outerHTML" hx-trigger="load" class="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <div class="px-6 py-4 flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <span class="ml-3 text-gray-500">Loading health status...</span>
+                    </div>
+                </div>
+
+                <!-- Health Check History -->
+                <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-lg font-medium text-gray-900">Health Check History</h2>
+                            <p class="mt-1 text-sm text-gray-500">Recent health check results for this instance</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-gray-100 px-3 py-1 rounded-full">
+                                <span class="text-sm font-medium text-gray-700">{{ len .HealthcheckResults }} Total Results</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <label for="results-per-page" class="text-sm text-gray-500">Show:</label>
+                                <select id="results-per-page" class="text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <button 
+                                hx-get="/htmx/health/application/instance?live_reload=true&size=large&id={{ .Instance.Id }}"
+                                hx-target="#health-status"
+                                hx-swap="outerHTML"
+                                class="inline-flex items-center p-2 border border-transparent rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="px-6 py-6">
+                        {{ if .HealthcheckResults }}
+                        <div class="flex flex-row space-x-6">
+                            <!-- Timeline -->
+                            <div class="flex-shrink-0 w-56">
+                                <div class="flex flex-col h-96">
+                                    <!-- Timeline Header -->
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-sm font-medium text-gray-900">Timeline</h3>
+                                        <div class="flex items-center space-x-2">
+                                            <button id="timeline-prev" class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                                                </svg>
+                                            </button>
+                                            <span id="timeline-page-info" class="text-xs text-gray-500">1 of 1</span>
+                                            <button id="timeline-next" class="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Timeline Container -->
+                                    <div class="flex-1 overflow-y-auto">
+                                        <div class="space-y-2" id="timeline">
+                                            <!-- Timeline items will be populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Timeline Summary -->
+                                    <div class="mt-4 pt-4 border-t border-gray-200">
+                                        <div class="grid grid-cols-2 gap-2 text-xs">
+                                            <div class="flex items-center space-x-1">
+                                                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                                                <span class="text-gray-600">Success: <span id="success-count">0</span></span>
+                                            </div>
+                                            <div class="flex items-center space-x-1">
+                                                <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                                                <span class="text-gray-600">Failed: <span id="failed-count">0</span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Details Panel -->
+                            <div class="flex-1 min-w-0">
+                                <div id="healthcheckDetails" class="bg-gray-50 rounded-lg p-6 h-96 overflow-y-auto">
+                                    <div class="text-center text-gray-500 h-full flex flex-col justify-center">
+                                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <p class="text-sm">Select a health check result from the timeline to view detailed information.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {{ else }}
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No health check results</h3>
+                            <p class="mt-1 text-sm text-gray-500">Health check results will appear here once checks have been performed.</p>
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Instance Variables -->
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-lg font-medium text-gray-900">Instance Variables</h2>
+                        <a href="/instances/{{ .Instance.Id }}/variables"
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Edit
+                        </a>
+                    </div>
+                    <div class="px-6 py-4">
+                        {{ if .Variables }}
+                        <div class="space-y-3">
+                            {{ range $variable := .Variables }}
+                            <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="text-xs font-medium text-gray-900 font-mono">{{ $variable.Name }}</h4>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                        Variable
+                                    </span>
+                                </div>
+                                {{ if $variable.Description }}
+                                <p class="text-xs text-gray-600 mb-2">{{ $variable.Description }}</p>
+                                {{ end }}
+                                <div class="text-xs text-gray-500 font-mono bg-white px-2 py-1 rounded border">
+                                    {{ $variable.Value }}
+                                </div>
+                            </div>
+                            {{ end }}
+                        </div>
+                        {{ else }}
+                        <!-- Empty State -->
+                        <div class="text-center py-6">
+                            <svg class="h-8 w-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="text-sm font-medium text-gray-900 mb-1">No variables</h3>
+                            <p class="text-xs text-gray-500 mb-3">Configure instance variables above</p>
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+
+                <!-- Health Check Template -->
+                {{ if .Healthcheck }}
+                <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-lg font-medium text-gray-900">Health Check Template</h2>
+                        <a href="/healthchecks/{{ .Healthcheck.Id }}/details"
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            View
+                        </a>
+                    </div>
+                    <div class="px-6 py-4 space-y-4">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Health Check Name</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ .Healthcheck.Name }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Endpoint</dt>
+                            <dd class="mt-1 text-sm text-gray-900 font-mono">{{ .Healthcheck.ReqUrl }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Timeout</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ .Healthcheck.ReqTimeout }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Check Interval</dt>
+                            <dd class="mt-1 text-sm text-gray-900">{{ .Healthcheck.CheckInterval }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Expected Status</dt>
+                            <dd class="mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {{ .Healthcheck.ExpectedStatus }}
+                                </span>
+                            </dd>
+                        </div>
+                        {{ if .Healthcheck.ExpectedResponse }}
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Expected Response</dt>
+                            <dd class="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md font-mono text-xs">
+                                {{ .Healthcheck.ExpectedResponse }}
+                            </dd>
+                        </div>
+                        {{ end }}
+                    </div>
                 </div>
                 {{ end }}
             </div>
@@ -419,7 +542,10 @@
                 displayText = `${Math.floor(diffMinutes / 60)}h ago`;
             }
             
-            document.getElementById('last-refresh').textContent = displayText;
+            const lastRefreshEl = document.getElementById('last-refresh');
+            if (lastRefreshEl) {
+                lastRefreshEl.textContent = displayText;
+            }
         }
         
         function renderTimeline() {

@@ -166,6 +166,15 @@ type ApplicationDefinitionVariableDAO struct {
 	ApplicationDefinitionID uint   `json:"application_definition_id" db:"application_definition_id"`
 }
 
+// ApplicationInstanceVariableDAO represents a variable associated with an application instance
+type ApplicationInstanceVariableDAO struct {
+	Id                    uint   `json:"id" db:"id"`
+	Name                  string `json:"name" db:"name"`
+	Value                 string `json:"value" db:"value"`
+	Description           string `json:"description" db:"description"`
+	ApplicationInstanceID uint   `json:"application_instance_id" db:"application_instance_id"`
+}
+
 // ApplicationInstance represents an instance of an application
 type ApplicationInstance struct {
 	Id                      uint   `json:"id" db:"id"`

@@ -1,0 +1,456 @@
+{{ define "pages/application/instance/variables" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Variables - {{ .Instance.Name }}</title>
+    {{ template "template/head.includes" }}
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="/instances/{{ .Instance.Id }}/details" 
+                        class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        Back to Instance
+                    </a>
+                    <div class="text-gray-300">|</div>
+                    <div>
+                        <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
+                            Variables - {{ .Instance.Name }}
+                        </h1>
+                        <p class="mt-1 text-sm text-gray-500">
+                            Manage variables for <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">{{ .Instance.Name }}</span> instance of the <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">{{ .Instance.ApplicationDefinition.Name }}</span> application.
+                        </p>
+                    </div>
+                </div>
+                <button id="add-variable-btn"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Add Variable
+                </button>
+            </div>
+        </div>
+
+        <!-- Variables Container -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-900">Variables</h2>
+                        <p class="mt-1 text-sm text-gray-500">Configure variables that can be used in actions. These variables will overwrite the application defaults.</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm text-gray-500">
+                            <span id="variable-count">{{ len .Variables }}</span> variables configured
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Variables Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                                Variable Name
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/3">
+                                Value
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Description
+                            </th>
+                            <th scope="col" class="relative px-6 py-3 w-32">
+                                <span class="sr-only">Actions</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="variables-tbody" class="bg-white divide-y divide-gray-200">
+                        {{ range $variable := .Variables }}
+                        <tr class="variable-row hover:bg-gray-50" data-variable-id="{{ $variable.Id }}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="hidden" class="variable-id" value="{{ $variable.Id }}">
+                                <input type="text" class="variable-name w-full px-2 py-1 text-sm font-mono border-0 bg-transparent focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded" 
+                                       value="{{ $variable.Name }}" placeholder="VARIABLE_NAME" readonly>
+                            </td>
+                            <td class="px-6 py-4">
+                                <input type="text" class="variable-value w-full px-2 py-1 text-sm font-mono border-0 bg-transparent focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded" 
+                                       value="{{ $variable.Value }}" placeholder="Variable value" readonly>
+                            </td>
+                            <td class="px-6 py-4">
+                                <input type="text" class="variable-description w-full px-2 py-1 text-sm border-0 bg-transparent focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded" 
+                                       value="{{ $variable.Description }}" placeholder="Describe what this variable is used for..." readonly>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex space-x-2 justify-end">
+                                    <button type="button" class="edit-variable text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 p-2 rounded-md transition-colors" title="Edit Variable">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="save-variable text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 p-2 rounded-md transition-colors hidden" title="Save Variable">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="cancel-edit text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-2 rounded-md transition-colors hidden" title="Cancel Edit">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                    <button type="button" class="delete-variable text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-2 rounded-md transition-colors" title="Delete Variable">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {{ end }}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-16 {{ if .Variables }}hidden{{ end }}">
+                <svg class="h-16 w-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No variables configured</h3>
+                <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                    Variables help configure your actions for different scenarios.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript for Variables Management -->
+    <script>
+        const instanceId = {{ .Instance.Id }};
+        const applicationDefinitionId = {{ .Instance.ApplicationDefinition.Id }};
+        let variableCounter = 0;
+
+        function updateVariableCount() {
+            const variableRows = document.querySelectorAll('.variable-row');
+            const count = variableRows.length;
+            const countElement = document.getElementById('variable-count');
+            const emptyState = document.getElementById('empty-state');
+            const tableContainer = document.querySelector('.overflow-x-auto');
+            
+            if (countElement) {
+                countElement.textContent = count;
+            }
+            
+            if (count === 0) {
+                emptyState.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+            }
+        }
+
+        function showSuccessMessage(message) {
+            // Create a temporary success notification
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'fixed top-4 right-4 p-4 rounded-md shadow-lg z-50 bg-green-50 text-green-800 border border-green-200';
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 3000);
+        }
+
+        function enableEdit(row) {
+            const nameInput = row.querySelector('.variable-name');
+            const valueInput = row.querySelector('.variable-value');
+            const descriptionInput = row.querySelector('.variable-description');
+            const editBtn = row.querySelector('.edit-variable');
+            const saveBtn = row.querySelector('.save-variable');
+            const cancelBtn = row.querySelector('.cancel-edit');
+            
+            // Store original values
+            row.dataset.originalName = nameInput.value;
+            row.dataset.originalValue = valueInput.value;
+            row.dataset.originalDescription = descriptionInput.value;
+            
+            // Make inputs editable
+            nameInput.removeAttribute('readonly');
+            valueInput.removeAttribute('readonly');
+            descriptionInput.removeAttribute('readonly');
+            
+            // Show/hide buttons
+            editBtn.classList.add('hidden');
+            saveBtn.classList.remove('hidden');
+            cancelBtn.classList.remove('hidden');
+            
+            // Focus on name input
+            nameInput.focus();
+        }
+
+        function cancelEdit(row) {
+            const nameInput = row.querySelector('.variable-name');
+            const valueInput = row.querySelector('.variable-value');
+            const descriptionInput = row.querySelector('.variable-description');
+            const editBtn = row.querySelector('.edit-variable');
+            const saveBtn = row.querySelector('.save-variable');
+            const cancelBtn = row.querySelector('.cancel-edit');
+            
+            // Restore original values
+            nameInput.value = row.dataset.originalName;
+            valueInput.value = row.dataset.originalValue;
+            descriptionInput.value = row.dataset.originalDescription;
+            
+            // Make inputs readonly
+            nameInput.setAttribute('readonly', 'readonly');
+            valueInput.setAttribute('readonly', 'readonly');
+            descriptionInput.setAttribute('readonly', 'readonly');
+            
+            // Show/hide buttons
+            editBtn.classList.remove('hidden');
+            saveBtn.classList.add('hidden');
+            cancelBtn.classList.add('hidden');
+        }
+
+        async function saveVariable(row) {
+            const variableId = row.querySelector('.variable-id').value;
+            const nameInput = row.querySelector('.variable-name');
+            const valueInput = row.querySelector('.variable-value');
+            const descriptionInput = row.querySelector('.variable-description');
+            const editBtn = row.querySelector('.edit-variable');
+            const saveBtn = row.querySelector('.save-variable');
+            const cancelBtn = row.querySelector('.cancel-edit');
+            
+            const variableData = {
+                id: parseInt(variableId),
+                name: nameInput.value.trim(),
+                value: valueInput.value.trim(),
+                description: descriptionInput.value.trim(),
+                application_instance_id: instanceId
+            };
+            
+            if (!variableData.name || !variableData.value) {
+                showErrorMessage('Name and value are required');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/rest/v1/applications/${applicationDefinitionId}/instances/${instanceId}/variables/${variableId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(variableData)
+                });
+                
+                if (response.ok) {
+                    // Make inputs readonly
+                    nameInput.setAttribute('readonly', 'readonly');
+                    valueInput.setAttribute('readonly', 'readonly');
+                    descriptionInput.setAttribute('readonly', 'readonly');
+                    
+                    // Show/hide buttons
+                    editBtn.classList.remove('hidden');
+                    saveBtn.classList.add('hidden');
+                    cancelBtn.classList.add('hidden');
+                    
+                    showSuccessMessage('Variable updated successfully');
+                } else {
+                    const error = await response.json();
+                    showErrorMessage(error);
+                }
+            } catch (error) {
+                showErrorMessage('Network error occurred');
+            }
+        }
+
+        async function deleteVariable(row) {
+            if (!confirm('Are you sure you want to delete this variable?')) {
+                return;
+            }
+            
+            const variableId = row.querySelector('.variable-id').value;
+            
+            try {
+                const response = await fetch(`/api/rest/v1/applications/${applicationDefinitionId}/instances/${instanceId}/variables/${variableId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    row.remove();
+                    updateVariableCount();
+                    showSuccessMessage('Variable deleted successfully');
+                } else {
+                    const error = await response.json();
+                    showErrorMessage(error);
+                }
+            } catch (error) {
+                showErrorMessage('Network error occurred');
+            }
+        }
+
+        async function createVariable() {
+            const tbody = document.getElementById('variables-tbody');
+            const emptyState = document.getElementById('empty-state');
+            const tableContainer = document.querySelector('.overflow-x-auto');
+            
+            // Show table and hide empty state if it was hidden
+            if (emptyState && !emptyState.classList.contains('hidden')) {
+                emptyState.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+            }
+            
+            // Create a new row for creating
+            const newRow = document.createElement('tr');
+            newRow.className = 'variable-row hover:bg-gray-50 bg-blue-50';
+            newRow.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <input type="text" class="variable-name w-full px-2 py-1 text-sm font-mono border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded" 
+                           placeholder="VARIABLE_NAME">
+                </td>
+                <td class="px-6 py-4">
+                    <input type="text" class="variable-value w-full px-2 py-1 text-sm font-mono border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded" 
+                           placeholder="Variable value">
+                </td>
+                <td class="px-6 py-4">
+                    <input type="text" class="variable-description w-full px-2 py-1 text-sm border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 rounded" 
+                           placeholder="Describe what this variable is used for...">
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div class="flex space-x-2 justify-end">
+                        <button type="button" class="create-variable text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 p-2 rounded-md transition-colors" title="Create Variable">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="cancel-create text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 p-2 rounded-md transition-colors" title="Cancel">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
+            
+            tbody.appendChild(newRow);
+            attachRowEventListeners(newRow);
+            
+            // Focus on name input
+            const nameInput = newRow.querySelector('.variable-name');
+            nameInput.focus();
+            
+            // Scroll to new row
+            newRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function saveNewVariable(row) {
+            const nameInput = row.querySelector('.variable-name');
+            const valueInput = row.querySelector('.variable-value');
+            const descriptionInput = row.querySelector('.variable-description');
+            
+            const variableData = {
+                name: nameInput.value.trim(),
+                value: valueInput.value.trim(),
+                description: descriptionInput.value.trim(),
+                application_instance_id: instanceId
+            };
+            
+            if (!variableData.name || !variableData.value) {
+                showErrorMessage('Name and value are required');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/rest/v1/applications/${applicationDefinitionId}/instances/${instanceId}/variables`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(variableData)
+                });
+                
+                if (response.ok) {
+                    // Reload the page to show the new variable
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    showErrorMessage(error);
+                }
+            } catch (error) {
+                showErrorMessage('Network error occurred');
+            }
+        }
+
+        function attachRowEventListeners(row) {
+            // Edit button
+            const editBtn = row.querySelector('.edit-variable');
+            if (editBtn) {
+                editBtn.addEventListener('click', () => enableEdit(row));
+            }
+            
+            // Save button
+            const saveBtn = row.querySelector('.save-variable');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => saveVariable(row));
+            }
+            
+            // Cancel edit button
+            const cancelBtn = row.querySelector('.cancel-edit');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => cancelEdit(row));
+            }
+            
+            // Delete button
+            const deleteBtn = row.querySelector('.delete-variable');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => deleteVariable(row));
+            }
+            
+            // Create button (for new variables)
+            const createBtn = row.querySelector('.create-variable');
+            if (createBtn) {
+                createBtn.addEventListener('click', () => saveNewVariable(row));
+            }
+            
+            // Cancel create button
+            const cancelCreateBtn = row.querySelector('.cancel-create');
+            if (cancelCreateBtn) {
+                cancelCreateBtn.addEventListener('click', () => {
+                    row.remove();
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateVariableCount();
+            
+            // Attach event listeners to existing rows
+            document.querySelectorAll('.variable-row').forEach(attachRowEventListeners);
+            
+            // Add Variable button (top right corner)
+            const addButton = document.getElementById('add-variable-btn');
+            if (addButton) {
+                addButton.addEventListener('click', createVariable);
+            }
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}

@@ -28,10 +28,10 @@
                     <div class="text-gray-300">|</div>
                     <div>
                         <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
-                            Application Variables
+                            Variables -  {{ .Application.Name }}
                         </h1>
                         <p class="mt-1 text-sm text-gray-500">
-                            Manage environment variables for {{ .Application.Name }}
+                            Manage variables for the whole <span class="font-mono bg-gray-100 px-1.5 py-0.5 rounded text-gray-800">{{ .Application.Name }}</span> application.
                         </p>
                     </div>
                 </div>
@@ -50,8 +50,8 @@
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-lg font-medium text-gray-900">Environment Variables</h2>
-                        <p class="mt-1 text-sm text-gray-500">Configure variables that can be used in actions and scripts</p>
+                        <h2 class="text-lg font-medium text-gray-900">Variables</h2>
+                        <p class="mt-1 text-sm text-gray-500">Configure variables that can be used in actions. These variables will serve as defaults for all instances.</p>
                     </div>
                     <div class="flex items-center space-x-4">
                         <div class="text-sm text-gray-500">
@@ -135,7 +135,7 @@
                 </svg>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No variables configured</h3>
                 <p class="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
-                    Environment variables help configure your application for different environments and store sensitive information securely.
+                    Variables help configure your actions for different scenarios.
                 </p>
             </div>
         </div>

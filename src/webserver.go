@@ -152,6 +152,15 @@ func InitWebServer(app *Application) {
 						appInsIdGroup.GET("/", appInsController.GetById)
 						appInsIdGroup.DELETE("/", appInsController.DeleteInstance)
 						appInsIdGroup.POST("/maintenance", appInsController.ToggleMaintenance)
+						{ // Application Instance Variables
+							appInsVarsController := apiRestV1.NewAppInstanceVariablesController(App.Database)
+							appInsVarsGroup := appInsIdGroup.Group("/variables")
+							appInsVarsGroup.GET("/", appInsVarsController.GetAllVariables)
+							appInsVarsGroup.POST("/", appInsVarsController.CreateVariable)
+							appInsVarIdGroup := appInsVarsGroup.Group("/:varId")
+							appInsVarIdGroup.PUT("/", appInsVarsController.UpdateVariable)
+							appInsVarIdGroup.DELETE("/", appInsVarsController.DeleteVariable)
+						}
 					}
 				}
 			}
@@ -227,6 +236,7 @@ func InitWebServer(app *Application) {
 		idGroup := routeGroup.Group("/:id")
 		{ // Instance ID specific routes
 			idGroup.GET("/details", iv.GetPageApplicationInstanceDetails)
+			idGroup.GET("/variables", iv.GetPageApplicationInstanceVariables)
 		}
 	}
 	{ // Healthchecks
