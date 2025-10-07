@@ -173,6 +173,7 @@ type ApplicationInstanceVariableDAO struct {
 	Value                 string `json:"value" db:"value"`
 	Description           string `json:"description" db:"description"`
 	ApplicationInstanceID uint   `json:"application_instance_id" db:"application_instance_id"`
+	IsInherited           bool   `json:"is_inherited" db:"is_inherited"` // True if the variable is inherited from the application definition
 }
 
 // ApplicationInstance represents an instance of an application

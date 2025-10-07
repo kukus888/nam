@@ -102,26 +102,32 @@ func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 	}
 	app, err := data.GetApplicationDefinitionById(av.Database.Pool, uint64(id))
 	if err != nil {
-		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "unable to get application definition", "trace": err.Error()})
 		return
 	}
 	var hc *data.Healthcheck
 	if app.HealthcheckId != nil {
 		hc, err = data.GetHealthCheckById(av.Database.Pool, uint(*app.HealthcheckId))
 		if err != nil {
-			ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+			ctx.AbortWithStatusJSON(500, gin.H{"error": "unable to get health check", "trace": err.Error()})
 			return
 		}
 	}
 	instances, err := data.GetApplicationInstancesFullByApplicationDefinitionId(av.Database.Pool, uint64(app.Id))
 	if err != nil {
-		ctx.AbortWithStatusJSON(500, gin.H{"error": err.Error()})
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "unable to get application instances", "trace": err.Error()})
+		return
+	}
+	variables, err := data.GetApplicationDefinitionVariablesByApplicationDefinitionId(av.Database.Pool, uint64(app.Id))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "unable to get application definition variables", "trace": err.Error()})
 		return
 	}
 	ctx.HTML(200, "pages/applications/details", gin.H{
 		"Application": app,
 		"Healthcheck": hc,
 		"Instances":   instances,
+		"Variables":   variables,
 	})
 }
 

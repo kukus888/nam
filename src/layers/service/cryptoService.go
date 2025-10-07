@@ -18,6 +18,7 @@ type CryptoService struct {
 }
 
 // NewCryptoService creates a new crypto service with a master key
+// Used for encrypting and decrypting secrets into the database
 func NewCryptoService(masterPassword string, salt []byte) *CryptoService {
 	// Use PBKDF2 to derive a key from the master password
 	key := pbkdf2.Key([]byte(masterPassword), salt, 100000, 32, sha256.New)

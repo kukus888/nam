@@ -27,3 +27,13 @@ func GetJWTKeyProvider() *JWTKeyProvider {
 	}
 	return provider
 }
+
+// SetJWTKey allows setting a custom key for JWT signing.
+// This is useful for testing or if you want to use a persistent key.
+func SetJWTKey(key []byte) {
+	lock.Do(func() {
+		provider = &JWTKeyProvider{
+			Key: key,
+		}
+	})
+}

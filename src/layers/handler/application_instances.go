@@ -32,11 +32,6 @@ func (iv InstanceView) GetPageApplicationInstanceDetails(ctx *gin.Context) {
 		ctx.AbortWithStatusJSON(404, gin.H{"error": "Application instance not found"})
 		return
 	}
-	healthcheckResults, err := data.GetHealthcheckResultsByApplicationInstanceId(iv.Database.Pool, uint64(appInstance.Id))
-	if err != nil {
-		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get healthcheck results.", "trace": err.Error()})
-		return
-	}
 
 	// Get instance variables
 	variables, err := data.GetApplicationInstanceVariablesByApplicationInstanceId(iv.Database.Pool, uint64(appInstance.Id))
@@ -56,10 +51,9 @@ func (iv InstanceView) GetPageApplicationInstanceDetails(ctx *gin.Context) {
 	}
 
 	ctx.HTML(200, "pages/application/instance/details", gin.H{
-		"Instance":           appInstance,
-		"HealthcheckResults": *healthcheckResults,
-		"Variables":          *variables,
-		"Healthcheck":        healthcheck,
+		"Instance":    appInstance,
+		"Variables":   *variables,
+		"Healthcheck": healthcheck,
 	})
 }
 

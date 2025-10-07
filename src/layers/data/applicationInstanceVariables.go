@@ -9,6 +9,7 @@ import (
 )
 
 // GetApplicationInstanceVariablesByApplicationInstanceId retrieves all variables associated with a specific application instance
+// It also includes variables inherited from the application definition
 func GetApplicationInstanceVariablesByApplicationInstanceId(pool *pgxpool.Pool, appInstanceId uint64) (*[]ApplicationInstanceVariableDAO, error) {
 	tx, err := pool.Begin(context.Background())
 	if err != nil {
@@ -30,6 +31,28 @@ func GetApplicationInstanceVariablesByApplicationInstanceId(pool *pgxpool.Pool, 
 		return nil, nil // No results found
 	} else if err != nil {
 		return nil, err
+	}
+
+	// Collect inherited variables from application definition
+	appInstance, err := GetApplicationInstanceById(pool, appInstanceId)
+	if err != nil {
+		return nil, err
+	}
+	appDefVars, err := GetApplicationDefinitionVariablesByApplicationDefinitionId(pool, uint64(appInstance.ApplicationDefinitionID))
+	if err != nil {
+		return nil, err
+	}
+
+	// Combine instance variables with inherited variables
+	for _, v := range *appDefVars {
+		variable := &ApplicationInstanceVariableDAO{
+			Name:                  v.Name,
+			Value:                 v.Value,
+			Description:           v.Description,
+			ApplicationInstanceID: uint(appInstanceId),
+			IsInherited:           true,
+		}
+		vars = append(vars, *variable)
 	}
 	return &vars, tx.Commit(context.Background())
 }

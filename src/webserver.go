@@ -38,6 +38,9 @@ func InitWebServer(app *Application) {
 		gin.SetMode(gin.DebugMode)
 		app.Engine = gin.New()
 		slogLevel = slog.LevelDebug
+		app.Engine.Use(ErrorHandler())
+		// Set default jwt key for debugging
+		services.SetJWTKey([]byte("nam-debug-jwt-key-2025"))
 	case "release":
 		gin.SetMode(gin.ReleaseMode)
 		app.Engine = gin.New()
@@ -308,6 +311,27 @@ func LoadAndAddToRoot(funcMap template.FuncMap, rootTemplate *template.Template,
 		return nil
 	})
 	return err
+}
+
+// ErrorHandler captures errors and returns a consistent JSON error response
+func ErrorHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next() // Step1: Process the request first.
+
+		// Step2: Check if any errors were added to the context
+		if len(c.Errors) > 0 {
+			// Step3: Use the last error
+			err := c.Errors.Last().Err
+
+			// Step4: Respond with a generic error message
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+		}
+
+		// Any other steps if no errors are found
+	}
 }
 
 // Middleware to check JWT token and set user context

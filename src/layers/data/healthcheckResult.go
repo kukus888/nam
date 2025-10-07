@@ -159,6 +159,44 @@ func GetHealthcheckResultsByApplicationInstanceId(pool *pgxpool.Pool, id uint64)
 	return &res, tx.Commit(context.Background())
 }
 
+// Gets all healthcheck results for a given application instance id in a given time range
+func GetHealthcheckResultsByApplicationInstanceIdRange(pool *pgxpool.Pool, id uint64, startTime time.Time, endTime time.Time) (*[]HealthcheckResult, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+		SELECT
+		  hcr.id AS id,
+		  hcr.healthcheck_id AS healthcheck_id,
+		  hcr.application_instance_id AS application_instance_id,
+		  hcr.is_successful AS is_successful,
+		  hcr.time_start AS time_start,
+		  hcr.time_end AS time_end,
+		  hcr.res_status AS res_status,
+		  hcr.res_body AS res_body,
+		  hcr.res_time AS res_time,
+		  hcr.error_message AS error_message
+		FROM healthcheck_results hcr
+		WHERE hcr.application_instance_id = $1
+		  AND hcr.time_start >= $2
+		  AND hcr.time_end <= $3
+		ORDER BY hcr.id desc;
+	`, id, startTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByNameLax[HealthcheckResult])
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, tx.Commit(context.Background())
+}
+
 // Gets the latest healthcheck results for all application instances
 func GetHealthcheckLatestResultAll(pool *pgxpool.Pool) (*[]ApplicationDefinitionHealthcheckResult, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})

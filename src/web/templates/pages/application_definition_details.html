@@ -18,7 +18,7 @@
         <div class="mb-8">
             <div class="flex justify-between items-start mb-6">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                    <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
                         {{ .Application.Name }}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
@@ -185,78 +185,27 @@
                     </div>
                     <div class="px-6 py-6">
                         <div id="variables-list" class="space-y-4">
-                            <!-- Sample Variables - Replace with actual data from backend -->
+                            {{ range .Variables }}
                             <div class="variable-item bg-gray-50 rounded-lg p-5 border border-gray-200">
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
                                         <div class="flex items-center space-x-3 mb-2">
-                                            <h4 class="text-sm font-medium text-gray-900 font-mono">DATABASE_URL</h4>
+                                            <h4 class="text-sm font-medium text-gray-900 font-mono">{{ .Name }}</h4>
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                                Database
+                                                Variable
                                             </span>
                                         </div>
-                                        <p class="text-sm text-gray-600 mb-2">PostgreSQL database connection string for the application</p>
+                                        <p class="text-sm text-gray-600 mb-2">{{ .Description }}</p>
                                         <div class="text-xs text-gray-500 font-mono bg-white px-3 py-2 rounded border">
-                                            postgresql://localhost:5432/myapp
+                                            {{ .Value }}
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="variable-item bg-gray-50 rounded-lg p-5 border border-gray-200">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center space-x-3 mb-2">
-                                            <h4 class="text-sm font-medium text-gray-900 font-mono">API_KEY</h4>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                                                Secret
-                                            </span>
-                                        </div>
-                                        <p class="text-sm text-gray-600 mb-2">Authentication key for external API services</p>
-                                        <div class="text-xs text-gray-500 font-mono bg-white px-3 py-2 rounded border">
-                                            ••••••••••••••••
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="variable-item bg-gray-50 rounded-lg p-5 border border-gray-200">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center space-x-3 mb-2">
-                                            <h4 class="text-sm font-medium text-gray-900 font-mono">LOG_LEVEL</h4>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                Config
-                                            </span>
-                                        </div>
-                                        <p class="text-sm text-gray-600 mb-2">Logging level for application output and debugging</p>
-                                        <div class="text-xs text-gray-500 font-mono bg-white px-3 py-2 rounded border">
-                                            INFO
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="variable-item bg-gray-50 rounded-lg p-5 border border-gray-200">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center space-x-3 mb-2">
-                                            <h4 class="text-sm font-medium text-gray-900 font-mono">MAX_CONNECTIONS</h4>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                Performance
-                                            </span>
-                                        </div>
-                                        <p class="text-sm text-gray-600 mb-2">Maximum number of concurrent database connections</p>
-                                        <div class="text-xs text-gray-500 font-mono bg-white px-3 py-2 rounded border">
-                                            100
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Empty State -->
-                        <div id="no-variables" class="text-center py-12 hidden">
+                            {{ else }}
+                            <!-- No variables defined -->
+                             <!-- Empty State -->
+                        <div id="no-variables" class="text-center py-12">
                             <svg class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17v4a2 2 0 002 2h4M13 13h4a2 2 0 012 2v4a2 2 0 01-2 2h-4m-6-6V9a2 2 0 012-2h2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2M7 7h.01"></path>
                             </svg>
@@ -267,6 +216,10 @@
                                 Add First Variable
                             </a>
                         </div>
+                            {{ end }}
+                        </div>
+
+                        
                     </div>
                 </div>
             </div>
@@ -342,11 +295,18 @@
                                 </span>
                             </dd>
                         </div>
-                        {{ if .Healthcheck.ExpectedResponse }}
+                        {{ if not .Healthcheck.ExpectedResponseBody }}
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Expected Response</dt>
                             <dd class="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md font-mono text-xs">
-                                {{ .Healthcheck.ExpectedResponse }}
+                                <span class="text-gray-400 italic">No specific response expected</span>
+                            </dd>
+                        </div>
+                        {{ else }}
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">Expected Response</dt>
+                            <dd class="mt-1 text-sm text-gray-900 bg-gray-50 p-3 rounded-md font-mono text-xs">
+                                {{ .Healthcheck.ExpectedResponseBody }}
                             </dd>
                         </div>
                         {{ end }}
