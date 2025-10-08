@@ -54,7 +54,6 @@ type HealthcheckDTO struct {
 	RetryCount    int    `json:"retry_count"`    // Number of retries before marking as unhealthy
 	RetryInterval int    `json:"retry_interval"` // Time between retries
 	Protocol      string `json:"protocol"`
-	UseHttps      bool   `json:"use_https"`
 
 	// Response validation
 	ExpectedStatus       int     `json:"expected_status" binding:"required"`
@@ -95,16 +94,12 @@ func (dto HealthcheckDTO) ToHealthcheck() (*Healthcheck, error) {
 		ResponseValidation:   *dto.ResponseValidation,
 		AuthType:             dto.AuthType,
 		AuthCredentials:      dto.AuthCredentials,
+		Protocol:             dto.Protocol,
 	}
 	if dto.VerifySSL == "on" || dto.VerifySSL == "true" {
 		hc.VerifySSL = true
 	} else {
 		hc.VerifySSL = false
-	}
-	if dto.UseHttps {
-		hc.Protocol = "https"
-	} else {
-		hc.Protocol = "http"
 	}
 	return &hc, nil
 }
