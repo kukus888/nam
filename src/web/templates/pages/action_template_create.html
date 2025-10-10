@@ -1,0 +1,171 @@
+{{ define "pages/actions/templates/new" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ template "template/head.includes" }}
+    <title>New Action Template</title>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex items-center space-x-4 mb-6">
+                <a href="/actions/templates" 
+                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back to Action Templates
+                </a>
+            </div>
+            <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
+                Create New Action Template
+            </h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Create a reusable bash script template that can be executed on application instances
+            </p>
+        </div>
+
+        <!-- Form -->
+        <form hx-post="/api/rest/v1/actions/templates" 
+              hx-ext="submitjson" 
+              hx-on::after-request="if(event.detail.successful) { window.location.href = '/actions/templates'; } else { showErrorMessage(event.detail.xhr.responseText); }"
+              class="bg-white shadow-lg rounded-lg">
+            
+            <!-- Basic Information -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900">Template Information</h2>
+                <p class="mt-1 text-sm text-gray-500">Basic details about your action template</p>
+            </div>
+            
+            <div class="px-6 py-6 space-y-6">
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- Name -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                            Template Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               id="name" 
+                               name="name" 
+                               required
+                               placeholder="e.g., Restart Service, Deploy Application, Update Configuration"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="mt-1 text-xs text-gray-500">A descriptive name for your action template</p>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                            Description
+                        </label>
+                        <textarea id="description" 
+                                  name="description" 
+                                  rows="3"
+                                  placeholder="Describe what this action template does, when to use it, and any prerequisites..."
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        <p class="mt-1 text-xs text-gray-500">Optional description to help others understand the purpose of this template</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Script Editor -->
+            <div class="px-6 py-4 border-t border-gray-200">
+                <h2 class="text-lg font-medium text-gray-900 mb-2">Bash Script</h2>
+                <p class="text-sm text-gray-500 mb-4">
+                    Write your bash script below. You can use template variables like <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{{.APP_NAME}}</code> or <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{{.PORT}}</code> 
+                    which will be substituted with values from application definitions and instance variables.
+                </p>
+                
+                <!-- Variable Usage Info -->
+                <div class="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Template Variables</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                <p>Available variables will be automatically populated from:</p>
+                                <ul class="mt-1 ml-4 list-disc">
+                                    <li><strong>Application Definition Variables:</strong> Global variables defined for the application</li>
+                                    <li><strong>Application Instance Variables:</strong> Instance-specific variables that override defaults</li>
+                                    <li><strong>Built-in Variables:</strong> <code>{{.INSTANCE_NAME}}</code>, <code>{{.SERVER_HOSTNAME}}</code>, <code>{{.APP_NAME}}</code>, <code>{{.PORT}}</code></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Script textarea -->
+                <div>
+                    <label for="bash_script" class="block text-sm font-medium text-gray-700 mb-2">
+                        Script Content <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="bash_script" 
+                              name="bash_script" 
+                              required
+                              rows="20"
+                              placeholder="#!/bin/bash
+
+# Example script template
+echo &quot;Starting action on {{.INSTANCE_NAME}}&quot;
+echo &quot;Application: {{.APP_NAME}} on port {{.PORT}}&quot;
+echo &quot;Server: {{.SERVER_HOSTNAME}}&quot;
+
+# Your script logic here...
+# Use application and instance variables like {{.VAR_NAME}}
+
+echo &quot;Action completed successfully&quot;"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
+                              style="resize: vertical; min-height: 300px;"></textarea>
+                    <p class="mt-1 text-xs text-gray-500">Write your bash script using Go template syntax for variables</p>
+                </div>
+
+                <!-- Script validation info -->
+                <div class="mt-4 bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Script Validation</h3>
+                            <div class="mt-1 text-sm text-yellow-700">
+                                When you create actions from this template, the system will validate that all required variables are available 
+                                before allowing execution. Missing variables will be reported during the pre-flight check.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg flex justify-end space-x-3">
+                <a href="/actions/templates" 
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Create Template
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+{{ end }}

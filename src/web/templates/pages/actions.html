@@ -1,0 +1,319 @@
+{{ define "pages/actions" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ template "template/head.includes" }}
+    <title>Actions</title>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start mb-6">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
+                        Actions
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Manage and monitor automated script executions across your application instances
+                    </p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="/actions/templates"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Manage Templates
+                    </a>
+                    <a href="/actions/new"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Create Action
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white shadow rounded-lg mb-6">
+                <div class="px-6 py-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <!-- Status Filter -->
+                            <div class="min-w-0">
+                                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select id="status-filter" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option value="">All Statuses</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="running">Running</option>
+                                    <option value="completed">Completed</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Template Filter -->
+                            <div class="min-w-0">
+                                <label for="template-filter" class="block text-sm font-medium text-gray-700 mb-1">Template</label>
+                                <select id="template-filter" class="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option value="">All Templates</option>
+                                    {{ range .ActionTemplates }}
+                                    <option value="{{ .Id }}">{{ .Name }}</option>
+                                    {{ end }}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Search -->
+                        <div class="flex-1 max-w-md">
+                            <label for="search" class="sr-only">Search actions</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </div>
+                                <input id="search" name="search" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Search actions..." type="search">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions List -->
+        {{ if .Actions }}
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul id="actions-list" class="divide-y divide-gray-200">
+                {{ range .Actions }}
+                <li class="action-item" data-status="{{ .Status }}" data-template="{{ .ActionTemplateId }}" data-name="{{ .Name | lower }}">
+                    <div class="px-6 py-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center min-w-0 flex-1">
+                                <div class="flex-shrink-0">
+                                    <div class="h-12 w-12 rounded-full flex items-center justify-center
+                                        {{ if eq .Status "completed" }}bg-green-100 text-green-600{{ else if eq .Status "failed" }}bg-red-100 text-red-600{{ else if eq .Status "running" }}bg-yellow-100 text-yellow-600{{ else }}bg-gray-100 text-gray-600{{ end }}">
+                                        {{ if eq .Status "completed" }}
+                                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ else if eq .Status "failed" }}
+                                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ else if eq .Status "running" }}
+                                        <div class="animate-spin rounded-full h-5 w-5 border border-current border-t-transparent"></div>
+                                        {{ else }}
+                                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ end }}
+                                    </div>
+                                </div>
+                                <div class="ml-4 min-w-0 flex-1">
+                                    <div class="flex items-center justify-between">
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-sm font-medium text-gray-900 truncate">
+                                                <a href="/actions/{{ .Id }}/details" class="hover:text-indigo-600">{{ .Name }}</a>
+                                            </p>
+                                            <p class="text-sm text-gray-500 truncate">
+                                                Template: {{ .Template.Name }}
+                                                {{ if .CreatedBy.Username }}
+                                                • Created by {{ .CreatedBy.Username }}
+                                                {{ end }}
+                                            </p>
+                                        </div>
+                                        <div class="ml-2 flex-shrink-0 flex items-center space-x-3">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                {{ if eq .Status "completed" }}bg-green-100 text-green-800{{ else if eq .Status "failed" }}bg-red-100 text-red-800{{ else if eq .Status "running" }}bg-yellow-100 text-yellow-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                                                {{ .Status | title }}
+                                            </span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ len .Executions }} instance{{ if ne (len .Executions) 1 }}s{{ end }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 flex items-center justify-between">
+                                        <div class="flex items-center text-xs text-gray-500 space-x-4">
+                                            <span>Created {{ .CreatedAt | formatTime }}</span>
+                                            {{ if .StartedAt }}
+                                            <span>Started {{ .StartedAt | formatTime }}</span>
+                                            {{ end }}
+                                            {{ if .CompletedAt }}
+                                            <span>Completed {{ .CompletedAt | formatTime }}</span>
+                                            {{ end }}
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <a href="/actions/{{ .Id }}/details" 
+                                               class="text-indigo-600 hover:text-indigo-900 text-xs font-medium">
+                                                View Details
+                                            </a>
+                                            {{ if eq .Status "pending" }}
+                                            <button hx-post="/api/rest/v1/actions/{{ .Id }}/start"
+                                                    hx-swap="none"
+                                                    hx-on::after-request="if(event.detail.successful) { location.reload(); } else { showErrorMessage(event.detail.xhr.responseText); }"
+                                                    class="text-green-600 hover:text-green-900 text-xs font-medium">
+                                                Start
+                                            </button>
+                                            {{ else if eq .Status "running" }}
+                                            <button hx-post="/api/rest/v1/actions/{{ .Id }}/cancel"
+                                                    hx-confirm="Are you sure you want to cancel this action?"
+                                                    hx-swap="none"
+                                                    hx-on::after-request="if(event.detail.successful) { location.reload(); } else { showErrorMessage(event.detail.xhr.responseText); }"
+                                                    class="text-red-600 hover:text-red-900 text-xs font-medium">
+                                                Cancel
+                                            </button>
+                                            {{ end }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ml-5 flex-shrink-0">
+                                <a href="/actions/{{ .Id }}/details" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                {{ end }}
+            </ul>
+        </div>
+
+        <!-- Pagination (if needed) -->
+        {{ if gt .TotalPages 1 }}
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow">
+            <div class="flex-1 flex justify-between sm:hidden">
+                {{ if gt .CurrentPage 1 }}
+                <a href="?page={{ sub .CurrentPage 1 }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+                {{ end }}
+                {{ if lt .CurrentPage .TotalPages }}
+                <a href="?page={{ add .CurrentPage 1 }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+                {{ end }}
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing <span class="font-medium">{{ .StartItem }}</span> to <span class="font-medium">{{ .EndItem }}</span> of <span class="font-medium">{{ .TotalItems }}</span> results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        {{ range .PageNumbers }}
+                        <a href="?page={{ . }}" class="relative inline-flex items-center px-4 py-2 border text-sm font-medium {{ if eq . $.CurrentPage }}border-indigo-500 bg-indigo-50 text-indigo-600{{ else }}border-gray-300 bg-white text-gray-500 hover:bg-gray-50{{ end }}">
+                            {{ . }}
+                        </a>
+                        {{ end }}
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {{ end }}
+        
+        {{ else }}
+        <!-- Empty State -->
+        <div class="text-center py-12">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 max-w-md mx-auto p-8">
+                <svg class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Actions Yet</h3>
+                <p class="text-sm text-gray-500 mb-6">
+                    Get started by creating your first automated action. Actions allow you to execute scripts across multiple application instances simultaneously.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <a href="/actions/templates"
+                        class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Browse Templates
+                    </a>
+                    <a href="/actions/new"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Create Action
+                    </a>
+                </div>
+            </div>
+        </div>
+        {{ end }}
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeFilters();
+        });
+
+        function initializeFilters() {
+            const statusFilter = document.getElementById('status-filter');
+            const templateFilter = document.getElementById('template-filter');
+            const searchInput = document.getElementById('search');
+
+            // Apply filters
+            function applyFilters() {
+                const statusValue = statusFilter.value.toLowerCase();
+                const templateValue = templateFilter.value;
+                const searchValue = searchInput.value.toLowerCase();
+
+                document.querySelectorAll('.action-item').forEach(item => {
+                    const itemStatus = item.dataset.status;
+                    const itemTemplate = item.dataset.template;
+                    const itemName = item.dataset.name;
+
+                    let show = true;
+
+                    // Status filter
+                    if (statusValue && itemStatus !== statusValue) {
+                        show = false;
+                    }
+
+                    // Template filter  
+                    if (templateValue && itemTemplate !== templateValue) {
+                        show = false;
+                    }
+
+                    // Search filter
+                    if (searchValue && !itemName.includes(searchValue)) {
+                        show = false;
+                    }
+
+                    item.style.display = show ? 'block' : 'none';
+                });
+            }
+
+            // Add event listeners
+            statusFilter.addEventListener('change', applyFilters);
+            templateFilter.addEventListener('change', applyFilters);
+            searchInput.addEventListener('input', applyFilters);
+
+            // Initialize from URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+            const template = urlParams.get('template_id');
+            
+            if (status) statusFilter.value = status;
+            if (template) templateFilter.value = template;
+            
+            applyFilters();
+        }
+    </script>
+</body>
+</html>
+{{ end }}

@@ -1,0 +1,1252 @@
+{{ define "pages/actions/new" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ template "template/head.includes" }}
+    <title>Create New Action</title>
+    <style>
+
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .search-highlight {
+            background-color: #fef3c7;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex items-center space-x-4 mb-6">
+                <a href="/actions" 
+                    class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                    Back to Actions
+                </a>
+            </div>
+            <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
+                Create New Action
+            </h1>
+            <p class="mt-1 text-sm text-gray-500">
+                Configure and execute automated actions across your application instances
+            </p>
+        </div>
+
+        <!-- Action Creation Form -->
+        <form id="actionForm" class="space-y-8">
+            <!-- Target Selection Section -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Select Target Instances</h2>
+                    <p class="mt-1 text-sm text-gray-500">Choose which instances, applications, or servers will execute this action</p>
+                </div>
+                
+                <div class="px-6 py-6">
+                    <!-- Search and Filter Controls -->
+                    <div class="mb-6 space-y-4">
+                        <div class="flex items-center space-x-4">
+                            <!-- Search Input -->
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <input type="text" 
+                                           id="search-input" 
+                                           placeholder="Search instances, applications, or servers..."
+                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                                </div>
+                            </div>
+                            
+                            <!-- Type Filter -->
+                            <div class="flex-shrink-0">
+                                <select id="type-filter" class="block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                                    <option value="">All Types</option>
+                                    <option value="instance">Instances</option>
+                                    <option value="application">Applications</option>
+                                    <option value="server">Servers</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Clear Filters -->
+                            <button type="button" id="clear-filters" class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Clear
+                            </button>
+                        </div>
+                        
+                        <!-- Active Filters Display -->
+                        <div id="active-filters" class="hidden">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-500">Active filters:</span>
+                                <div id="filter-tags" class="flex items-center space-x-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Available Items Grid -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-900">Available Targets</h3>
+                            <span id="results-count" class="text-sm text-gray-500"></span>
+                        </div>
+                        
+                        <div id="items-grid" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                            <!-- Instance Items -->
+                            {{ range .Instances }}
+                            <div class="item-card instance-item border border-gray-200 rounded-lg p-4 relative" 
+                                 data-type="instance" 
+                                 data-id="{{ .Id }}" 
+                                 data-name="{{ .Name }}" 
+                                 data-app="{{ .ApplicationDefinition.Name }}" 
+                                 data-server="{{ .Server.Alias }}">
+                                
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                Instance
+                                            </span>
+                                        </div>
+                                        
+                                        <h4 class="text-sm font-medium text-gray-900 truncate">{{ .Name }}</h4>
+                                        <p class="text-xs text-gray-500 mt-1">{{ .ApplicationDefinition.Name }}</p>
+                                        <p class="text-xs text-gray-500">Server: {{ .Server.Alias }}</p>
+                                        
+                                        <div class="mt-2">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ if .MaintenanceMode }}bg-yellow-100 text-yellow-800{{ else }}bg-green-100 text-green-800{{ end }}">
+                                                {{ if .MaintenanceMode }}Maintenance{{ else }}Active{{ end }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" 
+                                            class="add-button ml-2 flex-shrink-0 inline-flex items-center justify-center w-8 h-8 border border-transparent text-sm font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                            onclick="toggleItem('instance', '{{ .Id }}', '{{ .Name }}', '{{ .ApplicationDefinition.Name }} on {{ .Server.Alias }}', this)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {{ end }}
+
+                            <!-- Application Items -->
+                            {{ range .Applications }}
+                            <div class="item-card application-item border border-gray-200 rounded-lg p-4 relative" 
+                                 data-type="application" 
+                                 data-id="{{ .Id }}" 
+                                 data-name="{{ .Name }}" 
+                                 data-type-detail="{{ .Type }}">
+                                
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                Application
+                                            </span>
+                                        </div>
+                                        
+                                        <h4 class="text-sm font-medium text-gray-900 truncate">{{ .Name }}</h4>
+                                        <p class="text-xs text-gray-500 mt-1">{{ .Type }} • Port {{ .Port }}</p>
+                                    </div>
+                                    
+                                    <button type="button" 
+                                            class="add-button ml-2 flex-shrink-0 inline-flex items-center justify-center w-8 h-8 border border-transparent text-sm font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                            onclick="toggleItem('application', '{{ .Id }}', '{{ .Name }}', '{{ .Type }}', this)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {{ end }}
+
+                            <!-- Server Items -->
+                            {{ range .Servers }}
+                            <div class="item-card server-item border border-gray-200 rounded-lg p-4 relative" 
+                                 data-type="server" 
+                                 data-id="{{ .Id }}" 
+                                 data-name="{{ .Alias }}" 
+                                 data-hostname="{{ .Hostname }}">
+                                
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                                                    <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                Server
+                                            </span>
+                                        </div>
+                                        
+                                        <h4 class="text-sm font-medium text-gray-900 truncate">{{ .Alias }}</h4>
+                                        <p class="text-xs text-gray-500 mt-1">{{ .Hostname }}</p>
+                                    </div>
+                                    
+                                    <button type="button" 
+                                            class="add-button ml-2 flex-shrink-0 inline-flex items-center justify-center w-8 h-8 border border-transparent text-sm font-medium rounded-full text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                            onclick="toggleItem('server', '{{ .Id }}', '{{ .Alias }}', '{{ .Hostname }}', this)">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            {{ end }}
+                        </div>
+                        
+                        <!-- No Results Message -->
+                        <div id="no-results" class="hidden text-center py-8">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No targets found</h3>
+                            <p class="mt-1 text-sm text-gray-500">Try adjusting your search or filter criteria.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Items Overview -->
+                    <div id="selected-overview" class="border-t border-gray-200 pt-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-medium text-gray-900">Selected Targets</h3>
+                            <div class="flex items-center space-x-3">
+                                <span id="selected-count" class="text-xs text-gray-500">0 selected</span>
+                                <button type="button" 
+                                        id="clear-all" 
+                                        class="text-xs text-red-600 hover:text-red-700 font-medium hidden"
+                                        onclick="clearAllSelections()">
+                                    Clear All
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="selected-items" class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            <!-- Selected items will be populated here -->
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div id="empty-selection" class="text-center py-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+                            <p class="text-xs text-gray-500">No targets selected. Click + to add instances, applications, or servers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Template Selection Section -->
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Select Action Template</h2>
+                    <p class="mt-1 text-sm text-gray-500">Choose the action template to execute on your selected targets</p>
+                </div>
+                
+                <div class="px-6 py-6">
+                    <!-- Template Search -->
+                    <div class="mb-6">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input type="text" 
+                                   id="template-search-input" 
+                                   placeholder="Search action templates by name or description..."
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Template Selection -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-900">Available Templates</h3>
+                            <span id="template-results-count" class="text-sm text-gray-500"></span>
+                        </div>
+                        
+                        <div id="templates-grid" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4">
+                            {{ range .ActionTemplates }}
+                            <div class="template-card border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors" 
+                                 data-id="{{ .Id }}" 
+                                 data-name="{{ .Name }}" 
+                                 data-description="{{ .Description }}"
+                                 onclick="selectTemplate('{{ .Id }}', '{{ .Name }}', '{{ .Description }}', this)">
+                                
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="text-sm font-medium text-gray-900 mb-1">{{ .Name }}</h4>
+                                        <p class="text-xs text-gray-500 line-clamp-2">{{ .Description }}</p>
+                                    </div>
+                                    
+                                    <div class="flex-shrink-0 template-selection-indicator hidden">
+                                        <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
+                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {{ end }}
+                        </div>
+                        
+                        <!-- No Templates Found -->
+                        <div id="no-templates-found" class="hidden text-center py-8">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No templates found</h3>
+                            <p class="mt-1 text-sm text-gray-500">Try adjusting your search criteria.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Selected Template Display -->
+                    <div id="selected-template-overview" class="border-t border-gray-200 pt-4 hidden">
+                        <h3 class="text-sm font-medium text-gray-900 mb-3">Selected Template</h3>
+                        <div id="selected-template-display" class="border border-indigo-200 rounded-lg p-4 bg-indigo-50">
+                            <!-- Selected template will be displayed here -->
+                        </div>
+                    </div>
+                    
+                    <!-- No Template Selected State -->
+                    <div id="no-template-selected" class="border-t border-gray-200 pt-4">
+                        <div class="text-center py-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
+                            <p class="text-xs text-gray-500">No template selected. Click on a template above to select it.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pre-flight Check Section -->
+            <div id="preflight-section" class="bg-white shadow rounded-lg hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Pre-flight Check</h2>
+                    <p class="mt-1 text-sm text-gray-500">Validate template rendering for all target instances before execution</p>
+                </div>
+                
+                <div class="px-6 py-6">
+                    <!-- Pre-flight Actions -->
+                    <div class="mb-6 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <button type="button" 
+                                    id="run-preflight-btn"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                    hx-post="/actions/preflight"
+                                    hx-target="#preflight-results"
+                                    hx-include="[data-preflight-data]"
+                                    hx-indicator="#preflight-loading">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Run Pre-flight Check
+                            </button>
+                            
+                            <div id="preflight-loading" class="htmx-indicator flex items-center text-sm text-gray-500">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Checking instances...
+                            </div>
+                        </div>
+                        
+                        <div id="preflight-summary" class="hidden text-sm">
+                            <span id="preflight-status-text" class="font-medium"></span>
+                        </div>
+                    </div>
+
+                    <!-- Hidden form data for HTMX -->
+                    <input type="hidden" id="preflight-targets" name="targets" data-preflight-data>
+                    <input type="hidden" id="preflight-template" name="template_id" data-preflight-data>
+
+                    <!-- Pre-flight Results -->
+                    <div id="preflight-results" class="space-y-4">
+                        <!-- Results will be populated by HTMX -->
+                    </div>
+
+                    <!-- Action Execution Button -->
+                    <div id="execute-action-section" class="border-t border-gray-200 pt-6 mt-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 id="execute-title" class="text-sm font-medium text-gray-900">Run Pre-flight Check First</h3>
+                                <p id="execute-description" class="text-sm text-gray-500 mt-1">Click "Run Pre-flight Check" above to validate the action before execution.</p>
+                            </div>
+                            <button type="button" 
+                                    id="execute-action-btn"
+                                    disabled
+                                    class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed focus:outline-none">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                Execute Action
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+
+    <script>
+        // Global state
+        let selectedTargets = {
+            instance: new Set(),
+            application: new Set(), 
+            server: new Set()
+        };
+
+        let allItems = [];
+        let filteredItems = [];
+        let allTemplates = [];
+        let filteredTemplates = [];
+        let selectedTemplate = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeItemsData();
+            initializeSearchAndFilters();
+            initializeTemplatesData();
+            initializeTemplateSearch();
+            updateItemsDisplay();
+            updateSelectionOverview();
+            updateTemplatesDisplay();
+            
+            // Handle URL parameters for pre-filling
+            handleUrlParameters();
+        });
+
+        // Initialize items data from the DOM
+        function initializeItemsData() {
+            allItems = [];
+            
+            // Get all item cards and extract data
+            document.querySelectorAll('.item-card').forEach(card => {
+                const item = {
+                    element: card,
+                    type: card.dataset.type,
+                    id: card.dataset.id,
+                    name: card.dataset.name.toLowerCase(),
+                    searchText: ''
+                };
+                
+                // Build search text based on type
+                if (item.type === 'instance') {
+                    item.app = card.dataset.app.toLowerCase();
+                    item.server = card.dataset.server.toLowerCase();
+                    item.searchText = `${item.name} ${item.app} ${item.server}`;
+                } else if (item.type === 'application') {
+                    item.typeDetail = card.dataset.typeDetail?.toLowerCase() || '';
+                    item.searchText = `${item.name} ${item.typeDetail}`;
+                } else if (item.type === 'server') {
+                    item.hostname = card.dataset.hostname?.toLowerCase() || '';
+                    item.searchText = `${item.name} ${item.hostname}`;
+                }
+                
+                allItems.push(item);
+            });
+            
+            filteredItems = [...allItems];
+        }
+
+        // Initialize search and filter functionality
+        function initializeSearchAndFilters() {
+            const searchInput = document.getElementById('search-input');
+            const typeFilter = document.getElementById('type-filter');
+            const clearFilters = document.getElementById('clear-filters');
+            
+            // Search input
+            searchInput.addEventListener('input', function() {
+                applyFilters();
+            });
+            
+            // Type filter
+            typeFilter.addEventListener('change', function() {
+                applyFilters();
+            });
+            
+            // Clear filters
+            clearFilters.addEventListener('click', function() {
+                searchInput.value = '';
+                typeFilter.value = '';
+                applyFilters();
+            });
+        }
+
+        // Apply search and filter criteria
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            const typeFilter = document.getElementById('type-filter').value;
+            
+            filteredItems = allItems.filter(item => {
+                // Apply type filter
+                if (typeFilter && item.type !== typeFilter) {
+                    return false;
+                }
+                
+                // Apply search filter
+                if (searchTerm && !item.searchText.includes(searchTerm)) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            updateItemsDisplay();
+            updateActiveFiltersDisplay();
+        }
+
+        // Update the display of items
+        function updateItemsDisplay() {
+            const grid = document.getElementById('items-grid');
+            const noResults = document.getElementById('no-results');
+            const resultsCount = document.getElementById('results-count');
+            
+            // Hide all items first
+            allItems.forEach(item => {
+                item.element.style.display = 'none';
+            });
+            
+            // Show filtered items
+            if (filteredItems.length > 0) {
+                filteredItems.forEach(item => {
+                    item.element.style.display = 'block';
+                });
+                noResults.classList.add('hidden');
+                
+                const totalCount = allItems.length;
+                if (filteredItems.length === totalCount) {
+                    resultsCount.textContent = `${totalCount} total`;
+                } else {
+                    resultsCount.textContent = `${filteredItems.length} of ${totalCount}`;
+                }
+            } else {
+                noResults.classList.remove('hidden');
+                resultsCount.textContent = '0 results';
+            }
+        }
+
+        // Update active filters display
+        function updateActiveFiltersDisplay() {
+            const searchTerm = document.getElementById('search-input').value.trim();
+            const typeFilter = document.getElementById('type-filter').value;
+            const activeFilters = document.getElementById('active-filters');
+            const filterTags = document.getElementById('filter-tags');
+            
+            filterTags.innerHTML = '';
+            
+            if (searchTerm || typeFilter) {
+                if (searchTerm) {
+                    const tag = createFilterTag('Search', searchTerm, () => {
+                        document.getElementById('search-input').value = '';
+                        applyFilters();
+                    });
+                    filterTags.appendChild(tag);
+                }
+                
+                if (typeFilter) {
+                    const typeNames = {
+                        'instance': 'Instances',
+                        'application': 'Applications', 
+                        'server': 'Servers'
+                    };
+                    const tag = createFilterTag('Type', typeNames[typeFilter], () => {
+                        document.getElementById('type-filter').value = '';
+                        applyFilters();
+                    });
+                    filterTags.appendChild(tag);
+                }
+                
+                activeFilters.classList.remove('hidden');
+            } else {
+                activeFilters.classList.add('hidden');
+            }
+        }
+
+        // Create a filter tag element
+        function createFilterTag(label, value, removeCallback) {
+            const tag = document.createElement('span');
+            tag.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800';
+            tag.innerHTML = `
+                ${label}: ${value}
+                <button type="button" class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-600 focus:outline-none">
+                    <svg class="w-2 h-2" fill="currentColor" viewBox="0 0 8 8">
+                        <path fill-rule="evenodd" d="M5.354 4l2.646-2.647a.5.5 0 00-.708-.706L4.647 3.293 2.354.647A.5.5 0 00.647 1.354L3.293 4 .647 6.647a.5.5 0 00.708.706l2.646-2.647 2.647 2.647a.5.5 0 00.708-.706L5.354 4z"></path>
+                    </svg>
+                </button>
+            `;
+            
+            tag.querySelector('button').addEventListener('click', removeCallback);
+            return tag;
+        }
+
+        // Toggle item selection
+        function toggleItem(type, id, name, description, buttonElement) {
+            const card = buttonElement.closest('.item-card');
+            
+            if (selectedTargets[type].has(id)) {
+                // Remove from selection
+                selectedTargets[type].delete(id);
+                card.classList.remove('bg-indigo-50', 'border-indigo-500', 'ring-2', 'ring-indigo-200');
+                card.classList.add('border-gray-200');
+                
+                // Update button back to add state
+                buttonElement.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                `;
+            } else {
+                // Add to selection
+                selectedTargets[type].add(id);
+                card.classList.remove('border-gray-200');
+                card.classList.add('bg-indigo-50', 'border-indigo-500', 'ring-2', 'ring-indigo-200');
+                
+                // Update button to selected state
+                buttonElement.innerHTML = `
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                `;
+            }
+            
+            updateSelectionOverview();
+        }
+
+        // Update the selection overview (removed - moved to pre-flight section)
+
+        // Create a selected item element
+        function createSelectedItemElement(type, id, name, description) {
+            const div = document.createElement('div');
+            div.className = 'border border-gray-200 rounded-lg p-3 bg-gray-50 relative';
+            
+            const typeConfig = {
+                'instance': {
+                    icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                        </svg>`,
+                    bgColor: 'bg-blue-100',
+                    badgeColor: 'bg-blue-100 text-blue-800',
+                    label: 'Instance'
+                },
+                'application': {
+                    icon: `<svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                        </svg>`,
+                    bgColor: 'bg-green-100',
+                    badgeColor: 'bg-green-100 text-green-800',
+                    label: 'Application'
+                },
+                'server': {
+                    icon: `<svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                        </svg>`,
+                    bgColor: 'bg-purple-100',
+                    badgeColor: 'bg-purple-100 text-purple-800',
+                    label: 'Server'
+                }
+            };
+            
+            const config = typeConfig[type];
+            
+            div.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <div class="flex-shrink-0">
+                                <div class="w-8 h-8 ${config.bgColor} rounded-lg flex items-center justify-center">
+                                    ${config.icon}
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.badgeColor}">
+                                ${config.label}
+                            </span>
+                        </div>
+                        
+                        <h4 class="text-sm font-medium text-gray-900 truncate">${name}</h4>
+                        <p class="text-xs text-gray-500 mt-1">${description}</p>
+                    </div>
+                    
+                    <button type="button" 
+                            class="ml-2 flex-shrink-0 inline-flex items-center justify-center w-6 h-6 border border-transparent text-sm font-medium rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            onclick="removeSelectedItem('${type}', '${id}')">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+            
+            return div;
+        }
+
+        // Remove a selected item
+        function removeSelectedItem(type, id) {
+            // Find the button and trigger toggle to remove
+            const card = document.querySelector(`.item-card[data-type="${type}"][data-id="${id}"]`);
+            if (card) {
+                const button = card.querySelector('.add-button');
+                if (button) {
+                    button.click();
+                }
+            }
+        }
+
+        // Clear all selections
+        function clearAllSelections() {
+            // Clear all selected sets
+            selectedTargets.instance.clear();
+            selectedTargets.application.clear();
+            selectedTargets.server.clear();
+            
+            // Reset all visual states
+            document.querySelectorAll('.item-card').forEach(card => {
+                card.classList.remove('bg-indigo-50', 'border-indigo-500', 'ring-2', 'ring-indigo-200');
+                card.classList.add('border-gray-200');
+                
+                // Reset button
+                const button = card.querySelector('.add-button');
+                if (button) {
+                    button.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                    `;
+                }
+            });
+            
+            updateSelectionOverview();
+        }
+
+        // Template Selection Functions
+        
+        // Initialize templates data from the DOM
+        function initializeTemplatesData() {
+            allTemplates = [];
+            
+            document.querySelectorAll('.template-card').forEach(card => {
+                const template = {
+                    element: card,
+                    id: card.dataset.id,
+                    name: card.dataset.name.toLowerCase(),
+                    description: card.dataset.description.toLowerCase(),
+                    searchText: `${card.dataset.name.toLowerCase()} ${card.dataset.description.toLowerCase()}`
+                };
+                
+                allTemplates.push(template);
+            });
+            
+            filteredTemplates = [...allTemplates];
+        }
+
+        // Initialize template search functionality
+        function initializeTemplateSearch() {
+            const searchInput = document.getElementById('template-search-input');
+            
+            searchInput.addEventListener('input', function() {
+                applyTemplateFilters();
+            });
+        }
+
+        // Apply template search filters
+        function applyTemplateFilters() {
+            const searchTerm = document.getElementById('template-search-input').value.toLowerCase().trim();
+            
+            filteredTemplates = allTemplates.filter(template => {
+                if (searchTerm && !template.searchText.includes(searchTerm)) {
+                    return false;
+                }
+                return true;
+            });
+            
+            updateTemplatesDisplay();
+        }
+
+        // Update templates display
+        function updateTemplatesDisplay() {
+            const noTemplatesFound = document.getElementById('no-templates-found');
+            const resultsCount = document.getElementById('template-results-count');
+            
+            // Hide all templates first
+            allTemplates.forEach(template => {
+                template.element.style.display = 'none';
+            });
+            
+            // Show filtered templates
+            if (filteredTemplates.length > 0) {
+                filteredTemplates.forEach(template => {
+                    template.element.style.display = 'block';
+                });
+                noTemplatesFound.classList.add('hidden');
+                
+                const totalCount = allTemplates.length;
+                if (filteredTemplates.length === totalCount) {
+                    resultsCount.textContent = `${totalCount} total`;
+                } else {
+                    resultsCount.textContent = `${filteredTemplates.length} of ${totalCount}`;
+                }
+            } else {
+                noTemplatesFound.classList.remove('hidden');
+                resultsCount.textContent = '0 results';
+            }
+        }
+
+        // Select a template
+        function selectTemplate(id, name, description, cardElement) {
+            // Clear previous selection
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('bg-indigo-50', 'border-indigo-500', 'ring-2', 'ring-indigo-200');
+                card.classList.add('border-gray-200');
+                card.querySelector('.template-selection-indicator').classList.add('hidden');
+            });
+            
+            // Mark current selection
+            cardElement.classList.remove('border-gray-200');
+            cardElement.classList.add('bg-indigo-50', 'border-indigo-500', 'ring-2', 'ring-indigo-200');
+            cardElement.querySelector('.template-selection-indicator').classList.remove('hidden');
+            
+            // Update global state
+            selectedTemplate = { id, name, description };
+            
+            // Update display
+            updateSelectedTemplateDisplay();
+        }
+
+        // Update selected template display
+        function updateSelectedTemplateDisplay() {
+            const selectedTemplateOverview = document.getElementById('selected-template-overview');
+            const noTemplateSelected = document.getElementById('no-template-selected');
+            const selectedTemplateDisplay = document.getElementById('selected-template-display');
+            
+            if (selectedTemplate) {
+                // Show selected template
+                selectedTemplateOverview.classList.remove('hidden');
+                noTemplateSelected.classList.add('hidden');
+                
+                selectedTemplateDisplay.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 mb-1">${selectedTemplate.name}</h4>
+                                <p class="text-xs text-gray-500">${selectedTemplate.description}</p>
+                            </div>
+                        </div>
+                        <button type="button" 
+                                class="ml-2 flex-shrink-0 inline-flex items-center justify-center w-6 h-6 border border-transparent text-xs font-medium rounded-full text-gray-400 hover:text-gray-600 focus:outline-none"
+                                onclick="clearTemplateSelection()">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Show empty state
+                selectedTemplateOverview.classList.add('hidden');
+                noTemplateSelected.classList.remove('hidden');
+            }
+            
+            // Invalidate preflight results when template changes
+            invalidatePreflightResults();
+            
+            // Update pre-flight section
+            updatePreflightSection();
+        }
+
+        // Clear template selection
+        function clearTemplateSelection() {
+            selectedTemplate = null;
+            
+            // Clear visual selection
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('bg-indigo-50', 'border-indigo-500', 'ring-2', 'ring-indigo-200');
+                card.classList.add('border-gray-200');
+                card.querySelector('.template-selection-indicator').classList.add('hidden');
+            });
+            
+            updateSelectedTemplateDisplay();
+            updatePreflightSection();
+        }
+
+        // Pre-flight Check Functions
+        
+        // Update pre-flight section visibility and data
+        function updatePreflightSection() {
+            const preflightSection = document.getElementById('preflight-section');
+            const preflightResults = document.getElementById('preflight-results');
+            
+            // Show pre-flight section if both targets and template are selected
+            const hasTargets = (selectedTargets.instance.size + selectedTargets.application.size + selectedTargets.server.size) > 0;
+            const hasTemplate = selectedTemplate !== null;
+            
+            if (hasTargets && hasTemplate) {
+                preflightSection.classList.remove('hidden');
+                preparePreflightData();
+            } else {
+                preflightSection.classList.add('hidden');
+                preflightResults.innerHTML = '';
+                // Reset execute button to initial state
+                disableExecuteButton('Run Pre-flight Check First', 'Click "Run Pre-flight Check" above to validate the action before execution.');
+            }
+        }
+
+        // Prepare data for pre-flight check
+        function preparePreflightData() {
+            const targetsInput = document.getElementById('preflight-targets');
+            const templateInput = document.getElementById('preflight-template');
+            
+            // Prepare target data
+            const targets = {
+                instances: Array.from(selectedTargets.instance),
+                applications: Array.from(selectedTargets.application),
+                servers: Array.from(selectedTargets.server)
+            };
+            
+            targetsInput.value = JSON.stringify(targets);
+            templateInput.value = selectedTemplate ? selectedTemplate.id : '';
+        }
+
+        // Handle pre-flight success response
+        function handlePreflightSuccess(data) {
+            const executeSection = document.getElementById('execute-action-section');
+            const preflightSummary = document.getElementById('preflight-summary');
+            const statusText = document.getElementById('preflight-status-text');
+            
+            // Check if all instances passed
+            const allPassed = data.instances && data.instances.every(instance => instance.status === 'success');
+            
+            if (allPassed) {
+                executeSection.classList.remove('hidden');
+                statusText.textContent = `✓ All ${data.instances.length} instances passed`;
+                statusText.className = 'font-medium text-green-600';
+            } else {
+                executeSection.classList.add('hidden');
+                const failedCount = data.instances ? data.instances.filter(instance => instance.status === 'error').length : 0;
+                statusText.textContent = `✗ ${failedCount} instances failed`;
+                statusText.className = 'font-medium text-red-600';
+            }
+            
+            preflightSummary.classList.remove('hidden');
+        }
+
+        // Update pre-flight section when selections change
+        function updateSelectionOverview() {
+            const selectedItems = document.getElementById('selected-items');
+            const emptySelection = document.getElementById('empty-selection');
+            const selectedCount = document.getElementById('selected-count');
+            const clearAllBtn = document.getElementById('clear-all');
+            
+            // Calculate total selections
+            const totalSelected = selectedTargets.instance.size + selectedTargets.application.size + selectedTargets.server.size;
+            
+            // Update count
+            selectedCount.textContent = `${totalSelected} selected`;
+            
+            if (totalSelected > 0) {
+                // Show clear all button
+                clearAllBtn.classList.remove('hidden');
+                
+                // Hide empty state, show selected items
+                emptySelection.classList.add('hidden');
+                selectedItems.classList.remove('hidden');
+                
+                // Build selected items display
+                selectedItems.innerHTML = '';
+                
+                // Add instances
+                selectedTargets.instance.forEach(id => {
+                    const item = allItems.find(item => item.type === 'instance' && item.id === id);
+                    if (item) {
+                        const itemElement = createSelectedItemElement('instance', id, item.name, `${item.app} on ${item.server}`);
+                        selectedItems.appendChild(itemElement);
+                    }
+                });
+                
+                // Add applications 
+                selectedTargets.application.forEach(id => {
+                    const item = allItems.find(item => item.type === 'application' && item.id === id);
+                    if (item) {
+                        const itemElement = createSelectedItemElement('application', id, item.name, item.typeDetail);
+                        selectedItems.appendChild(itemElement);
+                    }
+                });
+                
+                // Add servers
+                selectedTargets.server.forEach(id => {
+                    const item = allItems.find(item => item.type === 'server' && item.id === id);
+                    if (item) {
+                        const itemElement = createSelectedItemElement('server', id, item.name, item.hostname);
+                        selectedItems.appendChild(itemElement);
+                    }
+                });
+            } else {
+                // Hide clear all button
+                clearAllBtn.classList.add('hidden');
+                
+                // Show empty state, hide selected items
+                emptySelection.classList.remove('hidden');
+                selectedItems.classList.add('hidden');
+            }
+            
+            // Invalidate preflight results when selection changes
+            invalidatePreflightResults();
+            
+            // Update pre-flight section
+            updatePreflightSection();
+        }
+
+        // HTMX event listeners
+        document.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.target.id === 'run-preflight-btn') {
+                if (evt.detail.successful) {
+                    // Parse the preflight results from the rendered HTML
+                    handlePreflightResults();
+                } else {
+                    // Handle preflight request error
+                    hideExecuteSection();
+                }
+            }
+        });
+
+        // Parse preflight results and update UI accordingly
+        function handlePreflightResults() {
+            const responseEl = document.getElementById('preflight-results');
+            const preflightSummary = document.getElementById('preflight-summary');
+            const statusText = document.getElementById('preflight-status-text');
+            
+            if (!responseEl) return;
+            
+            // Check if there's an error message in the response
+            const errorDiv = responseEl.querySelector('.bg-red-50');
+            if (errorDiv) {
+                // Preflight check failed with an error
+                disableExecuteButton('Pre-flight Check Failed', 'There was an error running the pre-flight check. Please try again.');
+                statusText.textContent = '✗ Pre-flight check failed';
+                statusText.className = 'font-medium text-red-600';
+                preflightSummary.classList.remove('hidden');
+                return;
+            }
+            
+            // Parse the summary data from the rendered HTML
+            const summaryGrid = responseEl.querySelector('.grid.grid-cols-3');
+            if (!summaryGrid) {
+                disableExecuteButton('Pre-flight Check Failed', 'Unable to parse pre-flight results. Please try again.');
+                return;
+            }
+            
+            // Get all the number divs with large font (these contain the counts)
+            const numberDivs = summaryGrid.querySelectorAll('.text-lg.font-semibold');
+            if (numberDivs.length < 3) {
+                console.error('Expected 3 number divs, found:', numberDivs.length);
+                disableExecuteButton('Pre-flight Check Failed', 'Invalid pre-flight results structure. Please try again.');
+                return;
+            }
+            
+            // Extract counts: Total, Success, Error
+            const totalInstances = parseInt(numberDivs[0].textContent.trim()) || 0;
+            const successInstances = parseInt(numberDivs[1].textContent.trim()) || 0;
+            const errorInstances = parseInt(numberDivs[2].textContent.trim()) || 0;
+            
+            console.log('Preflight Summary:', { totalInstances, successInstances, errorInstances });
+            console.log('Number divs found:', numberDivs.length);
+            numberDivs.forEach((div, i) => {
+                console.log(`Number div ${i}:`, div.textContent.trim(), 'classes:', div.className);
+            });
+            
+            // Validate the numbers make sense
+            if (totalInstances === 0) {
+                disableExecuteButton('No Instances Found', 'No instances were found to check. Please verify your target selection.');
+                return;
+            }
+            
+            // Check if all instances passed
+            const allPassed = (errorInstances === 0 && successInstances > 0 && successInstances === totalInstances);
+            
+            if (allPassed) {
+                enableExecuteButton(totalInstances);
+                statusText.textContent = `✓ All ${totalInstances} instances passed`;
+                statusText.className = 'font-medium text-green-600';
+            } else {
+                if (errorInstances > 0) {
+                    disableExecuteButton('Pre-flight Check Failed', `${errorInstances} of ${totalInstances} instances failed validation. Fix the errors before executing.`);
+                    statusText.textContent = `✗ ${errorInstances} of ${totalInstances} instances failed`;
+                } else {
+                    disableExecuteButton('Pre-flight Check Incomplete', 'Pre-flight check did not complete successfully. Please try again.');
+                    statusText.textContent = `✗ Pre-flight check incomplete`;
+                }
+                statusText.className = 'font-medium text-red-600';
+            }
+            
+            preflightSummary.classList.remove('hidden');
+        }
+
+        // Enable execute button with success styling
+        function enableExecuteButton(instanceCount) {
+            const executeBtn = document.getElementById('execute-action-btn');
+            const executeTitle = document.getElementById('execute-title');
+            const executeDescription = document.getElementById('execute-description');
+            
+            executeBtn.disabled = false;
+            executeBtn.className = 'inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
+            
+            executeTitle.textContent = 'Ready to Execute';
+            executeTitle.className = 'text-sm font-medium text-gray-900';
+            executeDescription.textContent = `All ${instanceCount} instances passed validation. You can now execute the action safely.`;
+        }
+
+        // Disable execute button with appropriate styling and messaging
+        function disableExecuteButton(title, description) {
+            const executeBtn = document.getElementById('execute-action-btn');
+            const executeTitle = document.getElementById('execute-title');
+            const executeDescription = document.getElementById('execute-description');
+            
+            executeBtn.disabled = true;
+            executeBtn.className = 'inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed focus:outline-none';
+            
+            executeTitle.textContent = title;
+            executeTitle.className = 'text-sm font-medium text-gray-900';
+            executeDescription.textContent = description;
+        }
+
+        // Invalidate preflight results when selections change
+        function invalidatePreflightResults() {
+            const preflightResults = document.getElementById('preflight-results');
+            const preflightSummary = document.getElementById('preflight-summary');
+            
+            // Clear preflight results
+            preflightResults.innerHTML = '';
+            preflightSummary.classList.add('hidden');
+            
+            // Reset execute button to initial state (but only if preflight section is visible)
+            const preflightSection = document.getElementById('preflight-section');
+            if (!preflightSection.classList.contains('hidden')) {
+                disableExecuteButton('Run Pre-flight Check', 'Click "Run Pre-flight Check" above to validate the updated selection.');
+            }
+        }
+
+        // Handle URL parameters to pre-fill selections
+        function handleUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Get parameters
+            const templateId = urlParams.get('template_id');
+            const instanceId = urlParams.get('instance_id');
+            const serverId = urlParams.get('server_id');
+            const applicationId = urlParams.get('application_definition_id');
+            
+            console.log('URL Parameters:', { templateId, instanceId, serverId, applicationId });
+            
+            // Pre-select template if provided
+            if (templateId) {
+                preSelectTemplate(templateId);
+            }
+            
+            // Pre-select targets if provided
+            if (instanceId) {
+                preSelectTarget('instance', instanceId);
+            }
+            
+            if (serverId) {
+                preSelectTarget('server', serverId);
+            }
+            
+            if (applicationId) {
+                preSelectTarget('application', applicationId);
+            }
+            
+            // Update displays after pre-selection
+            updateSelectionOverview();
+            updateSelectedTemplateDisplay();
+        }
+
+        // Pre-select a template by ID
+        function preSelectTemplate(templateId) {
+            const templateCard = document.querySelector(`.template-card[data-id="${templateId}"]`);
+            if (templateCard) {
+                const name = templateCard.dataset.name;
+                const description = templateCard.dataset.description;
+                
+                console.log('Pre-selecting template:', { templateId, name, description });
+                
+                // Call selectTemplate function
+                selectTemplate(templateId, name, description, templateCard);
+            } else {
+                console.warn('Template not found for ID:', templateId);
+            }
+        }
+
+        // Pre-select a target (instance, server, or application) by type and ID
+        function preSelectTarget(type, id) {
+            const itemCard = document.querySelector(`.item-card[data-type="${type}"][data-id="${id}"]`);
+            if (itemCard) {
+                const addButton = itemCard.querySelector('.add-button');
+                if (addButton && !selectedTargets[type].has(id)) {
+                    console.log('Pre-selecting target:', { type, id });
+                    
+                    // Trigger the add button click to select the item
+                    addButton.click();
+                } else {
+                    console.warn('Add button not found or item already selected:', { type, id });
+                }
+            } else {
+                console.warn('Item not found for type and ID:', { type, id });
+            }
+        }
+    </script>
+</body>
+</html>
+{{ end }}

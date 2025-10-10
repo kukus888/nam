@@ -7,7 +7,9 @@
             <div class="flex items-center space-x-4">
                 <div class="bg-white/20 p-3 rounded-lg">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
                     </svg>
                 </div>
                 <div>
@@ -31,7 +33,8 @@
                 <!-- Time Range Selector -->
                 <div class="flex items-center space-x-2">
                     <label for="time-range-quick" class="text-sm font-medium text-gray-700">Time Range:</label>
-                    <select id="time-range-quick" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <select id="time-range-quick"
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="1h">Last Hour</option>
                         <option value="6h">Last 6 Hours</option>
                         <option value="24h" selected>Last 24 Hours</option>
@@ -44,7 +47,8 @@
                 <!-- Auto-refresh -->
                 <div class="flex items-center space-x-2">
                     <label for="auto-refresh-interval" class="text-sm font-medium text-gray-700">Auto Refresh:</label>
-                    <select id="auto-refresh-interval" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <select id="auto-refresh-interval"
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="0">Off</option>
                         <option value="30">30s</option>
                         <option value="60" selected>1m</option>
@@ -86,11 +90,13 @@
             <div class="flex items-center space-x-4">
                 <div class="flex items-center space-x-2">
                     <label for="range-from" class="text-sm font-medium text-gray-700">From:</label>
-                    <input type="datetime-local" id="range-from" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="datetime-local" id="range-from"
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div class="flex items-center space-x-2">
                     <label for="range-to" class="text-sm font-medium text-gray-700">To:</label>
-                    <input type="datetime-local" id="range-to" class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="datetime-local" id="range-to"
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
             </div>
         </div>
@@ -98,74 +104,41 @@
         <!-- Custom Refresh Input (initially hidden) -->
         <div id="custom-refresh" class="hidden mt-4 pt-4 border-t border-gray-200">
             <div class="flex items-center space-x-2">
-                <label for="custom-refresh-input" class="text-sm font-medium text-gray-700">Refresh Interval (seconds):</label>
-                <input type="number" id="custom-refresh-input" min="5" max="3600" value="60" class="border border-gray-300 rounded-md px-3 py-2 text-sm w-24 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <label for="custom-refresh-input" class="text-sm font-medium text-gray-700">Refresh Interval
+                    (seconds):</label>
+                <input type="number" id="custom-refresh-input" min="5" max="3600" value="60"
+                    class="border border-gray-300 rounded-md px-3 py-2 text-sm w-24 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
             </div>
         </div>
     </div>
 
     <!-- Timeline Canvas Container -->
     <div class="p-4">
-        <div class="w-full relative">
-            <div class="overflow-x-auto">
-                <div class="relative min-w-full mb-4">
-                    <!-- Results timeline -->
-                    <div class="flex flex-row flex-nowrap items-end justify-between min-w-full mb-2">
-                        {{ range $i, $v := .HealthcheckResults }}
-                        <div class="flex">
-                            <div class="w-5 h-10 {{ if $v.IsSuccessful }}bg-green-500 hover:bg-green-700{{ else }}bg-red-500 hover:bg-red-700{{ end }}"></div>
+        <div class="overflow-x-none h-20">
+            <div class="pointer-events-none">
+                <div class="h-px w-full bg-gray-400"></div>
+            </div>
+            <div class="flex relative w-full h-full mb-4">
+                <!-- Results timeline -->
+                {{ with .Timeline }}
+                <div class="flex flex-row flex-nowrap items-end justify-between w-full mb-2">
+                    {{ range $i, $v := .Buckets }}
+                    <div class="flex flex-col">
+                        <div class="w-5 {{ if gt $v.Failures 0 }}bg-red-500 hover:bg-red-700{{ else }}bg-green-500 hover:bg-green-700{{ end }} cursor-pointer" style="height: {{ $v.AvgResTimePercent }}px; min-height: 4px;"
+                            title="From: {{ .StartTime | formatTime }}&#10;To: {{ .EndTime | formatTime }}&#10;Failures: {{ .Failures }}&#10;Successes: {{ .Successes }}&#10;Avg Response: {{ .AverageResTime }} ms">
                         </div>
+                        {{ if .Indicator }}
+                        <div class="flex flex-col items-left overflow-x-none mt-1">
+                            <div class="w-px h-4 bg-gray-400"></div>
+                            <span class="absolute text-xs text-gray-500 mt-1">{{ .StartTime | formatTime }}</span>
+                        </div>
+                        {{ else }}
+                        <div class="flex w-px h-4 mt-1 bg-transparent"></div>
                         {{ end }}
                     </div>
-                    
-                    <!-- Time markers -->
-                    <div class="flex justify-between items-start min-w-full">
-                        <div class="flex flex-col items-left">
-                            <div class="w-px h-4 bg-gray-400"></div>
-                            <span class="text-xs text-gray-500 mt-1">{{ if .HealthcheckResults }}{{ (index .HealthcheckResults 0).TimeStart.Format "15:04" }}{{ else }}Start{{ end }}</span>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <div class="w-px h-4 bg-gray-400"></div>
-                            <span class="text-xs text-gray-500 mt-1">25%</span>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <div class="w-px h-4 bg-gray-400"></div>
-                            <span class="text-xs text-gray-500 mt-1">50%</span>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <div class="w-px h-4 bg-gray-400"></div>
-                            <span class="text-xs text-gray-500 mt-1">75%</span>
-                        </div>
-                        {{ $hcrLen := len .HealthcheckResults }}
-                        <div class="flex flex-col items-end">
-                            <div class="w-px h-4 bg-gray-400"></div>
-                            <span class="text-xs text-gray-500 mt-1">{{ if .HealthcheckResults }}{{ (index .HealthcheckResults (sub1 $hcrLen)).TimeStart.Format "15:04" }}{{ else }}End{{ end }}</span>
-                        </div>
-                    </div>
+                    {{ end }}
                 </div>
-            </div>
-            <div class="static inset-0 flex justify-between items-start pointer-events-none">
-                <div class="static flex flex-col items-left">
-                    <div class="w-px h-10 bg-gray-400"></div>
-                    <span class="text-xs text-gray-500 mt-1">{{ if .HealthcheckResults }}{{ (index .HealthcheckResults 0).TimeStart.Format "15:04" }}{{ else }}Start{{ end }}</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-px h-10 bg-gray-400"></div>
-                    <span class="text-xs text-gray-500 mt-1">25%</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-px h-10 bg-gray-400"></div>
-                    <span class="text-xs text-gray-500 mt-1">50%</span>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="w-px h-10 bg-gray-400"></div>
-                    <span class="text-xs text-gray-500 mt-1">75%</span>
-                </div>
-                {{ $hcrLen := len .HealthcheckResults }}
-                <div class="flex flex-col items-end">
-                    <div class="w-px h-10 bg-gray-400"></div>
-                    <span class="text-xs text-gray-500 mt-1">{{ if .HealthcheckResults }}{{ (index .HealthcheckResults (sub1 $hcrLen)).TimeStart.Format "15:04" }}{{ else }}End{{ end }}</span>
-                </div>
+                {{ end }}
             </div>
         </div>
     </div>
@@ -199,7 +172,9 @@
         <h3 class="text-lg font-semibold text-gray-900">Selected Time Period Details</h3>
         <button onclick="hideSelectedDetails()" class="text-gray-400 hover:text-gray-600">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd"></path>
             </svg>
         </button>
     </div>
@@ -208,7 +183,8 @@
 </div>
 
 <!-- Tooltip -->
-<div id="timeline-tooltip" class="hidden fixed bg-gray-900 text-white px-3 py-2 rounded-lg text-sm z-50 pointer-events-none">
+<div id="timeline-tooltip"
+    class="hidden fixed bg-gray-900 text-white px-3 py-2 rounded-lg text-sm z-50 pointer-events-none">
     <div id="tooltip-content"></div>
 </div>
 
@@ -230,194 +206,73 @@
     ]
 </script>
 
-<!-- Heatmap Timeline JavaScript -->
+<!-- Timeline JavaScript -->
 <script>
-    class HealthTimelineHeatmap {
-        constructor(canvasId, dataElementId, instanceId) {
-            this.canvas = document.getElementById(canvasId);
-            this.ctx = this.canvas.getContext('2d');
-            this.instanceId = instanceId;
-            this.data = [];
-            this.selectedRange = { from: null, to: null };
-            this.autoRefreshInterval = null;
-            this.autoRefreshSeconds = 60; // Default 1 minute
-            this.granularity = 'hour'; // Default granularity
-            this.tooltip = document.getElementById('timeline-tooltip');
-            
-            // Load initial data
-            this.loadData(dataElementId);
-            this.setupCanvas();
-            this.setupEventListeners();
-            
-            // Set initial time range based on available data
-            this.setInitialTimeRange();
-            
-            // Initial render
-            this.render();
-        }
 
-        loadData(dataElementId) {
-            try {
-                const dataElement = document.getElementById(dataElementId);
-                if (dataElement) {
-                    this.data = JSON.parse(dataElement.textContent);
-                    console.log('Raw health check data:', this.data);
-                    
-                    this.data.forEach(item => {
-                        item.timeStart = new Date(item.timeStart);
-                        item.timeEnd = new Date(item.timeEnd);
-                    });
-                    
-                    console.log('Parsed health check data:', this.data);
-                    console.log('Data count:', this.data.length);
-                    
-                    if (this.data.length > 0) {
-                        const latestTime = Math.max(...this.data.map(d => d.timeEnd.getTime()));
-                        const oldestTime = Math.min(...this.data.map(d => d.timeEnd.getTime()));
-                        console.log('Data time range:', new Date(oldestTime), 'to', new Date(latestTime));
-                    }
-                }
-            } catch (e) {
-                console.error('Error parsing healthcheck data:', e);
-                this.data = [];
-            }
-        }
+    // Global function to hide selected details
+    function hideSelectedDetails() {
+        document.getElementById('selected-details').classList.add('hidden');
+    }
 
-        setupCanvas() {
-            // Setup canvas dimensions and DPI scaling
-            const rect = this.canvas.getBoundingClientRect();
-            const dpr = window.devicePixelRatio || 1;
-            this.canvas.width = rect.width * dpr;
-            this.canvas.height = 160 * dpr;
-            this.ctx.scale(dpr, dpr);
-            this.canvas.style.width = rect.width + 'px';
-            this.canvas.style.height = '160px';
-        }
+    // Initialize the timeline controls when DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        initTimelineControls();
+    });
 
-        setupEventListeners() {
-            // Time range selector
-            document.getElementById('time-range-quick').addEventListener('change', (e) => {
-                if (e.target.value === 'custom') {
-                    document.getElementById('custom-range').classList.remove('hidden');
-                } else {
-                    document.getElementById('custom-range').classList.add('hidden');
-                    this.setTimeRange(e.target.value);
-                }
-            });
+    function initTimelineControls() {
+        let autoRefreshInterval = null;
+        let autoRefreshSeconds = 60;
 
-            // Custom range inputs
-            document.getElementById('range-from').addEventListener('change', () => this.updateCustomRange());
-            document.getElementById('range-to').addEventListener('change', () => this.updateCustomRange());
-
-            // Auto-refresh controls
-            document.getElementById('auto-refresh-interval').addEventListener('change', (e) => {
-                if (e.target.value === 'custom') {
-                    document.getElementById('custom-refresh').classList.remove('hidden');
-                } else {
-                    document.getElementById('custom-refresh').classList.add('hidden');
-                    this.autoRefreshSeconds = parseInt(e.target.value);
-                    this.setupAutoRefresh();
-                }
-            });
-
-            document.getElementById('custom-refresh-input').addEventListener('change', (e) => {
-                this.autoRefreshSeconds = parseInt(e.target.value) || 60;
-                this.setupAutoRefresh();
-            });
-
-            // Canvas mouse events
-            this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-            this.canvas.addEventListener('mouseleave', () => this.hideTooltip());
-            this.canvas.addEventListener('click', (e) => this.handleClick(e));
-
-            // Window resize
-            window.addEventListener('resize', () => {
-                this.setupCanvas();
-                this.render();
-            });
-        }
-
-        setInitialTimeRange() {
-            if (this.data.length === 0) {
-                this.setTimeRange('1h'); // Default if no data
-                return;
-            }
-
-            // Find the actual data range
-            const latestTime = Math.max(...this.data.map(d => d.timeEnd.getTime()));
-            const oldestTime = Math.min(...this.data.map(d => d.timeEnd.getTime()));
-            const dataRangeHours = (latestTime - oldestTime) / (60 * 60 * 1000);
-
-            console.log('Data spans', dataRangeHours.toFixed(1), 'hours');
-
-            // Choose appropriate initial range based on data span
-            if (dataRangeHours <= 1) {
-                this.setTimeRange('1h');
-            } else if (dataRangeHours <= 6) {
-                this.setTimeRange('6h');
-            } else if (dataRangeHours <= 24) {
-                this.setTimeRange('24h');
-            } else if (dataRangeHours <= 168) { // 7 days
-                this.setTimeRange('7d');
+        // Time range selector
+        document.getElementById('time-range-quick').addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                document.getElementById('custom-range').classList.remove('hidden');
             } else {
-                this.setTimeRange('30d');
+                document.getElementById('custom-range').classList.add('hidden');
+                // For now, just log the selection - you can implement actual filtering later
+                console.log('Time range changed to:', e.target.value);
             }
-        }
+        });
 
-        setTimeRange(range) {
-            const now = new Date();
-            let from;
+        // Custom range inputs
+        document.getElementById('range-from').addEventListener('change', () => updateCustomRange());
+        document.getElementById('range-to').addEventListener('change', () => updateCustomRange());
 
-            switch (range) {
-                case '1h':
-                    from = new Date(now.getTime() - 60 * 60 * 1000);
-                    break;
-                case '6h':
-                    from = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-                    break;
-                case '24h':
-                    from = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-                    break;
-                case '7d':
-                    from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-                    break;
-                case '30d':
-                    from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-                    break;
-                default:
-                    return;
+        // Auto-refresh controls
+        document.getElementById('auto-refresh-interval').addEventListener('change', (e) => {
+            if (e.target.value === 'custom') {
+                document.getElementById('custom-refresh').classList.remove('hidden');
+            } else {
+                document.getElementById('custom-refresh').classList.add('hidden');
+                autoRefreshSeconds = parseInt(e.target.value);
+                setupAutoRefresh();
             }
+        });
 
-            this.selectedRange = { from, to: now };
-            
-            // Update the dropdown to match
-            document.getElementById('time-range-quick').value = range;
-            
-            this.render();
-        }
+        document.getElementById('custom-refresh-input').addEventListener('change', (e) => {
+            autoRefreshSeconds = parseInt(e.target.value) || 60;
+            setupAutoRefresh();
+        });
 
-        updateCustomRange() {
+        function updateCustomRange() {
             const from = document.getElementById('range-from').value;
             const to = document.getElementById('range-to').value;
-            
+
             if (from && to) {
-                this.selectedRange = {
-                    from: new Date(from),
-                    to: new Date(to)
-                };
-                this.render();
+                console.log('Custom range set:', from, 'to', to);
+                // You can implement actual filtering here
             }
         }
 
-        setupAutoRefresh() {
-            if (this.autoRefreshInterval) {
-                clearInterval(this.autoRefreshInterval);
+        function setupAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
             }
 
-            if (this.autoRefreshSeconds > 0) {
-                this.autoRefreshInterval = setInterval(() => {
-                    this.refreshData();
-                }, this.autoRefreshSeconds * 1000);
+            if (autoRefreshSeconds > 0) {
+                autoRefreshInterval = setInterval(() => {
+                    refreshData();
+                }, autoRefreshSeconds * 1000);
 
                 // Update indicator
                 const indicator = document.getElementById('refresh-indicator');
@@ -427,10 +282,10 @@
                 indicator.className = 'w-2 h-2 rounded-full bg-gray-300';
             }
 
-            this.updateLastRefreshDisplay();
+            updateLastRefreshDisplay();
         }
 
-        updateLastRefreshDisplay() {
+        function updateLastRefreshDisplay() {
             const lastRefresh = document.getElementById('last-refresh');
             if (lastRefresh) {
                 const now = new Date();
@@ -438,303 +293,46 @@
             }
         }
 
-        refreshData() {
-            // In a real implementation, this would fetch new data from the server
-            // For now, we'll just update the display
-            this.updateLastRefreshDisplay();
-            
-            // TODO: Implement actual data refresh via HTMX or fetch
-            console.log('Refreshing health check data...');
+        function refreshData() {
+            updateLastRefreshDisplay();
+            // Reload the page to get fresh data
+            window.location.reload();
         }
 
-        render() {
-            if (!this.selectedRange.from || !this.selectedRange.to) return;
+        // Initialize auto-refresh
+        setupAutoRefresh();
 
-            const canvasWidth = this.canvas.width / (window.devicePixelRatio || 1);
-            const canvasHeight = 160; // Updated to match new canvas height
+        // Add tooltip functionality for timeline bars
+        initTooltips();
+    }
 
-            // Clear canvas
-            this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    function initTooltips() {
+        const tooltip = document.getElementById('timeline-tooltip');
+        const bars = document.querySelectorAll('[title]');
 
-            console.log('Rendering timeline...');
-            console.log('Selected range:', this.selectedRange);
-            console.log('Total data points:', this.data.length);
-
-            // Filter data to selected time range
-            const filteredData = this.data.filter(item => 
-                item.timeEnd >= this.selectedRange.from && 
-                item.timeEnd <= this.selectedRange.to
-            );
-
-            console.log('Filtered data points:', filteredData.length);
-            console.log('Filtered data:', filteredData);
-
-            if (filteredData.length === 0) {
-                // If no data in selected range, let's try to show the most recent data available
-                if (this.data.length > 0) {
-                    console.log('No data in selected range, showing available data range instead');
-                    const latestTime = Math.max(...this.data.map(d => d.timeEnd.getTime()));
-                    const oldestTime = Math.min(...this.data.map(d => d.timeEnd.getTime()));
+        bars.forEach(bar => {
+            bar.addEventListener('mouseenter', (e) => {
+                const title = e.target.getAttribute('title');
+                if (title) {
+                    const content = document.getElementById('tooltip-content');
+                    content.innerHTML = title.replace(/&#10;/g, '<br>');
                     
-                    // Auto-adjust range to show available data
-                    this.selectedRange.to = new Date(latestTime);
-                    this.selectedRange.from = new Date(Math.max(oldestTime, latestTime - (24 * 60 * 60 * 1000))); // Show last 24h or all available
-                    
-                    // Update the dropdown to reflect this change
-                    document.getElementById('time-range-quick').value = '24h';
-                    
-                    // Re-filter with new range
-                    const reFilteredData = this.data.filter(item => 
-                        item.timeEnd >= this.selectedRange.from && 
-                        item.timeEnd <= this.selectedRange.to
-                    );
-                    
-                    if (reFilteredData.length === 0) {
-                        this.showEmptyState();
-                        return;
-                    }
-                    
-                    console.log('Auto-adjusted to show', reFilteredData.length, 'data points');
-                    this.renderWithData(reFilteredData, canvasWidth, canvasHeight);
-                } else {
-                    this.showEmptyState();
-                    return;
-                }
-            } else {
-                this.renderWithData(filteredData, canvasWidth, canvasHeight);
-            }
-
-            this.hideEmptyState();
-        }
-
-        renderWithData(filteredData, canvasWidth, canvasHeight) {
-            // Calculate time buckets
-            const timeDiff = this.selectedRange.to.getTime() - this.selectedRange.from.getTime();
-            const buckets = this.calculateBuckets(timeDiff);
-            const bucketWidth = canvasWidth / buckets.length;
-            const maxHeight = canvasHeight - 30; // Leave more space for time labels
-
-            console.log('Buckets created:', buckets.length);
-            console.log('Bucket width:', bucketWidth);
-
-            // Find max response time for height scaling
-            const maxResponseTime = Math.max(...filteredData.map(d => d.responseTime || 0), 100); // Minimum 100ms for scaling
-
-            buckets.forEach((bucket, index) => {
-                const x = index * bucketWidth;
-                const bucketData = filteredData.filter(item => 
-                    item.timeEnd >= bucket.start && item.timeEnd < bucket.end
-                );
-
-                if (bucketData.length > 0) {
-                    // Calculate bucket stats
-                    const successCount = bucketData.filter(d => d.isSuccessful).length;
-                    const failedCount = bucketData.length - successCount;
-                    const avgResponseTime = bucketData.reduce((sum, d) => sum + (d.responseTime || 0), 0) / bucketData.length;
-
-                    // Determine color based on health status - using updated colors for better visibility
-                    let color;
-                    if (bucketData.some(d => d.maintenance)) {
-                        color = '#F59E0B'; // Amber for maintenance
-                    } else if (failedCount > successCount) {
-                        color = '#EF4444'; // Red for mostly failed
-                    } else if (failedCount > 0) {
-                        color = '#F97316'; // Orange for mixed
-                    } else {
-                        color = '#10B981'; // Emerald for all successful
-                    }
-
-                    // Calculate height based on response time
-                    const height = Math.max(8, (avgResponseTime / maxResponseTime) * maxHeight);
-
-                    // Draw rectangle with better positioning
-                    this.ctx.fillStyle = color;
-                    this.ctx.fillRect(x + 1, canvasHeight - height - 20, bucketWidth - 2, height);
-
-                    // Add subtle border for better definition
-                    this.ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-                    this.ctx.lineWidth = 0.5;
-                    this.ctx.strokeRect(x + 1, canvasHeight - height - 20, bucketWidth - 2, height);
-
-                    // Store bucket data for mouse events
-                    bucket.data = bucketData;
-                    bucket.x = x;
-                    bucket.width = bucketWidth;
-                    bucket.height = height;
-                    bucket.color = color;
-                    bucket.stats = { successCount, failedCount, avgResponseTime };
-                    
-                    console.log(`Bucket ${index}: ${bucketData.length} items, height: ${height}`);
-                } else {
-                    // No data - draw gray placeholder
-                    this.ctx.fillStyle = '#D1D5DB';
-                    this.ctx.fillRect(x + 1, canvasHeight - 24, bucketWidth - 2, 4);
+                    tooltip.style.left = e.clientX + 10 + 'px';
+                    tooltip.style.top = e.clientY - 10 + 'px';
+                    tooltip.classList.remove('hidden');
                 }
             });
 
-            this.buckets = buckets;
-            this.renderTimeAxis(buckets);
-            this.updateStatistics(filteredData);
-        }
+            bar.addEventListener('mouseleave', () => {
+                tooltip.classList.add('hidden');
+            });
 
-        calculateBuckets(timeDiff) {
-            const buckets = [];
-            const bucketCount = Math.min(100, Math.max(10, Math.floor(timeDiff / (5 * 60 * 1000)))); // 5-minute minimum buckets
-            const bucketSize = timeDiff / bucketCount;
-
-            for (let i = 0; i < bucketCount; i++) {
-                const start = new Date(this.selectedRange.from.getTime() + i * bucketSize);
-                const end = new Date(this.selectedRange.from.getTime() + (i + 1) * bucketSize);
-                buckets.push({ start, end });
-            }
-
-            return buckets;
-        }
-
-        renderTimeAxis(buckets) {
-            const timeAxis = document.getElementById('time-axis');
-            timeAxis.innerHTML = '';
-
-            // Show time labels for key points
-            const labelCount = Math.min(8, buckets.length);
-            const labelInterval = Math.floor(buckets.length / labelCount);
-
-            for (let i = 0; i < buckets.length; i += labelInterval) {
-                if (i < buckets.length) {
-                    const label = document.createElement('div');
-                    label.textContent = buckets[i].start.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    });
-                    label.className = 'text-xs text-gray-500';
-                    timeAxis.appendChild(label);
-                }
-            }
-        }
-
-        handleMouseMove(e) {
-            if (!this.buckets) return;
-
-            const rect = this.canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            
-            const bucket = this.buckets.find(b => 
-                b.x !== undefined && x >= b.x && x < b.x + b.width
-            );
-
-            if (bucket && bucket.data && bucket.data.length > 0) {
-                this.showTooltip(e, bucket);
-            } else {
-                this.hideTooltip();
-            }
-        }
-
-        showTooltip(e, bucket) {
-            const content = document.getElementById('tooltip-content');
-            const { stats, data } = bucket;
-            
-            content.innerHTML = `
-                <div><strong>${bucket.start.toLocaleTimeString()}</strong></div>
-                <div>✅ Success: ${stats.successCount}</div>
-                <div>❌ Failed: ${stats.failedCount}</div>
-                <div>⚡ Avg Response: ${stats.avgResponseTime.toFixed(0)}ms</div>
-                <div>📊 Total Checks: ${data.length}</div>
-            `;
-
-            this.tooltip.style.left = e.clientX + 10 + 'px';
-            this.tooltip.style.top = e.clientY - 10 + 'px';
-            this.tooltip.classList.remove('hidden');
-        }
-
-        hideTooltip() {
-            this.tooltip.classList.add('hidden');
-        }
-
-        handleClick(e) {
-            if (!this.buckets) return;
-
-            const rect = this.canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            
-            const bucket = this.buckets.find(b => 
-                b.x !== undefined && x >= b.x && x < b.x + b.width
-            );
-
-            if (bucket && bucket.data && bucket.data.length > 0) {
-                this.showSelectedDetails(bucket);
-            }
-        }
-
-        showSelectedDetails(bucket) {
-            const detailsPanel = document.getElementById('selected-details');
-            const timestamp = document.getElementById('selected-timestamp');
-            const content = document.getElementById('selected-content');
-
-            timestamp.textContent = `${bucket.start.toLocaleString()} - ${bucket.end.toLocaleString()}`;
-
-            content.innerHTML = `
-                <div>
-                    <div class="text-xs text-gray-500">Success Rate</div>
-                    <div class="font-medium">${((bucket.stats.successCount / bucket.data.length) * 100).toFixed(1)}%</div>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-500">Avg Response Time</div>
-                    <div class="font-medium">${bucket.stats.avgResponseTime.toFixed(0)}ms</div>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-500">Total Checks</div>
-                    <div class="font-medium">${bucket.data.length}</div>
-                </div>
-                <div>
-                    <div class="text-xs text-gray-500">Time Period</div>
-                    <div class="font-medium">${Math.round((bucket.end - bucket.start) / 60000)}min</div>
-                </div>
-            `;
-
-            detailsPanel.classList.remove('hidden');
-        }
-
-        updateStatistics(data) {
-            const successCount = data.filter(d => d.isSuccessful).length;
-            const failedCount = data.length - successCount;
-            const avgResponseTime = data.length > 0 
-                ? data.reduce((sum, d) => sum + (d.responseTime || 0), 0) / data.length
-                : 0;
-            const uptime = data.length > 0 ? (successCount / data.length) * 100 : 0;
-
-            // Update main statistics
-            document.getElementById('success-count').textContent = successCount;
-            document.getElementById('failed-count').textContent = failedCount;
-            document.getElementById('avg-response-time').textContent = avgResponseTime.toFixed(0) + 'ms';
-            document.getElementById('maintenance-periods').textContent = '0'; // TODO: Calculate maintenance periods
-            
-            // Update header statistics
-            document.getElementById('uptime-percentage').textContent = uptime.toFixed(1) + '%';
-            document.getElementById('avg-response-time-header').textContent = avgResponseTime.toFixed(0) + 'ms';
-        }
-
-        showEmptyState() {
-            document.getElementById('timeline-empty-state').classList.remove('hidden');
-        }
-
-        hideEmptyState() {
-            document.getElementById('timeline-empty-state').classList.add('hidden');
-        }
+            bar.addEventListener('mousemove', (e) => {
+                tooltip.style.left = e.clientX + 10 + 'px';
+                tooltip.style.top = e.clientY - 10 + 'px';
+            });
+        });
     }
-
-    // Global function to hide selected details
-    function hideSelectedDetails() {
-        document.getElementById('selected-details').classList.add('hidden');
-    }
-
-    // Initialize the timeline when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-        window.healthTimeline = new HealthTimelineHeatmap(
-            'health-timeline', 
-            'healthcheck-data',
-            '{{ .Instance.Id }}'
-        );
-    });
 
     // Function to show error messages (if not already defined)
     if (typeof showErrorMessage === 'undefined') {

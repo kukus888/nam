@@ -254,3 +254,47 @@ type Role struct {
 	Color       string `json:"color" db:"color"` // Name of the color for the role, tailwind.css
 	Description string `json:"description" db:"description"`
 }
+
+// ActionTemplate represents a reusable script template
+type ActionTemplate struct {
+	Id          uint      `json:"id" db:"id"`
+	Name        string    `json:"name" db:"name"`
+	Description string    `json:"description" db:"description"`
+	BashScript  string    `json:"bash_script" db:"bash_script"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
+}
+
+// Action represents an execution of an action template
+type Action struct {
+	Id               uint       `json:"id" db:"id"`
+	ActionTemplateId uint       `json:"action_template_id" db:"action_template_id"`
+	Name             string     `json:"name" db:"name"`
+	Status           string     `json:"status" db:"status"` // pending, running, completed, failed
+	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at" db:"updated_at"`
+	StartedAt        *time.Time `json:"started_at" db:"started_at"`
+	CompletedAt      *time.Time `json:"completed_at" db:"completed_at"`
+	CreatedByUserId  uint64     `json:"created_by_user_id" db:"created_by_user_id"`
+}
+
+// ActionExecution represents the execution of an action on a specific instance
+type ActionExecution struct {
+	Id                    uint       `json:"id" db:"id"`
+	ActionId              uint       `json:"action_id" db:"action_id"`
+	ApplicationInstanceId uint       `json:"application_instance_id" db:"application_instance_id"`
+	Status                string     `json:"status" db:"status"` // pending, running, completed, failed
+	Output                string     `json:"output" db:"output"`
+	ErrorOutput           string     `json:"error_output" db:"error_output"`
+	ExitCode              *int       `json:"exit_code" db:"exit_code"`
+	StartedAt             *time.Time `json:"started_at" db:"started_at"`
+	CompletedAt           *time.Time `json:"completed_at" db:"completed_at"`
+}
+
+// ActionFull represents an action with its template and executions
+type ActionFull struct {
+	Action
+	Template   ActionTemplate    `json:"template"`
+	Executions []ActionExecution `json:"executions"`
+	CreatedBy  User              `json:"created_by"`
+}

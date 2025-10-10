@@ -268,13 +268,65 @@ func (h *HtmxHealthHandler) RenderHealthTimelineComponent(ctx *gin.Context) {
 
 	// Get healthcheck results for the instance
 	healthcheckResults, err := data.GetHealthcheckResultsByApplicationInstanceIdRange(h.Database, uint64(instanceId), startTime, endTime)
-	if err != nil {
+	if err != nil || healthcheckResults == nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get healthcheck results", "trace": err.Error()})
 		return
 	}
 
-	if healthcheckResults == nil {
-		healthcheckResults = &[]data.HealthcheckResult{}
+	// Transform the data into buckets
+	const bucketCount = 25
+	const indicatorCount = 7 // Number of indicators to show on the timeline
+	indicatorInterval := bucketCount / indicatorCount
+	// Initialize timeline structure
+	timeline := Timeline{
+		Buckets:         make([]TimelineBucket, bucketCount),
+		MaxResponseTime: 0,
+	}
+	bucketDuration := endTime.Sub(startTime) / bucketCount
+	bucketSize := len(*healthcheckResults) / bucketCount
+	if bucketSize == 0 {
+		bucketSize = 1 // Ensure at least one item per bucket
+	}
+	for bucket := range bucketCount {
+		// Fill this bucket with a 1/bucketCount slice of the time range
+		// Slice input data
+		sliceToProcess := (*healthcheckResults)[bucket*bucketSize : (bucket+1)*bucketSize]
+		timeline.Buckets[bucket] = TimelineBucket{
+			StartTime:   startTime.Add(bucketDuration * time.Duration(bucket)),
+			EndTime:     startTime.Add(bucketDuration * time.Duration(bucket+1)),
+			TotalChecks: 0,
+			Successes:   0,
+			Failures:    0,
+		}
+		for _, result := range sliceToProcess {
+			timeline.Buckets[bucket].TotalChecks++
+			if result.IsSuccessful {
+				timeline.Buckets[bucket].Successes++
+			} else {
+				timeline.Buckets[bucket].Failures++
+			}
+			// Update max response time if needed
+			if float64(result.ResTime) > timeline.MaxResponseTime {
+				timeline.MaxResponseTime = float64(result.ResTime)
+			}
+			// Mark indicator on each 7th bucket
+			if bucket%indicatorInterval == 0 {
+				timeline.Buckets[bucket].Indicator = true
+			}
+		}
+		// Compute average response time for the bucket
+		var totalResTime float64
+		for _, result := range sliceToProcess {
+			totalResTime += float64(result.ResTime)
+		}
+		timeline.Buckets[bucket].AverageResTime = totalResTime / float64(timeline.Buckets[bucket].TotalChecks)
+	}
+	// Compute average response time percentage for each bucket
+	for i := range timeline.Buckets {
+		timeline.Buckets[i].AvgResTimePercent = int((timeline.Buckets[i].AverageResTime / timeline.MaxResponseTime) * 100)
+		if timeline.Buckets[i].AvgResTimePercent < 10 {
+			timeline.Buckets[i].AvgResTimePercent = 10 // Ensure minimum height for visibility
+		}
 	}
 
 	// Render the timeline component
@@ -282,5 +334,22 @@ func (h *HtmxHealthHandler) RenderHealthTimelineComponent(ctx *gin.Context) {
 		"Instance":           instance,
 		"HealthcheckResults": *healthcheckResults,
 		"TimeRange":          timeRange,
+		"Timeline":           timeline,
 	})
+}
+
+type TimelineBucket struct {
+	StartTime         time.Time
+	EndTime           time.Time
+	AverageResTime    float64
+	AvgResTimePercent int // Percentage relative to the max response time in the timeline
+	TotalChecks       int
+	Successes         int
+	Failures          int
+	Indicator         bool // True if there is supposed to be a line indicator in the timeline
+}
+
+type Timeline struct {
+	Buckets         []TimelineBucket
+	MaxResponseTime float64
 }

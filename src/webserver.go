@@ -80,6 +80,15 @@ func InitWebServer(app *Application) {
 	app.Engine.FuncMap["sub1"] = sub1
 	app.Engine.FuncMap["add"] = func(a, b int) int { return a + b }
 	app.Engine.FuncMap["deref"] = deref
+	app.Engine.FuncMap["title"] = func(s string) string {
+		if len(s) == 0 {
+			return s
+		}
+		return strings.ToUpper(s[:1]) + strings.ToLower(s[1:])
+	}
+	app.Engine.FuncMap["lower"] = strings.ToLower
+	app.Engine.FuncMap["printf"] = fmt.Sprintf
+	app.Engine.FuncMap["sub"] = func(a, b int) int { return a - b }
 
 	if App.Configuration.WebServer.Mode == "release" {
 		LoadHTMLFromEmbedFS(app.Engine, webResources, "*")
@@ -192,6 +201,38 @@ func InitWebServer(app *Application) {
 			profileGroup.PUT("/", profileHandler.UpdateUser)
 			profileGroup.PUT("/password", profileHandler.UpdatePassword)
 		}
+		{ // Actions
+			actionController := apiRestV1.NewActionController(App.Database)
+			actionGroup := restV1group.Group("/actions")
+			actionGroup.Use(RequireRole(dbPool, "admin"))
+
+			// Action Templates
+			actionTemplatesGroup := actionGroup.Group("/templates")
+			actionTemplatesGroup.GET("/", actionController.GetAllActionTemplates)
+			actionTemplatesGroup.POST("/", actionController.CreateActionTemplate)
+			actionTemplateIdGroup := actionTemplatesGroup.Group("/:templateId")
+			{
+				actionTemplateIdGroup.GET("/", actionController.GetActionTemplateById)
+				actionTemplateIdGroup.PUT("/", actionController.UpdateActionTemplate)
+				actionTemplateIdGroup.DELETE("/", actionController.DeleteActionTemplate)
+			}
+
+			// Actions
+			actionGroup.GET("/", actionController.GetAllActions)
+			actionGroup.POST("/", actionController.CreateAction)
+			actionGroup.POST("/preflight", actionController.PreflightCheck)
+
+			actionIdGroup := actionGroup.Group("/:actionId")
+			{
+				actionIdGroup.GET("/", actionController.GetActionById)
+				actionIdGroup.POST("/start", actionController.StartAction)
+				actionIdGroup.POST("/cancel", actionController.CancelAction)
+				actionIdGroup.GET("/status", actionController.GetActionStatus)
+			}
+
+			// Execution logs
+			restV1group.GET("/executions/:executionId/logs", actionController.GetExecutionLogs)
+		}
 	}
 	{ // HTMX
 		htmxGroup := App.Engine.Group("/htmx")
@@ -271,6 +312,25 @@ func InitWebServer(app *Application) {
 		secretGroup.GET("/", psh.GetPageSecrets)
 		secretGroup.GET("/:id/edit", psh.GetPageEditSecret)
 		secretGroup.GET("/:id/details", psh.GetPageViewSecret)
+	}
+	{ // Actions
+		av := handlers.NewActionView(App.Database)
+		routeGroup := rootGroup.Group("/actions")
+		routeGroup.Use(RequireRole(dbPool, "admin"))
+
+		routeGroup.GET("/", av.GetPageActions)
+		routeGroup.GET("/new", av.GetPageActionCreate)
+		routeGroup.POST("/preflight", av.PostActionsPreflight) // HTMX preflight endpoint
+
+		// Action Templates
+		routeGroup.GET("/templates", av.GetPageActionTemplates)
+		routeGroup.GET("/templates/new", av.GetPageActionTemplateCreate)
+		routeGroup.GET("/templates/:id/edit", av.GetPageActionTemplateEdit)
+		routeGroup.POST("/templates/:id/edit", av.PostPageActionTemplateEdit)
+		routeGroup.GET("/templates/:id/details", av.GetPageActionTemplateDetails)
+
+		// Action Details
+		routeGroup.GET("/:id/details", av.GetPageActionDetails)
 	}
 
 	var err error

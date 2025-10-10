@@ -1,0 +1,181 @@
+{{ define "pages/actions/templates" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ template "template/head.includes" }}
+    <title>Action Templates</title>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <div class="flex justify-between items-start mb-6">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">
+                        Action Templates
+                    </h1>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Manage reusable bash script templates for automated actions
+                    </p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <a href="/actions/templates/new"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Create Template
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        {{ if not .Templates }}
+        <div class="text-center py-12">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 max-w-md mx-auto p-8">
+                <svg class="h-12 w-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Action Templates</h3>
+                <p class="text-sm text-gray-500 mb-6">
+                    Get started by creating your first action template. Templates allow you to define reusable bash scripts 
+                    that can be executed across multiple application instances.
+                </p>
+                <a href="/actions/templates/new"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Create Your First Template
+                </a>
+            </div>
+        </div>
+        {{ else }}
+        <!-- Templates Grid -->
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {{ range .Templates }}
+            <div class="bg-white overflow-hidden shadow rounded-lg hover:shadow-lg transition-shadow duration-200">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div class="bg-indigo-100 rounded-md p-2">
+                                    <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-lg font-medium text-gray-900 truncate">
+                                    {{ .Name }}
+                                </h3>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <div class="relative inline-block text-left">
+                                <button type="button" class="template-menu-button bg-gray-100 rounded-full p-2 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+                                        data-template-id="{{ .Id }}">
+                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                    </svg>
+                                </button>
+                                <div class="template-menu hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5" 
+                                     data-template-id="{{ .Id }}">
+                                    <a href="/actions/templates/{{ .Id }}/details" 
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">View Details</a>
+                                    <a href="/actions/templates/{{ .Id }}/edit" 
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Edit</a>
+                                    <a href="/actions/new?template_id={{ .Id }}" 
+                                       class="block px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50">Create Action</a>
+                                    <div class="border-t border-gray-100"></div>
+                                    <button hx-delete="/api/rest/v1/actions/templates/{{ .Id }}"
+                                            hx-confirm="Are you sure you want to delete this template?"
+                                            hx-target="closest .bg-white"
+                                            hx-swap="outerHTML swap:1s"
+                                            hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)"
+                                            class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ if .Description }}
+                        <p class="text-sm text-gray-600 line-clamp-2">{{ .Description }}</p>
+                        {{ else }}
+                        <p class="text-sm text-gray-400 italic">No description provided</p>
+                        {{ end }}
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="text-xs text-gray-500 mb-2">Script Preview:</div>
+                        <div class="bg-gray-50 rounded-md p-3 text-xs font-mono text-gray-700 max-h-20 overflow-hidden relative">
+                            {{ .BashScript | printf "%.200s" }}{{ if gt (len .BashScript) 200 }}...{{ end }}
+                            <div class="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-gray-50 to-transparent"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-gray-500">
+                        <div>
+                            Created {{ .CreatedAt | formatTime }}
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <a href="/actions/templates/{{ .Id }}/details" 
+                               class="text-indigo-600 hover:text-indigo-900 font-medium">
+                                View Details
+                            </a>
+                            <a href="/actions/new?template_id={{ .Id }}" 
+                               class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-medium hover:bg-indigo-200 transition-colors">
+                                Use Template
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+        {{ end }}
+    </div>
+
+    <script>
+        // Handle dropdown menus
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuButtons = document.querySelectorAll('.template-menu-button');
+            
+            menuButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const templateId = this.dataset.templateId;
+                    const menu = document.querySelector(`.template-menu[data-template-id="${templateId}"]`);
+                    
+                    // Close all other menus
+                    document.querySelectorAll('.template-menu').forEach(m => {
+                        if (m !== menu) m.classList.add('hidden');
+                    });
+                    
+                    // Toggle this menu
+                    menu.classList.toggle('hidden');
+                });
+            });
+            
+            // Close menus when clicking outside
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.template-menu').forEach(menu => {
+                    menu.classList.add('hidden');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+{{ end }}
