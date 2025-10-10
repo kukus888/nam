@@ -266,6 +266,8 @@
                         <!-- URL and ReqMethod -->
                         <div class="flex items-center mb-3 text-sm text-gray-500 bg-gray-50 rounded p-1">
                             <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-mono mr-2">{{ .ReqMethod }}</span>
+                            <span class="truncate">{{ .Protocol }}://</span>
+                            <span class="px-2 bg-gray-100 text-gray-700 rounded text-xs font-mono mr-2">server:port</span>
                             <span class="truncate" title="{{ .ReqUrl }}">{{ .ReqUrl }}</span>
                         </div>
 

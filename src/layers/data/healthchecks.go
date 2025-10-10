@@ -58,19 +58,19 @@ func (hc *Healthcheck) DbInsert(pool *pgxpool.Pool) (*uint, error) {
             name, description, url, method, headers, body, 
             timeout, check_interval, retry_count, retry_interval,
             expected_status, expected_response_body, response_validation,
-            verify_ssl, auth_type, auth_credentials
+            verify_ssl, auth_type, auth_credentials, protocol
         ) VALUES (
             $1, $2, $3, $4, $5, $6, 
             $7, $8, $9, $10,
             $11, $12, $13,
-            $14, $15,
-            $16
+            $14, $15, $16,
+            $17
         ) RETURNING id
     `,
 		hc.Name, hc.Description, hc.ReqUrl, hc.ReqMethod, headersJSON, hc.ReqBody,
 		hc.ReqTimeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
-		hc.VerifySSL, hc.AuthType, hc.AuthCredentials,
+		hc.VerifySSL, hc.AuthType, hc.AuthCredentials, hc.Protocol,
 	).Scan(&hc.Id)
 
 	if err != nil {
@@ -145,14 +145,15 @@ func (hc *Healthcheck) Update(pool *pgxpool.Pool) error {
             response_validation = $13,
             verify_ssl = $14,
             auth_type = $15,
-            auth_credentials = $16
-        WHERE id = $17
+            auth_credentials = $16,
+            protocol = $17
+        WHERE id = $18;
     `,
 		hc.Name, hc.Description, hc.ReqUrl, hc.ReqMethod, headersJSON, hc.ReqBody,
 		hc.ReqTimeout, hc.CheckInterval, hc.RetryCount, hc.RetryInterval,
 		hc.ExpectedStatus, hc.ExpectedResponseBody, hc.ResponseValidation,
 		hc.VerifySSL,
-		hc.AuthType, hc.AuthCredentials,
+		hc.AuthType, hc.AuthCredentials, hc.Protocol,
 		hc.Id,
 	)
 
