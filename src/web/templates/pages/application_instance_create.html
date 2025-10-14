@@ -139,7 +139,7 @@
             serverSelect.addEventListener('change', function() {
                 const selectedOption = serverSelect.options[serverSelect.selectedIndex];
                 if (selectedOption.value) {
-                    const serverHostname = selectedOption.text.split(" ")[0]; // Extract hostname from option text
+                    const serverHostname = selectedOption.text.split(" (")[0]; // Extract hostname from option text
                     if (serverHostname) {
                         instanceNameInput.value = `{{ .Application.Name }}@${serverHostname}`;
                     }
