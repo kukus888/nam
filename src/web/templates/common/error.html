@@ -142,7 +142,7 @@
         }
     }
     
-    // Initialize click handler for the entire notification
+    // Initialize click handler for the entire notification and global HTMX error handling
     document.addEventListener('DOMContentLoaded', function() {
         const errorNotification = document.getElementById('error-notification');
         if (errorNotification) {
@@ -171,6 +171,27 @@
         if (notification) {
             notification.removeAttribute('_');
         }
+        
+        // Global HTMX error handling - automatically show errors for failed requests
+        document.body.addEventListener('htmx:afterRequest', function(event) {
+            if (!event.detail.successful && event.detail.xhr.status >= 400) {
+                // Hide any existing error notifications first
+                hideErrorNotification();
+                
+                // Show new error notification
+                setTimeout(() => {
+                    showErrorMessage(event.detail.xhr.responseText);
+                }, 100); // Small delay to ensure previous notification is hidden
+            }
+        });
+        
+        // Auto-hide errors on successful requests
+        document.body.addEventListener('htmx:afterRequest', function(event) {
+            if (event.detail.successful) {
+                // Hide error notifications on successful requests
+                hideErrorNotification();
+            }
+        });
     });
     
     // Function to hide the error notification programmatically
