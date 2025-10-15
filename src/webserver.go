@@ -111,71 +111,69 @@ func InitWebServer(app *Application) {
 	{ // REST
 		restV1group := App.Engine.Group("/api/rest/v1")
 		restV1group.Use(AuthMiddleware())
-		{ // Servers
+		restV1group.Use(RequireRole(dbPool, "Viewer")) // All endpoint require at least Viewer role
+		{                                              // Servers
 			serverController := apiRestV1.NewServerController(App.Database)
 			serverGroup := restV1group.Group("/servers")
-			serverGroup.Use(RequireRole(dbPool, "admin"))
-			serverGroup.POST("/", serverController.NewServer)
+			serverGroup.POST("/", RequireRole(dbPool, "Operator"), serverController.NewServer)
 			serverGroup.GET("/", serverController.GetAll)
 			serverIdGroup := serverGroup.Group("/:serverId")
 			{ // Server ID specific routes
 				serverIdGroup.GET("/", serverController.GetById)
-				serverIdGroup.PUT("/", serverController.UpdateById)
-				serverIdGroup.DELETE("/", serverController.RemoveById)
+				serverIdGroup.PUT("/", RequireRole(dbPool, "Operator"), serverController.UpdateById)
+				serverIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), serverController.RemoveById)
 			}
 		}
 		{ // Healthchecks
 			hcController := apiRestV1.NewHealthcheckController(App.Database)
 			hcGroup := restV1group.Group("/healthchecks")
-			hcGroup.Use(RequireRole(dbPool, "admin"))
-			hcGroup.POST("/", hcController.NewHealthcheck)
+			hcGroup.POST("/", RequireRole(dbPool, "Operator"), hcController.NewHealthcheck)
 			hcGroup.GET("/", hcController.GetAll)
 			hcIdGroup := hcGroup.Group("/:hcId")
 			{ // Healthcheck ID specific routes
 				hcIdGroup.GET("/", hcController.GetById)
-				hcIdGroup.PUT("/", hcController.UpdateHealthcheck)
-				hcIdGroup.DELETE("/", hcController.Delete)
+				hcIdGroup.PUT("/", RequireRole(dbPool, "Operator"), hcController.UpdateHealthcheck)
+				hcIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), hcController.Delete)
 			}
 		}
 		{ // Application Definitions
 			appDefController := apiRestV1.NewApplicationDefinitionController(App.Database)
 			appDefGroup := restV1group.Group("/applications")
-			appDefGroup.Use(RequireRole(dbPool, "admin"))
-			appDefGroup.POST("/", appDefController.NewApplication)
+			appDefGroup.POST("/", RequireRole(dbPool, "Operator"), appDefController.NewApplication)
 			appDefGroup.GET("/", appDefController.GetAll)
 			appDefIdGroup := appDefGroup.Group("/:appId")
 			{ // Application ID specific routes
 				appDefIdGroup.GET("/", appDefController.GetById)
-				appDefIdGroup.PUT("/", appDefController.UpdateApplicationDefinition)
-				appDefIdGroup.DELETE("/", appDefController.DeleteById)
+				appDefIdGroup.PUT("/", RequireRole(dbPool, "Operator"), appDefController.UpdateApplicationDefinition)
+				appDefIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), appDefController.DeleteById)
 				{ // Application Definition Variables
 					appDefVarController := apiRestV1.NewAppDefVariablesController(App.Database)
 					appDefVarGroup := appDefIdGroup.Group("/variables")
-					appDefVarGroup.POST("/", appDefVarController.CreateVariable)
+					appDefVarGroup.POST("/", RequireRole(dbPool, "Operator"), appDefVarController.CreateVariable)
 					{
 						appDefVarIdGroup := appDefVarGroup.Group("/:varId")
-						appDefVarIdGroup.PUT("/", appDefVarController.UpdateVariable)
-						appDefVarIdGroup.DELETE("/", appDefVarController.DeleteVariable)
+						appDefVarIdGroup.PUT("/", RequireRole(dbPool, "Operator"), appDefVarController.UpdateVariable)
+						appDefVarIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), appDefVarController.DeleteVariable)
 					}
 				}
 				{ // Application Instances
 					appInsGroup := appDefIdGroup.Group("/instances")
 					appInsController := apiRestV1.NewApplicationInstanceController(App.Database)
-					appInsGroup.POST("/", appInsController.CreateInstance)
+					appInsGroup.POST("/", RequireRole(dbPool, "Operator"), appInsController.CreateInstance)
 					appInsGroup.GET("/", appInsController.GetAllInstances)
 					appInsIdGroup := appInsGroup.Group("/:instanceId")
 					{ // Instance ID specific routes
 						appInsIdGroup.GET("/", appInsController.GetById)
-						appInsIdGroup.DELETE("/", appInsController.DeleteInstance)
-						appInsIdGroup.POST("/maintenance", appInsController.ToggleMaintenance)
+						appInsIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), appInsController.DeleteInstance)
+						appInsIdGroup.POST("/maintenance", RequireRole(dbPool, "Operator"), appInsController.ToggleMaintenance)
 						{ // Application Instance Variables
 							appInsVarsController := apiRestV1.NewAppInstanceVariablesController(App.Database)
 							appInsVarsGroup := appInsIdGroup.Group("/variables")
 							appInsVarsGroup.GET("/", appInsVarsController.GetAllVariables)
-							appInsVarsGroup.POST("/", appInsVarsController.CreateVariable)
+							appInsVarsGroup.POST("/", RequireRole(dbPool, "Operator"), appInsVarsController.CreateVariable)
 							appInsVarIdGroup := appInsVarsGroup.Group("/:varId")
-							appInsVarIdGroup.PUT("/", appInsVarsController.UpdateVariable)
-							appInsVarIdGroup.DELETE("/", appInsVarsController.DeleteVariable)
+							appInsVarIdGroup.PUT("/", RequireRole(dbPool, "Operator"), appInsVarsController.UpdateVariable)
+							appInsVarIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), appInsVarsController.DeleteVariable)
 						}
 					}
 				}
@@ -184,7 +182,7 @@ func InitWebServer(app *Application) {
 		{ // Users
 			userHandler := apiRestV1.NewUserHandler(dbPool)
 			userGroup := restV1group.Group("/users")
-			userGroup.Use(RequireRole(dbPool, "admin")) // Only admin can manage users
+			userGroup.Use(RequireRole(dbPool, "Admin")) // Only admin can manage users
 			userGroup.POST("/create", userHandler.CreateUser)
 			userGroup.DELETE("/:id", userHandler.DeleteUser)
 			userGroup.PUT("/:id", userHandler.UpdateUser)
@@ -194,7 +192,7 @@ func InitWebServer(app *Application) {
 			secretService := services.NewSecretsService(App.Database.Pool, log, cryptoService)
 			secretHandler := apiRestV1.NewSecretsHandler(secretService)
 			secretGroup := restV1group.Group("/secrets")
-			secretGroup.Use(RequireRole(dbPool, "admin"))
+			secretGroup.Use(RequireRole(dbPool, "Operator"))       // Only admin and operator can manage secrets
 			secretGroup.POST("/", secretHandler.CreateSecret)      // Create new secret
 			secretGroup.PUT("/:id", secretHandler.UpdateSecret)    // Update secret
 			secretGroup.DELETE("/:id", secretHandler.DeleteSecret) // Delete secret
@@ -208,29 +206,28 @@ func InitWebServer(app *Application) {
 		{ // Actions
 			actionController := apiRestV1.NewActionController(App.Database)
 			actionGroup := restV1group.Group("/actions")
-			actionGroup.Use(RequireRole(dbPool, "admin"))
 
 			// Action Templates
 			actionTemplatesGroup := actionGroup.Group("/templates")
 			actionTemplatesGroup.GET("/", actionController.GetAllActionTemplates)
-			actionTemplatesGroup.POST("/", actionController.CreateActionTemplate)
+			actionTemplatesGroup.POST("/", RequireRole(dbPool, "Operator"), actionController.CreateActionTemplate)
 			actionTemplateIdGroup := actionTemplatesGroup.Group("/:templateId")
 			{
 				actionTemplateIdGroup.GET("/", actionController.GetActionTemplateById)
-				actionTemplateIdGroup.PUT("/", actionController.UpdateActionTemplate)
-				actionTemplateIdGroup.DELETE("/", actionController.DeleteActionTemplate)
+				actionTemplateIdGroup.PUT("/", RequireRole(dbPool, "Operator"), actionController.UpdateActionTemplate)
+				actionTemplateIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), actionController.DeleteActionTemplate)
 			}
 
 			// Actions
 			actionGroup.GET("/", actionController.GetAllActions)
-			actionGroup.POST("/", actionController.CreateAction)
+			actionGroup.POST("/", RequireRole(dbPool, "Operator"), actionController.CreateAction)
 			actionGroup.POST("/preflight", actionController.PreflightCheck)
 
 			actionIdGroup := actionGroup.Group("/:actionId")
 			{
 				actionIdGroup.GET("/", actionController.GetActionById)
-				actionIdGroup.POST("/start", actionController.StartAction)
-				actionIdGroup.POST("/cancel", actionController.CancelAction)
+				actionIdGroup.POST("/start", RequireRole(dbPool, "Operator"), actionController.StartAction)
+				actionIdGroup.POST("/cancel", RequireRole(dbPool, "Operator"), actionController.CancelAction)
 				actionIdGroup.GET("/status", actionController.GetActionStatus)
 			}
 
@@ -251,59 +248,53 @@ func InitWebServer(app *Application) {
 	rootGroup.Use(AuthMiddleware())
 
 	ph := handlers.NewPageHandler(App.Database)
-	rootGroup.GET("/", RequireRole(dbPool, "admin"), ph.GetPageDashboard)
-	rootGroup.GET("/dashboard", RequireRole(dbPool, "admin"), ph.GetPageDashboard)
-	rootGroup.GET("/dashboard/component", RequireRole(dbPool, "admin"), ph.GetDashboardComponent)
-	rootGroup.GET("/dashboard/data", RequireRole(dbPool, "admin"), ph.GetDashboardDataAPI)
+	// Dashboard - accessible to all authenticated users (Viewer and above)
+	rootGroup.GET("/", RequireRole(dbPool, "Viewer"), ph.GetPageDashboard)
+	rootGroup.GET("/dashboard", RequireRole(dbPool, "Viewer"), ph.GetPageDashboard)
+	rootGroup.GET("/dashboard/component", RequireRole(dbPool, "Viewer"), ph.GetDashboardComponent)
+	rootGroup.GET("/dashboard/data", RequireRole(dbPool, "Viewer"), ph.GetDashboardDataAPI)
 	rootGroup.GET("/profile", ph.GetProfilePage)
 	{ // Servers
 		psh := handlers.NewPageServerHandler(App.Database)
-		rootGroup.GET("/servers", RequireRole(dbPool, "admin"), psh.GetPageServers)
-		rootGroup.GET("/servers/create", RequireRole(dbPool, "admin"), psh.GetPageServerCreate)
-		rootGroup.GET("/servers/:id/edit", RequireRole(dbPool, "admin"), psh.GetPageServerEdit)
-		rootGroup.GET("/servers/:id/view", RequireRole(dbPool, "admin"), psh.GetPageServerView)
+		// Server viewing - accessible to Viewers and above
+		rootGroup.GET("/servers", RequireRole(dbPool, "Viewer"), psh.GetPageServers)
+		rootGroup.GET("/servers/:id/view", RequireRole(dbPool, "Viewer"), psh.GetPageServerView)
+		// Server management - accessible to Operators and above
+		rootGroup.GET("/servers/create", RequireRole(dbPool, "Operator"), psh.GetPageServerCreate)
+		rootGroup.GET("/servers/:id/edit", RequireRole(dbPool, "Operator"), psh.GetPageServerEdit)
 	}
 	{ // Application Definitions
 		av := handlers.NewApplicationView(App.Database)
-		routeGroup := rootGroup.Group("/applications")
-		routeGroup.Use(RequireRole(dbPool, "admin"))
-		routeGroup.GET("/", av.GetPageApplications)
-		routeGroup.GET("/create", av.GetPageApplicationCreate)
-		routeGroup.GET("/maintenance", av.GetPageApplicationMaintenance)
-		idGroup := routeGroup.Group("/:id")
-		{ // Application ID specific routes
-			idGroup.GET("/details", av.GetPageApplicationDetails)
-			idGroup.GET("/edit", av.GetPageApplicationEdit)
-			idGroup.GET("/variables", av.GetPageApplicationVariables)
-			idGroup.GET("/instances/create", av.GetPageApplicationInstanceCreate)
-		}
+		// Application viewing - accessible to Viewers and above
+		rootGroup.GET("/applications", RequireRole(dbPool, "Viewer"), av.GetPageApplications)
+		rootGroup.GET("/applications/:id/details", RequireRole(dbPool, "Viewer"), av.GetPageApplicationDetails)
+		// Application management - accessible to Operators and above
+		rootGroup.GET("/applications/create", RequireRole(dbPool, "Operator"), av.GetPageApplicationCreate)
+		rootGroup.GET("/applications/maintenance", RequireRole(dbPool, "Operator"), av.GetPageApplicationMaintenance)
+		rootGroup.GET("/applications/:id/edit", RequireRole(dbPool, "Operator"), av.GetPageApplicationEdit)
+		rootGroup.GET("/applications/:id/variables", RequireRole(dbPool, "Operator"), av.GetPageApplicationVariables)
+		rootGroup.GET("/applications/:id/instances/create", RequireRole(dbPool, "Operator"), av.GetPageApplicationInstanceCreate)
 	}
 	{ // Application instances
 		iv := handlers.NewInstanceView(App.Database)
-		routeGroup := rootGroup.Group("/instances")
-		routeGroup.Use(RequireRole(dbPool, "admin"))
-		idGroup := routeGroup.Group("/:id")
-		{ // Instance ID specific routes
-			idGroup.GET("/details", iv.GetPageApplicationInstanceDetails)
-			idGroup.GET("/variables", iv.GetPageApplicationInstanceVariables)
-		}
+		// Instance viewing - accessible to Viewers and above
+		rootGroup.GET("/instances/:id/details", RequireRole(dbPool, "Viewer"), iv.GetPageApplicationInstanceDetails)
+		// Instance management - accessible to Operators and above
+		rootGroup.GET("/instances/:id/variables", RequireRole(dbPool, "Operator"), iv.GetPageApplicationInstanceVariables)
 	}
 	{ // Healthchecks
 		hcv := handlers.NewHealthcheckView(App.Database)
-		routeGroup := rootGroup.Group("/healthchecks")
-		routeGroup.Use(RequireRole(dbPool, "admin"))
-		routeGroup.GET("/", hcv.GetPageHealthchecks)
-		routeGroup.GET("/create", hcv.GetPageHealthcheckCreate)
-		idGroup := routeGroup.Group("/:id")
-		{ // Healthcheck ID specific routes
-			idGroup.GET("/details", hcv.GetPageHealthcheckDetails)
-			idGroup.GET("/edit", hcv.GetPageHealthcheckEdit)
-		}
+		// Healthcheck viewing - accessible to Viewers and above
+		rootGroup.GET("/healthchecks", RequireRole(dbPool, "Viewer"), hcv.GetPageHealthchecks)
+		rootGroup.GET("/healthchecks/:id/details", RequireRole(dbPool, "Viewer"), hcv.GetPageHealthcheckDetails)
+		// Healthcheck management - accessible to Operators and above
+		rootGroup.GET("/healthchecks/create", RequireRole(dbPool, "Operator"), hcv.GetPageHealthcheckCreate)
+		rootGroup.GET("/healthchecks/:id/edit", RequireRole(dbPool, "Operator"), hcv.GetPageHealthcheckEdit)
 	}
 	{ // Settings
 		psh := handlers.NewPageSettingsHandler(App.Database)
 		routeGroup := rootGroup.Group("/settings")
-		routeGroup.Use(RequireRole(dbPool, "admin"))
+		routeGroup.Use(RequireRole(dbPool, "Admin"))
 		routeGroup.GET("/", psh.GetPageSettings)
 		routeGroup.GET("/database", psh.GetPageDatabaseSettings)
 		routeGroup.GET("/users", psh.GetPageUsers)
@@ -313,7 +304,7 @@ func InitWebServer(app *Application) {
 	{ // Secrets Management
 		psh := handlers.NewPageSecretsHandler(App.Database, cryptoService)
 		secretGroup := rootGroup.Group("/secrets")
-		secretGroup.Use(RequireRole(dbPool, "admin"))
+		secretGroup.Use(RequireRole(dbPool, "Operator")) // Only admin and operator can manage secrets
 		secretGroup.GET("/", psh.GetPageSecrets)
 		secretGroup.GET("/:id/edit", psh.GetPageEditSecret)
 		secretGroup.GET("/:id/details", psh.GetPageViewSecret)
@@ -321,17 +312,17 @@ func InitWebServer(app *Application) {
 	{ // Actions
 		av := handlers.NewActionView(App.Database)
 		routeGroup := rootGroup.Group("/actions")
-		routeGroup.Use(RequireRole(dbPool, "admin"))
+		routeGroup.Use(RequireRole(dbPool, "Viewer")) // All authenticated users can view actions
 
 		routeGroup.GET("/", av.GetPageActions)
 		routeGroup.GET("/new", av.GetPageActionCreate)
-		routeGroup.POST("/preflight", av.PostActionsPreflight) // HTMX preflight endpoint
+		routeGroup.POST("/preflight", RequireRole(dbPool, "Operator"), av.PostActionsPreflight) // HTMX preflight endpoint
 
 		// Action Templates
 		routeGroup.GET("/templates", av.GetPageActionTemplates)
 		routeGroup.GET("/templates/new", av.GetPageActionTemplateCreate)
 		routeGroup.GET("/templates/:id/edit", av.GetPageActionTemplateEdit)
-		routeGroup.POST("/templates/:id/edit", av.PostPageActionTemplateEdit)
+		routeGroup.POST("/templates/:id/edit", RequireRole(dbPool, "Operator"), av.PostPageActionTemplateEdit)
 		routeGroup.GET("/templates/:id/details", av.GetPageActionTemplateDetails)
 
 		// Action Details

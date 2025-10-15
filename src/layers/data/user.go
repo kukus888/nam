@@ -144,9 +144,39 @@ func GetUserCount(pool *pgxpool.Pool) (int, error) {
 	return count, tx.Commit(context.Background())
 }
 
-func (user User) HasRole(role string) bool {
-	return true // Placeholder for role checking logic
-	// TODO: Implement role checking logic based on the user's roles
+// HasRole checks if the user has the required role or a higher role in the hierarchy.
+// Role hierarchy: Admin > Operator > Viewer (Admin can access everything, Operator can access Operator and Viewer routes, etc.)
+func (user User) HasRole(requiredRole string) bool {
+	// Define the role hierarchy: Admin > Operator > Viewer
+	roleHierarchy := map[string]int{
+		"Admin":    3,
+		"Operator": 2,
+		"Viewer":   1,
+	}
+	
+	// Get the required role level
+	requiredLevel, exists := roleHierarchy[requiredRole]
+	if !exists {
+		return false // Unknown role
+	}
+	
+	// Map role IDs to role names (based on the order in migration)
+	// Admin is inserted first (ID=1), Operator second (ID=2), Viewer third (ID=3)
+	roleIdToName := map[uint64]string{
+		1: "Admin",
+		2: "Operator", 
+		3: "Viewer",
+	}
+	
+	userRoleName, exists := roleIdToName[user.RoleId]
+	if !exists {
+		return false // Unknown user role
+	}
+	
+	userLevel := roleHierarchy[userRoleName]
+	
+	// User has access if their role level is >= required role level
+	return userLevel >= requiredLevel
 }
 
 // Removes this user from the database
