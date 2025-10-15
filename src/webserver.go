@@ -79,7 +79,11 @@ func InitWebServer(app *Application) {
 	app.Engine.FuncMap["formatTimeRFC3339Nano"] = formatTimeRFC3339Nano
 	app.Engine.FuncMap["sub1"] = sub1
 	app.Engine.FuncMap["add"] = func(a, b int) int { return a + b }
-	app.Engine.FuncMap["deref"] = deref
+	app.Engine.FuncMap["derefBool"] = derefBool
+	app.Engine.FuncMap["derefInt"] = derefInt
+	app.Engine.FuncMap["derefInt64"] = derefInt64
+	app.Engine.FuncMap["derefUint64"] = derefUint64
+	app.Engine.FuncMap["derefStr"] = derefStr
 	app.Engine.FuncMap["title"] = func(s string) string {
 		if len(s) == 0 {
 			return s
@@ -257,6 +261,7 @@ func InitWebServer(app *Application) {
 		rootGroup.GET("/servers", RequireRole(dbPool, "admin"), psh.GetPageServers)
 		rootGroup.GET("/servers/create", RequireRole(dbPool, "admin"), psh.GetPageServerCreate)
 		rootGroup.GET("/servers/:id/edit", RequireRole(dbPool, "admin"), psh.GetPageServerEdit)
+		rootGroup.GET("/servers/:id/view", RequireRole(dbPool, "admin"), psh.GetPageServerView)
 	}
 	{ // Application Definitions
 		av := handlers.NewApplicationView(App.Database)
@@ -490,6 +495,39 @@ func sub1(x int) int {
 }
 
 // Dereference a pointer to a boolean value
-func deref(b *bool) bool {
+func derefBool(b *bool) bool {
+	if b == nil {
+		return false
+	}
 	return *b
+}
+
+// Dereference a pointer to an integer value
+func derefInt(i *int) int {
+	if i == nil {
+		return 0
+	}
+	return *i
+}
+
+func derefInt64(i *int64) int64 {
+	if i == nil {
+		return 0
+	}
+	return *i
+}
+
+func derefUint64(i *uint64) uint64 {
+	if i == nil {
+		return 0
+	}
+	return *i
+}
+
+// Dereference a pointer to a string value
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

@@ -30,7 +30,15 @@ func (h PageServerHandler) GetPageServers(ctx *gin.Context) {
 }
 
 func (h PageServerHandler) GetPageServerCreate(c *gin.Context) {
-	c.HTML(http.StatusOK, "pages/servers/create", gin.H{})
+	// Get SSH-compatible secrets for dropdown
+	secrets, err := data.GetSshSecrets(h.Database.Pool)
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{"error": "Unable to get secrets", "trace": err.Error()})
+		return
+	}
+	c.HTML(http.StatusOK, "pages/servers/create", gin.H{
+		"SshSecrets": secrets,
+	})
 }
 
 func (h PageServerHandler) GetPageServerEdit(c *gin.Context) {
@@ -45,7 +53,42 @@ func (h PageServerHandler) GetPageServerEdit(c *gin.Context) {
 		c.AbortWithStatusJSON(404, gin.H{"error": "Server not found", "trace": err.Error()})
 		return
 	}
+	// Get SSH-compatible secrets for dropdown
+	secrets, err := data.GetSshSecrets(h.Database.Pool)
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{"error": "Unable to get secrets", "trace": err.Error()})
+		return
+	}
 	c.HTML(http.StatusOK, "pages/servers/edit", gin.H{
-		"Server": server,
+		"Server":     server,
+		"SshSecrets": secrets,
+	})
+}
+
+func (h PageServerHandler) GetPageServerView(c *gin.Context) {
+	serverID := c.Param("id")
+	id, err := strconv.Atoi(serverID)
+	if err != nil {
+		c.AbortWithStatusJSON(400, gin.H{"error": "Invalid server ID", "trace": err.Error()})
+		return
+	}
+	server, err := data.GetServerById(h.Database.Pool, uint(id))
+	if err != nil {
+		c.AbortWithStatusJSON(404, gin.H{"error": "Server not found", "trace": err.Error()})
+		return
+	}
+
+	// Get the secret name if SSH is configured
+	var sshSecretName string
+	if server.SshAuthSecretId != nil {
+		secret, err := data.GetSecretById(h.Database.Pool, *server.SshAuthSecretId)
+		if err == nil && secret != nil {
+			sshSecretName = secret.Name
+		}
+	}
+
+	c.HTML(http.StatusOK, "pages/servers/view", gin.H{
+		"Server":        server,
+		"SshSecretName": sshSecretName,
 	})
 }

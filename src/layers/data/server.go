@@ -17,7 +17,9 @@ func (s Server) DbInsert(pool *pgxpool.Pool) (*uint, error) {
 		return nil, err
 	}
 	defer tx.Rollback(context.Background())
-	err = tx.QueryRow(context.Background(), "INSERT INTO server (alias, hostname) VALUES ($1, $2) RETURNING id", s.Alias, s.Hostname).Scan(&id)
+	err = tx.QueryRow(context.Background(), 
+		"INSERT INTO server (alias, hostname, ssh_port, ssh_auth_type, ssh_auth_secret_id, ssh_user) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", 
+		s.Alias, s.Hostname, s.SshPort, s.SshAuthType, s.SshAuthSecretId, s.SshUser).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +75,10 @@ func GetServerAll(pool *pgxpool.Pool) (*[]Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(context.Background(), `SELECT s.id as server_id, s.alias as server_alias, s.hostname as server_hostname FROM Server s ORDER BY id ASC;`)
+	rows, err := tx.Query(context.Background(), `
+		SELECT s.id as server_id, s.alias as server_alias, s.hostname as server_hostname, 
+		       s.ssh_port, s.ssh_auth_type, s.ssh_auth_secret_id, s.ssh_user 
+		FROM Server s ORDER BY id ASC;`)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +95,10 @@ func GetServerById(pool *pgxpool.Pool, id uint) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(context.Background(), `SELECT s.id as server_id, s.alias as server_alias, s.hostname as server_hostname FROM Server s WHERE s.id = $1`, id)
+	rows, err := tx.Query(context.Background(), `
+		SELECT s.id as server_id, s.alias as server_alias, s.hostname as server_hostname, 
+		       s.ssh_port, s.ssh_auth_type, s.ssh_auth_secret_id, s.ssh_user 
+		FROM Server s WHERE s.id = $1`, id)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +118,16 @@ func (server *Server) Update(pool *pgxpool.Pool) error {
 	if server.Id == 0 {
 		return errors.New("id is required for db update, got id = 0")
 	}
-	_, err = tx.Exec(context.Background(), `update server set alias = $2, hostname = $3 where id = $1`, server.Id, server.Alias, server.Hostname)
+	_, err = tx.Exec(context.Background(), `
+		update server set 
+			alias = $2, 
+			hostname = $3, 
+			ssh_port = $4, 
+			ssh_auth_type = $5, 
+			ssh_auth_secret_id = $6, 
+			ssh_user = $7 
+		where id = $1`, 
+		server.Id, server.Alias, server.Hostname, server.SshPort, server.SshAuthType, server.SshAuthSecretId, server.SshUser)
 	if err != nil {
 		return err
 	}

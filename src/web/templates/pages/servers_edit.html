@@ -1,254 +1,188 @@
 {{ define "pages/servers/edit" }}
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Servers</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {{ template "template/head.includes" }}
-    <style>
-        body {
-            background-color: #f9fafb;
-        }
-
-        .card {
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .server-row {
-            transition: all 0.3s ease;
-        }
-
-        .server-row:hover {
-            background-color: #f3f4f6;
-        }
-
-        .btn-primary {
-            @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out;
-        }
-
-        .btn-secondary {
-            @apply bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out;
-        }
-
-        .search-input {
-            @apply transition-all duration-300 ease-in-out;
-        }
-
-        .search-input:focus {
-            @apply ring-2 ring-indigo-500 ring-offset-2;
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #c5c5c5;
-            border-radius: 10px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #a0a0a0;
-        }
-    </style>
+    <title>Edit Server - {{ .Server.Alias }}</title>
 </head>
 
-<body class="min-h-screen">
-    <!-- Modern Navbar -->
+<body class="bg-gray-50">
     {{ template "templates/navbar" }}
-
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Page Header -->
-        <div class="flex items-center mb-6">
-            <a href="/servers"
-                class="mr-4 inline-flex items-center px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <svg class="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                Back
-            </a>
-            <h1 class="text-2xl font-bold text-gray-900">Edit Server [{{ .Server.Id }}] - {{ .Server.Alias }}</h1>
+    {{ template "template/components/error-notification" . }}
+    
+    <div class="max-w-4xl mx-auto p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">Edit Server: {{ .Server.Alias }}</h1>
+            <div class="flex space-x-3">
+                <a href="/servers/{{ .Server.Id }}/view"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <svg class="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    View
+                </a>
+                <a href="/servers"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <svg class="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Servers
+                </a>
+            </div>
         </div>
-
-        <div class="p-4 bg-white rounded-md shadow-md">
-            <form hx-put="/api/rest/v1/servers/{{ .Server.Id }}"
-                hx-on::after-request="handleRestApiResponse(event, '/htmx/items/servers/view')" hx-ext="submitjson">
-                <div class="space-y-4">
-                    <!-- Server ID (read-only) -->
-                    <div class="grid grid-cols-1 gap-2">
-                        <label for="server_id" class="block text-sm font-medium text-gray-700">Server ID</label>
-                        <input type="number" id="server_id" value="{{ .Server.Id }}" name="server_id"
-                            class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            readonly>
-
-                    </div>
-
-                    <!-- Server Alias -->
-                    <div class="grid grid-cols-1 gap-2">
-                        <label for="alias" class="block text-sm font-medium text-gray-700">Alias</label>
-                        <input type="text" id="alias" name="alias" value="{{ .Server.Alias }}"
-                            class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-
-                    <!-- Server Hostname -->
-                    <div class="grid grid-cols-1 gap-2">
-                        <label for="hostname" class="block text-sm font-medium text-gray-700">Hostname</label>
-                        <input type="text" id="hostname" name="hostname" value="{{ .Server.Hostname }}"
-                            class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-
-                    <!-- Add all other Server fields here -->
-                    <!-- For example, if Server has fields like Port, Username, etc. -->
-
-                    <div class="flex justify-end mt-6">
-                        <button type="submit"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Update Server
-                        </button>
+        
+        <form hx-put="/api/rest/v1/servers/{{ .Server.Id }}" hx-ext="submitjson" 
+              class="bg-white shadow-md rounded-lg p-6"
+              hx-on::after-request="handleResponse(event)">
+            
+            <div class="space-y-6">
+                <!-- Server Basic Information Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-indigo-200">Server Information</h2>
+                    <input type="number" id="server_id" name="server_id" value="{{ .Server.Id }}" hidden />
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="alias" class="block text-sm font-medium text-gray-700 mb-1">Server Alias *</label>
+                            <input type="text" id="alias" name="alias" required value="{{ .Server.Alias }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        
+                        <div>
+                            <label for="hostname" class="block text-sm font-medium text-gray-700 mb-1">Hostname *</label>
+                            <input type="text" id="hostname" name="hostname" required value="{{ .Server.Hostname }}"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
                     </div>
                 </div>
-            </form>
-        </div>
+
+                <!-- SSH Configuration Section -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4 pb-2 border-b border-green-200">SSH Configuration</h2>
+                    <p class="text-sm text-gray-600 mb-4">Configure SSH connection settings for remote server management (optional).</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="ssh_port" class="block text-sm font-medium text-gray-700 mb-1">SSH Port</label>
+                            <input type="number" id="ssh_port" name="ssh_port" 
+                                   value="{{if .Server.SshPort}}{{.Server.SshPort}}{{else}}22{{end}}" 
+                                   min="1" max="65535" placeholder="22"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label for="ssh_user" class="block text-sm font-medium text-gray-700 mb-1">SSH User</label>
+                            <input type="text" id="ssh_user" name="ssh_user" 
+                                   value="{{if .Server.SshUser}}{{.Server.SshUser}}{{end}}"
+                                   placeholder="e.g. root, ubuntu, admin"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label for="ssh_auth_type" class="block text-sm font-medium text-gray-700 mb-1">Authentication Type</label>
+                            <div class="flex items-center space-x-2">
+                                <div class="flex-shrink-0 h-6 w-6">
+                                    <svg id="auth_type_icon" class="text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                                <select id="ssh_auth_type" name="ssh_auth_type" onchange="toggleSshCredentials(); updateAuthTypeIcon();"
+                                        class="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    {{ $selectedSshAuthType := derefStr .Server.SshAuthType }}
+                                    <option value=""{{if not $selectedSshAuthType}} selected{{end}}>No SSH Authentication</option>
+                                    <option value="password"{{if $selectedSshAuthType}}{{if eq $selectedSshAuthType "password"}} selected{{end}}{{end}}>Password Authentication</option>
+                                    <option value="private_key"{{if $selectedSshAuthType}}{{if eq $selectedSshAuthType "private_key"}} selected{{end}}{{end}}>Private Key Authentication</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="ssh_credentials_section" class="{{if not .Server.SshAuthType}}hidden{{end}}">
+                            <label for="ssh_auth_secret_id" class="block text-sm font-medium text-gray-700 mb-1">SSH Credentials</label>
+                            <select id="ssh_auth_secret_id" name="ssh_auth_secret_id"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">Select credentials...</option>
+                                {{ $selectedSshAuthSecretId := derefUint64 .Server.SshAuthSecretId }}
+                                {{range .SshSecrets}}
+                                <option value="{{.Id}}" {{ if eq .Id $selectedSshAuthSecretId }} selected{{ end }}>
+                                    {{.Name}} ({{.Type}})
+                                </option>
+                                {{end}}
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">Select the stored credentials for SSH authentication.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-between items-center pt-6 border-t border-gray-200">
+                    <a href="/servers" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        Cancel
+                    </a>
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Update Server
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
-</body>
-<script>
-    // Function to handle delete response
-    function handleDeleteResponse(event, buttonElement) {
-        // Check if the request was successful (status code 2xx)
-        if (event.detail.successful) {
-            // Find the parent row and hide it with animation
-            const row = buttonElement.closest('tr');
-            if (row) {
-                // Add fade-out animation
-                row.style.transition = 'opacity 0.5s ease';
-                row.style.opacity = '0';
 
-                // After animation completes, hide the row
-                setTimeout(() => {
-                    row.classList.add('hidden');
-
-                    // Check if we need to show the "no results" message
-                    updateNoResultsMessage();
-                }, 500);
-            }
-        } else {
-            // Show error notification with the response text
-            try {
-                showErrorMessage(event.detail.xhr.responseText);
-            } catch (e) {
-                // If there's an issue with the response, show a generic error
-                showErrorMessage("Failed to delete the server. Please try again.");
-            }
-        }
-    }
-
-    // Function to update the "no results" message based on visible rows
-    function updateNoResultsMessage() {
-        const rows = document.querySelectorAll('#server-table-body .server-row:not(.hidden)');
-        const noResultsMessage = document.getElementById('no-results-message');
-        const searchInput = document.getElementById('search-input');
-
-        if (rows.length === 0 && searchInput && searchInput.value.trim() !== '') {
-            noResultsMessage.classList.remove('hidden');
-        } else if (rows.length === 0 && (!searchInput || searchInput.value.trim() === '')) {
-            // All servers have been deleted
-            noResultsMessage.textContent = 'No servers available';
-            noResultsMessage.classList.remove('hidden');
-        } else {
-            noResultsMessage.classList.add('hidden');
-        }
-    }
-
-    // Store all server rows when the page loads
-    document.addEventListener('DOMContentLoaded', function () {
-        // Cache the search input element
-        const searchInput = document.getElementById('search-input');
-
-        // If there's a value in the search input (e.g., after page refresh), filter immediately
-        if (searchInput && searchInput.value) {
-            filterServerRows(searchInput.value);
-        }
-
-        // Initialize the no results message
-        updateNoResultsMessage();
-    });
-
-    // Function to filter server rows based on search input
-    function filterServerRows(searchTerm) {
-        searchTerm = searchTerm.toLowerCase().trim();
-
-        const rows = document.querySelectorAll('#server-table-body .server-row');
-        let visibleCount = 0;
-
-        rows.forEach(row => {
-            // Skip already hidden rows (deleted ones)
-            if (row.classList.contains('hidden') && row.style.opacity === '0') {
-                return;
-            }
-
-            // Get searchable data from data attributes
-            const id = row.getAttribute('data-id').toLowerCase();
-            const alias = row.getAttribute('data-alias').toLowerCase();
-            const hostname = row.getAttribute('data-hostname').toLowerCase();
-
-            // Check if any field contains the search term
-            if (id.includes(searchTerm) ||
-                alias.includes(searchTerm) ||
-                hostname.includes(searchTerm)) {
-                row.classList.remove('hidden');
-                visibleCount++;
+    <script>
+        // Function to toggle SSH credentials section
+        function toggleSshCredentials() {
+            const authType = document.getElementById('ssh_auth_type').value;
+            const credentialsSection = document.getElementById('ssh_credentials_section');
+            
+            if (authType && authType !== '') {
+                credentialsSection.classList.remove('hidden');
             } else {
-                row.classList.add('hidden');
+                credentialsSection.classList.add('hidden');
+                // Reset the credentials selection when hiding
+                document.getElementById('ssh_auth_secret_id').value = '';
             }
-        });
-
-        // Update the "no results" message
-        updateNoResultsMessage();
-    }
-
-    // Listen for HTMX events to maintain search state after HTMX operations
-    document.body.addEventListener('htmx:afterSwap', function (event) {
-        // If the search input has a value, reapply the filter
-        const searchInput = document.getElementById('search-input');
-        if (searchInput && searchInput.value) {
-            filterServerRows(searchInput.value);
         }
 
-        // Update the no results message
-        updateNoResultsMessage();
-    });
-</script>
+        // Function to update the auth type icon
+        function updateAuthTypeIcon() {
+            const authType = document.getElementById('ssh_auth_type').value;
+            const icon = document.getElementById('auth_type_icon');
+            
+            // Reset classes
+            icon.className = 'h-6 w-6';
+            
+            if (authType === 'password') {
+                icon.className += ' text-yellow-500';
+                icon.innerHTML = `<path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd"></path>`;
+            } else if (authType === 'private_key') {
+                icon.className += ' text-purple-500';
+                icon.innerHTML = `<path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"></path>`;
+            } else {
+                icon.className += ' text-gray-500';
+                icon.innerHTML = `<path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>`;
+            }
+        }
+
+        // Function to handle form response
+        function handleResponse(event) {
+            if (event.detail.successful) {
+                // Success is handled by HX-Redirect header automatically
+            }
+            // Errors are handled automatically by the error notification component
+        }
+
+        // Initialize icon on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateAuthTypeIcon();
+        });
+    </script>
+</body>
 
 </html>
 {{end}}

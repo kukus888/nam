@@ -102,41 +102,68 @@
         </div>
 
         <div class="p-4 bg-white rounded-md shadow-md">
-            <!-- Error message banner -->
-            <div id="error-banner" class="hidden mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                clip-rule="evenodd" />
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm" id="error-message">Error message will appear here</p>
-                    </div>
-                </div>
-            </div>
+            {{ template "template/components/error-notification" . }}
 
-            <form id="server-create-form" hx-post="/api/rest/v1/servers"
-                hx-on::after-request="if(!event.detail.successful) showErrorMessage(event.detail.xhr.responseText)" hx-ext="submitjson">
+            <form id="server-create-form" hx-post="/api/rest/v1/servers" hx-ext="submitjson"
+                hx-on::after-request="handleResponse(event)">
                 <div class="space-y-4">
                     <!-- Server Alias -->
                     <div class="grid grid-cols-3 gap-4 items-center">
                         <label for="alias" class="text-sm font-medium text-gray-700 text-right">Alias</label>
-                        <input type="text" id="alias" name="Alias" value=""
+                        <input type="text" id="alias" name="alias" value=""
                             class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
                     <!-- Server Hostname -->
                     <div class="grid grid-cols-3 gap-4 items-center">
                         <label for="hostname" class="text-sm font-medium text-gray-700 text-right">Hostname</label>
-                        <input type="text" id="hostname" name="Hostname" value=""
+                        <input type="text" id="hostname" name="hostname" value=""
                             class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
 
-                    <!-- Add all other Server fields here -->
-                    <!-- For example, if Server has fields like Port, Username, etc. -->
+                    <!-- SSH Configuration Section -->
+                    <div class="col-span-3 border-t pt-4 mt-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">SSH Configuration (Optional)</h3>
+                    </div>
+
+                    <!-- SSH Port -->
+                    <div class="grid grid-cols-3 gap-4 items-center">
+                        <label for="ssh_port" class="text-sm font-medium text-gray-700 text-right">SSH Port</label>
+                        <input type="number" id="ssh_port" name="ssh_port" value="22" min="1" max="65535"
+                            class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- SSH User -->
+                    <div class="grid grid-cols-3 gap-4 items-center">
+                        <label for="ssh_user" class="text-sm font-medium text-gray-700 text-right">SSH User</label>
+                        <input type="text" id="ssh_user" name="ssh_user" value=""
+                            class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. root, ubuntu, admin">
+                    </div>
+
+                    <!-- SSH Auth Type -->
+                    <div class="grid grid-cols-3 gap-4 items-center">
+                        <label for="ssh_auth_type" class="text-sm font-medium text-gray-700 text-right">SSH Auth Type</label>
+                        <select id="ssh_auth_type" name="ssh_auth_type" 
+                                class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onchange="toggleSshCredentials()">
+                            <option value="">No SSH</option>
+                            <option value="password">Password</option>
+                            <option value="private_key">Private Key</option>
+                        </select>
+                    </div>
+
+                    <!-- SSH Credentials (Secret Selection) -->
+                    <div id="ssh_credentials_section" class="grid grid-cols-3 gap-4 items-center hidden">
+                        <label for="ssh_auth_secret_id" class="text-sm font-medium text-gray-700 text-right">SSH Credentials</label>
+                        <select id="ssh_auth_secret_id" name="ssh_auth_secret_id"
+                                class="col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Select credentials...</option>
+                            {{range .SshSecrets}}
+                            <option value="{{.Id}}">{{.Name}} ({{.Type}})</option>
+                            {{end}}
+                        </select>
+                    </div>
 
                     <div class="flex justify-end mt-6">
                         <button type="submit"
@@ -150,111 +177,30 @@
     </div>
 </body>
 <script>
-    // Function to handle delete response
-    function handleDeleteResponse(event, buttonElement) {
-        // Check if the request was successful (status code 2xx)
+    // Function to toggle SSH credentials section
+    function toggleSshCredentials() {
+        const authType = document.getElementById('ssh_auth_type').value;
+        const credentialsSection = document.getElementById('ssh_credentials_section');
+        
+        if (authType && authType !== '') {
+            credentialsSection.classList.remove('hidden');
+        } else {
+            credentialsSection.classList.add('hidden');
+            // Reset the credentials selection when hiding
+            document.getElementById('ssh_auth_secret_id').value = '';
+        }
+    }
+
+    // Function to handle form response
+    function handleResponse(event) {
         if (event.detail.successful) {
-            // Find the parent row and hide it with animation
-            const row = buttonElement.closest('tr');
-            if (row) {
-                // Add fade-out animation
-                row.style.transition = 'opacity 0.5s ease';
-                row.style.opacity = '0';
-
-                // After animation completes, hide the row
-                setTimeout(() => {
-                    row.classList.add('hidden');
-
-                    // Check if we need to show the "no results" message
-                    updateNoResultsMessage();
-                }, 500);
-            }
-        } else {
-            // Show error notification with the response text
-            try {
-                showErrorMessage(event.detail.xhr.responseText);
-            } catch (e) {
-                // If there's an issue with the response, show a generic error
-                showErrorMessage("Failed to delete the server. Please try again.");
-            }
+            // Success is handled by HX-Redirect header automatically
+            // No need to do anything special here
         }
+        // Errors are handled automatically by the error notification component
     }
 
-    // Function to update the "no results" message based on visible rows
-    function updateNoResultsMessage() {
-        const rows = document.querySelectorAll('#server-table-body .server-row:not(.hidden)');
-        const noResultsMessage = document.getElementById('no-results-message');
-        const searchInput = document.getElementById('search-input');
 
-        if (rows.length === 0 && searchInput && searchInput.value.trim() !== '') {
-            noResultsMessage.classList.remove('hidden');
-        } else if (rows.length === 0 && (!searchInput || searchInput.value.trim() === '')) {
-            // All servers have been deleted
-            noResultsMessage.textContent = 'No servers available';
-            noResultsMessage.classList.remove('hidden');
-        } else {
-            noResultsMessage.classList.add('hidden');
-        }
-    }
-
-    // Store all server rows when the page loads
-    document.addEventListener('DOMContentLoaded', function () {
-        // Cache the search input element
-        const searchInput = document.getElementById('search-input');
-
-        // If there's a value in the search input (e.g., after page refresh), filter immediately
-        if (searchInput && searchInput.value) {
-            filterServerRows(searchInput.value);
-        }
-
-        // Initialize the no results message
-        updateNoResultsMessage();
-    });
-
-    // Function to filter server rows based on search input
-    function filterServerRows(searchTerm) {
-        searchTerm = searchTerm.toLowerCase().trim();
-
-        const rows = document.querySelectorAll('#server-table-body .server-row');
-        let visibleCount = 0;
-
-        rows.forEach(row => {
-            // Skip already hidden rows (deleted ones)
-            if (row.classList.contains('hidden') && row.style.opacity === '0') {
-                return;
-            }
-
-            // Get searchable data from data attributes
-            const id = row.getAttribute('data-id').toLowerCase();
-            const alias = row.getAttribute('data-alias').toLowerCase();
-            const hostname = row.getAttribute('data-hostname').toLowerCase();
-
-            // Check if any field contains the search term
-            if (id.includes(searchTerm) ||
-                alias.includes(searchTerm) ||
-                hostname.includes(searchTerm)) {
-                row.classList.remove('hidden');
-                visibleCount++;
-            } else {
-                row.classList.add('hidden');
-            }
-        });
-
-        // Update the "no results" message
-        updateNoResultsMessage();
-    }
-
-    // Listen for HTMX events to maintain search state after HTMX operations
-    document.body.addEventListener('htmx:afterSwap', function (event) {
-        // If the search input has a value, reapply the filter
-        const searchInput = document.getElementById('search-input');
-        if (searchInput && searchInput.value) {
-            filterServerRows(searchInput.value);
-        }
-
-        // Update the no results message
-        updateNoResultsMessage();
-    });
 </script>
 
 </html>

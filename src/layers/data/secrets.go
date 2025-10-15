@@ -255,3 +255,44 @@ func DeleteSecret(pool *pgxpool.Pool, id uint64) error {
 
 	return tx.Commit(context.Background())
 }
+
+// Get secrets that can be used for SSH authentication (passwords and private keys)
+func GetSshSecrets(pool *pgxpool.Pool) ([]SecretDAO, error) {
+	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(context.Background())
+
+	rows, err := tx.Query(context.Background(), `
+		SELECT id, type, name, description, data, metadata, created_at, updated_at, created_by, updated_by 
+		FROM secrets 
+		WHERE type IN ('password', 'private_key', 'ssh_key')
+		ORDER BY type, name
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query SSH secrets: %w", err)
+	}
+	defer rows.Close()
+
+	var secrets []SecretDAO
+	for rows.Next() {
+		var secret SecretDAO
+		var metadataJSON []byte
+
+		err := rows.Scan(&secret.Id, &secret.Type, &secret.Name, &secret.Description,
+			&secret.Data, &metadataJSON, &secret.CreatedAt, &secret.UpdatedAt,
+			&secret.CreatedBy, &secret.UpdatedBy)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan SSH secret row: %w", err)
+		}
+
+		if err := json.Unmarshal(metadataJSON, &secret.Metadata); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
+		}
+
+		secrets = append(secrets, secret)
+	}
+
+	return secrets, tx.Commit(context.Background())
+}

@@ -9,9 +9,13 @@ import (
 )
 
 type Server struct {
-	Id       uint   `json:"server_id" db:"server_id"`
-	Alias    string `json:"alias" db:"server_alias"`
-	Hostname string `json:"hostname" db:"server_hostname"`
+	Id              uint    `json:"server_id" db:"server_id"`
+	Alias           string  `json:"alias" db:"server_alias"`
+	Hostname        string  `json:"hostname" db:"server_hostname"`
+	SshPort         *int    `json:"ssh_port" db:"ssh_port"`
+	SshAuthType     *string `json:"ssh_auth_type" db:"ssh_auth_type"`
+	SshAuthSecretId *uint64 `json:"ssh_auth_secret_id" db:"ssh_auth_secret_id"`
+	SshUser         *string `json:"ssh_user" db:"ssh_user"`
 }
 
 type Healthcheck struct {
