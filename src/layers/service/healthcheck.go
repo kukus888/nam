@@ -361,7 +361,7 @@ func (hcs *HealthcheckService) NewObserver(ai *data.ApplicationInstanceFull, hc 
 	observer.Context = context.WithValue(observer.Context, "healthcheck_id", *hc.Id)
 	// Start the observer
 	observer.Start(hcs.Database.Pool)
-	hcs.Observers[*hc.Id] = &observer
+	hcs.Observers[ai.Id] = &observer
 	hcs.Logger.Debug("Healthcheck observer started", "id", *hc.Id, "name", hc.Name, "for_application_instance_id", ai.Id, "for_application_instance_name", ai.Name)
 	return &observer
 }
