@@ -228,16 +228,6 @@ func (hcs *HealthcheckService) ListenForApplicationInstanceChanges() {
 				log.Info("Healthcheck updated", "payload", notification.Payload)
 			case "DELETE":
 				// Deleted existing application instance. Need to stop and remove the observer that monitor this application instance
-				// Get instance using this ID
-				ai, err := data.GetApplicationInstanceFullById(hcs.Database.Pool, uint64(id))
-				if err != nil {
-					log.Error("Failed to get deleted application instance from database", "application instance_id", id, "error", err)
-					continue
-				}
-				if ai == nil {
-					log.Warn("Deleted application instance not found in database", "application instance_id", id)
-					continue
-				}
 				// Remove observers for the application instance
 				if observer, exists := hcs.Observers[uint(id)]; exists {
 					observer.TimerCancel() // Cancel the timer for the observer
