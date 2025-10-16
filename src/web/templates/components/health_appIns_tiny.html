@@ -5,14 +5,25 @@
     hx-swap="outerHTML"
     hx-trigger="every 30s"
 {{ end }}>
-    {{ if .Healthy }}
-    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-        Healthy
-    
-    {{ else }}
-    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-        Unhealthy
-    {{ end }}
+    {{ if .Instance.MaintenanceMode }}
+    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+        In Maintenance
     </span>
+    {{ else }}
+        {{ if .HealthcheckTemplate }}
+            {{ if .Healthy }}
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                Healthy
+            {{ else }}
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                Unhealthy
+            {{ end }}
+            </span>
+        {{ else }}
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+            Unknown
+        </span>
+        {{ end }}
+    {{ end }}
 </div>
 {{ end }}

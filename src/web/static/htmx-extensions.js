@@ -8,7 +8,15 @@ htmx.defineExtension('submitjson', {
     encodeParameters: function (xhr, parameters, elt) {
         xhr.overrideMimeType('text/json') // override default mime type
 
-        let json = JSON.stringify(parameters);
+        // Filter out empty string values
+        const filteredParameters = {};
+        for (const [key, value] of Object.entries(parameters)) {
+            if (value !== "") {
+                filteredParameters[key] = value;
+            }
+        }
+
+        let json = JSON.stringify(filteredParameters);
 
         // Remove quotes from numbers (preserve previous behavior)
         const regex = /"(-|)([0-9]+(?:\.[0-9]+)?)"/g;

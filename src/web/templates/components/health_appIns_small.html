@@ -2,19 +2,26 @@
 <a {{ if .LiveReload }} hx-get="/htmx/health/application/instance?live_reload=true&size=small&id={{ .Instance.Id }}"
     hx-swap="outerHTML" hx-trigger="every 30s" {{ end }}
     href="/instances/{{ .Instance.Id }}/details">
-    {{ if .HealthcheckTemplate }}
-        {{ if .Healthy }}
-        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-            Healthy
-        {{ else }}
-        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-            Unhealthy
-        {{ end }}
-        ({{ .Timestamp | formatTime }})
-    {{ else }}
-    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-        Unknown
-    {{ end }}
+    {{ if .Instance.MaintenanceMode }}
+    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+        In Maintenance {{ if .Timestamp }} since {{ .Timestamp | formatTime }} {{ end }}
     </span>
+    {{ else }}
+        {{ if .HealthcheckTemplate }}
+            {{ if .Healthy }}
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                Healthy ({{ .Timestamp | formatTime }})
+            </span>
+            {{ else }}
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                Unhealthy ({{ .Timestamp | formatTime }})
+            </span>
+            {{ end }}
+        {{ else }}
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+            Unknown
+        </span>
+        {{ end }}
+    {{ end }}
 </a>
 {{ end }}

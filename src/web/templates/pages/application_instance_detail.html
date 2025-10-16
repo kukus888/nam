@@ -406,6 +406,7 @@
                 </div>
             </div>
             <div class="px-4 py-5 sm:p-6 flex flex-row border-t border-gray-200">
+                {{ if gt (len .HealthcheckResults) 0 }}
                 <!-- Timeline -->
                 <div class="shrink-0 overflow-y-auto inline-flex flex-col place-items-start justify-between mr-2 h-100"
                     id="timeline">
@@ -433,6 +434,11 @@
                         Please select a record to view the details.
                     </div>
                 </div>
+                {{ else }}
+                <div class="w-full text-center text-gray-500 py-10">
+                    No health check results available.
+                </div>
+                {{ end }}
             </div>
         </div>
     </div>

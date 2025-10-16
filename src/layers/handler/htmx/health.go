@@ -61,16 +61,22 @@ func (h *HtmxHealthHandler) RenderHealthApplicationDefinitionComponent(ctx *gin.
 	}
 	// Compute stats
 	healthyCount := 0
+	maintenanceCount := 0
 	for _, result := range *results {
+		if result.IsMaintenance {
+			maintenanceCount++
+			continue
+		}
 		if result.IsSuccessful {
 			healthyCount++
 		}
 	}
 	ctx.HTML(200, "components/health.application.definition."+size, gin.H{
-		"Id":           definitionId,
-		"LiveReload":   liveReload,
-		"HealthyCount": healthyCount,
-		"TotalCount":   len(*results),
+		"Id":               definitionId,
+		"LiveReload":       liveReload,
+		"HealthyCount":     healthyCount,
+		"MaintenanceCount": maintenanceCount,
+		"TotalCount":       len(*results) - maintenanceCount,
 	})
 }
 

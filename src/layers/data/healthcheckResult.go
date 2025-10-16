@@ -69,6 +69,7 @@ type ApplicationDefinitionHealthcheckResult struct {
 	ID                    uint64    `json:"id" db:"id"`
 	HealthcheckID         uint      `json:"healthcheck_id" db:"healthcheck_id"`
 	IsSuccessful          bool      `json:"is_successful" db:"is_successful"`
+	IsMaintenance         bool      `json:"is_maintenance" db:"is_maintenance"`
 	TimeStart             time.Time `json:"time_start" db:"time_start"`
 	TimeEnd               time.Time `json:"time_end" db:"time_end"`
 	ResStatus             int       `json:"res_status" db:"res_status"`
@@ -89,6 +90,7 @@ func GetHealthcheckLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id 
 		SELECT
 		  ai.id AS application_instance_id,
 		  ai.name AS instance_name,
+		  ai.maintenance_mode AS is_maintenance,
 		  s.hostname AS server_hostname,
 		  hcr.id AS id,
 		  hcr.healthcheck_id AS healthcheck_id,
@@ -209,6 +211,7 @@ func GetHealthcheckLatestResultAll(pool *pgxpool.Pool) (*[]ApplicationDefinition
 		SELECT
 		  ai.id AS application_instance_id,
 		  ai.name AS instance_name,
+		  ai.maintenance_mode AS is_maintenance,
 		  s.hostname AS server_hostname,
 		  hcr.id AS id,
 		  hcr.healthcheck_id AS healthcheck_id,
