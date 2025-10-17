@@ -29,11 +29,12 @@ func (sc *ServerController) GetAll(ctx *gin.Context) {
 
 // Get server with ID
 func (sc *ServerController) GetById(ctx *gin.Context) {
-	serverId, err := strconv.Atoi(ctx.Param("serverId"))
+	serverId, err := strconv.ParseUint(ctx.Param("serverId"), 10, 64)
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": "Must include ID of server"})
+		return
 	}
-	dtos, err := data.GetServerById(sc.Database.Pool, uint(serverId))
+	dtos, err := data.GetServerById(sc.Database.Pool, serverId)
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": "Unable to read server list", "trace": err.Error()})
 		return

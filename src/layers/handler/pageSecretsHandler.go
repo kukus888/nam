@@ -16,10 +16,10 @@ type PageSecretsHandler struct {
 }
 
 // NewPageSecretsHandler creates a new secrets handler
-func NewPageSecretsHandler(database *data.Database, cryptoService *services.CryptoService) *PageSecretsHandler {
+func NewPageSecretsHandler(database *data.Database) *PageSecretsHandler {
 	return &PageSecretsHandler{
 		database:      database,
-		cryptoService: cryptoService,
+		cryptoService: services.GetCryptoService(),
 	}
 }
 

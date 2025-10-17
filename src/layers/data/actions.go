@@ -33,7 +33,7 @@ func CreateActionTemplate(pool *pgxpool.Pool, template *ActionTemplate) (*Action
 }
 
 // GetActionTemplateById retrieves an action template by ID
-func GetActionTemplateById(pool *pgxpool.Pool, id uint) (*ActionTemplate, error) {
+func GetActionTemplateById(pool *pgxpool.Pool, id uint64) (*ActionTemplate, error) {
 	query := `
 		SELECT id, name, description, bash_script, created_at, updated_at
 		FROM action_template
@@ -249,18 +249,17 @@ func UpdateActionStatus(pool *pgxpool.Pool, id uint, status string) error {
 // ActionExecution CRUD operations
 
 // CreateActionExecution creates a new action execution
-func CreateActionExecution(pool *pgxpool.Pool, execution *ActionExecution) (*ActionExecution, error) {
+func CreateActionExecution(pool *pgxpool.Pool, execution *ActionInstanceExecution) (*ActionInstanceExecution, error) {
 	query := `
-		INSERT INTO action_execution (action_id, application_instance_id, status)
-		VALUES ($1, $2, $3)
-		RETURNING id, action_id, application_instance_id, status, output, error_output, exit_code, started_at, completed_at
+		INSERT INTO action_execution (action_id, application_instance_id, status, server_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
 	`
 
-	var result ActionExecution
+	var result ActionInstanceExecution
 	err := pool.QueryRow(context.Background(), query,
-		execution.ActionId, execution.ApplicationInstanceId, execution.Status).Scan(
-		&result.Id, &result.ActionId, &result.ApplicationInstanceId, &result.Status,
-		&result.Output, &result.ErrorOutput, &result.ExitCode, &result.StartedAt, &result.CompletedAt)
+		execution.ActionId, execution.ApplicationInstanceId, execution.Status, execution.ServerId).Scan(
+		&result.Id)
 
 	if err != nil {
 		return nil, err
@@ -270,15 +269,15 @@ func CreateActionExecution(pool *pgxpool.Pool, execution *ActionExecution) (*Act
 }
 
 // GetActionExecutionsByActionId retrieves all executions for an action
-func GetActionExecutionsByActionId(pool *pgxpool.Pool, actionId uint) (*[]ActionExecution, error) {
+func GetActionExecutionsByActionId(pool *pgxpool.Pool, actionId uint64) (*[]ActionInstanceExecution, error) {
 	query := `
 		SELECT ae.id, ae.action_id, ae.application_instance_id, ae.status, ae.output, ae.error_output, 
 		       ae.exit_code, ae.started_at, ae.completed_at,
-		       ai.name as instance_name, ad.name as application_name, s.hostname as server_hostname
+		       ai.name as instance_name, ad.name as application_name, s.hostname as server_hostname, s.id as server_id
 		FROM action_execution ae
 		JOIN application_instance ai ON ae.application_instance_id = ai.id
 		JOIN application_definition ad ON ai.application_definition_id = ad.id
-		JOIN server s ON ai.server_id = s.server_id
+		JOIN server s ON ai.server_id = s.id
 		WHERE ae.action_id = $1
 		ORDER BY ai.name
 	`
@@ -289,9 +288,9 @@ func GetActionExecutionsByActionId(pool *pgxpool.Pool, actionId uint) (*[]Action
 	}
 	defer rows.Close()
 
-	var executions []ActionExecution
+	var executions []ActionInstanceExecution
 	for rows.Next() {
-		var exec ActionExecution
+		var exec ActionInstanceExecution
 		var instanceName, applicationName, serverHostname string
 
 		err := rows.Scan(&exec.Id, &exec.ActionId, &exec.ApplicationInstanceId, &exec.Status,
@@ -308,7 +307,7 @@ func GetActionExecutionsByActionId(pool *pgxpool.Pool, actionId uint) (*[]Action
 }
 
 // UpdateActionExecution updates an action execution
-func UpdateActionExecution(pool *pgxpool.Pool, execution *ActionExecution) error {
+func UpdateActionExecution(pool *pgxpool.Pool, execution *ActionInstanceExecution) error {
 	query := `
 		UPDATE action_execution
 		SET status = $2, output = $3, error_output = $4, exit_code = $5, started_at = $6, completed_at = $7
@@ -323,17 +322,17 @@ func UpdateActionExecution(pool *pgxpool.Pool, execution *ActionExecution) error
 }
 
 // GetActionExecutionById retrieves a single action execution
-func GetActionExecutionById(pool *pgxpool.Pool, id uint) (*ActionExecution, error) {
+func GetActionExecutionById(pool *pgxpool.Pool, id uint) (*ActionInstanceExecution, error) {
 	query := `
-		SELECT id, action_id, application_instance_id, status, output, error_output, exit_code, started_at, completed_at
+		SELECT id, action_id, application_instance_id, status, output, error_output, exit_code, started_at, completed_at, server_id
 		FROM action_execution
 		WHERE id = $1
 	`
 
-	var execution ActionExecution
+	var execution ActionInstanceExecution
 	err := pool.QueryRow(context.Background(), query, id).Scan(
 		&execution.Id, &execution.ActionId, &execution.ApplicationInstanceId, &execution.Status,
-		&execution.Output, &execution.ErrorOutput, &execution.ExitCode, &execution.StartedAt, &execution.CompletedAt)
+		&execution.Output, &execution.ErrorOutput, &execution.ExitCode, &execution.StartedAt, &execution.CompletedAt, &execution.ServerId)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

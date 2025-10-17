@@ -18,10 +18,10 @@ import (
 
 type HealthcheckService struct {
 	Database            *data.Database
-	ListenerConnectorHc *pgx.Conn                     // Connector for listening to healthcheck changes
-	ListenerConnectorAi *pgx.Conn                     // Connector for listening to application instance changes
-	Status              string                        // Status of the healthcheck service, e.g., "running", "stopped"
-	Observers           map[uint]*HealthcheckObserver // Map of healthchecks being monitored with their observers (keyed by instance ID)
+	ListenerConnectorHc *pgx.Conn                       // Connector for listening to healthcheck changes
+	ListenerConnectorAi *pgx.Conn                       // Connector for listening to application instance changes
+	Status              string                          // Status of the healthcheck service, e.g., "running", "stopped"
+	Observers           map[uint64]*HealthcheckObserver // Map of healthchecks being monitored with their observers (keyed by instance ID)
 	Logger              *slog.Logger
 	TlsConfig           *tls.Config
 }
@@ -29,7 +29,7 @@ type HealthcheckService struct {
 func NewHealthcheckService(database *data.Database, logger *slog.Logger, tlsConfig *tls.Config) *HealthcheckService {
 	hcs := HealthcheckService{
 		Database:  database,
-		Observers: make(map[uint]*HealthcheckObserver),
+		Observers: make(map[uint64]*HealthcheckObserver),
 		Logger:    logger,
 		TlsConfig: tlsConfig,
 	}
@@ -106,7 +106,7 @@ func (hcs *HealthcheckService) SyncObserversAll() error {
 			healthcheckMap[*hc.Id] = &hc
 		}
 	}
-	hcs.Observers = make(map[uint]*HealthcheckObserver, len(*ais))
+	hcs.Observers = make(map[uint64]*HealthcheckObserver, len(*ais))
 	for _, ai := range *ais {
 		if ai.ApplicationDefinition.HealthcheckId != nil && !ai.MaintenanceMode {
 			hc := healthcheckMap[*ai.ApplicationDefinition.HealthcheckId]
@@ -194,9 +194,9 @@ func (hcs *HealthcheckService) ListenForApplicationInstanceChanges() {
 				}
 				if ai.ApplicationDefinition.HealthcheckId == nil {
 					// No healthcheck assigned, just remove existing observer if exists
-					if observer, exists := hcs.Observers[uint(id)]; exists {
+					if observer, exists := hcs.Observers[uint64(id)]; exists {
 						observer.TimerCancel()
-						delete(hcs.Observers, uint(id))
+						delete(hcs.Observers, uint64(id))
 					}
 					continue
 				}
@@ -208,17 +208,17 @@ func (hcs *HealthcheckService) ListenForApplicationInstanceChanges() {
 				if hc == nil {
 					log.Warn("Healthcheck for updated application instance not found in database", "application instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId)
 					// Just remove existing observer if exists
-					if observer, exists := hcs.Observers[uint(id)]; exists {
+					if observer, exists := hcs.Observers[uint64(id)]; exists {
 						observer.TimerCancel()
-						delete(hcs.Observers, uint(id))
+						delete(hcs.Observers, uint64(id))
 					}
 					continue
 				}
 				// Update or create observer for the application instance
-				if observer, exists := hcs.Observers[uint(id)]; exists {
+				if observer, exists := hcs.Observers[uint64(id)]; exists {
 					// Remove existing observer
 					observer.TimerCancel()
-					delete(hcs.Observers, uint(id))
+					delete(hcs.Observers, uint64(id))
 				}
 				if !ai.MaintenanceMode {
 					// Create new observer
@@ -229,9 +229,9 @@ func (hcs *HealthcheckService) ListenForApplicationInstanceChanges() {
 			case "DELETE":
 				// Deleted existing application instance. Need to stop and remove the observer that monitor this application instance
 				// Remove observers for the application instance
-				if observer, exists := hcs.Observers[uint(id)]; exists {
+				if observer, exists := hcs.Observers[uint64(id)]; exists {
 					observer.TimerCancel() // Cancel the timer for the observer
-					delete(hcs.Observers, uint(id))
+					delete(hcs.Observers, uint64(id))
 				}
 				// Existing application instance deleted
 				log.Info("Application instance deleted", "payload", notification.Payload)
@@ -296,10 +296,10 @@ func (hcs *HealthcheckService) ListenForHealthcheckChanges() {
 				}
 				// Recreate observers for each application instance
 				for _, ai := range *ais {
-					if observer, exists := hcs.Observers[uint(id)]; exists {
+					if observer, exists := hcs.Observers[uint64(id)]; exists {
 						// Delete existing observer
 						observer.TimerCancel()
-						delete(hcs.Observers, uint(id))
+						delete(hcs.Observers, uint64(id))
 					}
 					// Create new observer
 					hcs.NewObserver(&ai, hc)
@@ -316,9 +316,9 @@ func (hcs *HealthcheckService) ListenForHealthcheckChanges() {
 				}
 				// Remove observers for each application instance
 				for _, ai := range *ais {
-					if observer, exists := hcs.Observers[uint(ai.Id)]; exists {
+					if observer, exists := hcs.Observers[uint64(ai.Id)]; exists {
 						observer.TimerCancel() // Cancel the timer for the observer
-						delete(hcs.Observers, uint(ai.Id))
+						delete(hcs.Observers, uint64(ai.Id))
 					}
 				}
 				// Existing healthcheck deleted

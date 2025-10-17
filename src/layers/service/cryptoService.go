@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"kukus/nam/v2/layers/data"
+	"sync"
 
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -17,14 +18,30 @@ type CryptoService struct {
 	masterKey []byte
 }
 
+var cryptoLock = &sync.Once{}
+var cryptoService *CryptoService
+
+// GetCryptoService returns the singleton instance of CryptoService.
+// It panics if the service has not been initialized.
+func GetCryptoService() *CryptoService {
+	if cryptoService == nil {
+		cryptoLock.Do(func() {
+			panic("CryptoService not initialized. Call NewCryptoService first.")
+		})
+	}
+	return cryptoService
+}
+
 // NewCryptoService creates a new crypto service with a master key
 // Used for encrypting and decrypting secrets into the database
-func NewCryptoService(masterPassword string, salt []byte) *CryptoService {
-	// Use PBKDF2 to derive a key from the master password
-	key := pbkdf2.Key([]byte(masterPassword), salt, 100000, 32, sha256.New)
-	return &CryptoService{
-		masterKey: key,
-	}
+func NewCryptoService(masterPassword string, salt []byte) {
+	cryptoLock.Do(func() {
+		// Use PBKDF2 to derive a key from the master password
+		key := pbkdf2.Key([]byte(masterPassword), salt, 100000, 32, sha256.New)
+		cryptoService = &CryptoService{
+			masterKey: key,
+		}
+	})
 }
 
 // Encrypt encrypts data using AES-256-GCM

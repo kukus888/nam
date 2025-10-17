@@ -20,3 +20,4 @@ keys: # Keys used for calling healthchecks, see github issue #8
 
 services: # Here is a map of services to enable/disable
   HealthcheckService: true # Whether to enable calling health checks or not on this instance
+  ActionService: true # Whether to enable ActionService or not

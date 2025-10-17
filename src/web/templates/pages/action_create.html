@@ -420,6 +420,7 @@
                             <button type="button" 
                                     id="execute-action-btn"
                                     disabled
+                                    onclick="executeAction()"
                                     class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-400 cursor-not-allowed focus:outline-none">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
@@ -1061,6 +1062,69 @@
                 }
             }
         });
+
+        // Handle execute action
+        function executeAction() {
+            if (!selectedTemplate) {
+                console.error('No template selected');
+                return;
+            }
+
+            // Prepare the request data
+            const requestData = {
+                action_name: `${selectedTemplate.name} - ${new Date().toISOString().slice(0, 19).replace('T', ' ')}`,
+                template_id: parseInt(selectedTemplate.id),
+                targets: {
+                        instances: Array.from(selectedTargets.instance),
+                        applications: Array.from(selectedTargets.application),
+                        servers: Array.from(selectedTargets.server)
+                }
+            };
+
+            // Show loading state
+            const executeBtn = document.getElementById('execute-action-btn');
+            const originalText = executeBtn.innerHTML;
+            executeBtn.disabled = true;
+            executeBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Executing...
+            `;
+
+            // Make the API call
+            fetch('/api/rest/v1/actions/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.action_id) {
+                    // Redirect to the action view page
+                    window.location.href = `/actions/${data.action_id}/view`;
+                } else {
+                    // Handle error
+                    console.error('Failed to execute action:', data);
+                    showErrorMessage({ error: data.error || 'Failed to execute action' });
+                    
+                    // Restore button state
+                    executeBtn.disabled = false;
+                    executeBtn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error executing action:', error);
+                showErrorMessage({ error: 'Network error while executing action' });
+                
+                // Restore button state
+                executeBtn.disabled = false;
+                executeBtn.innerHTML = originalText;
+            });
+        }
 
         // Parse preflight results and update UI accordingly
         function handlePreflightResults() {

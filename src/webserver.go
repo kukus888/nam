@@ -107,7 +107,6 @@ func InitWebServer(app *Application) {
 	}
 	// Alias to shorten code
 	dbPool := App.Database.Pool
-	cryptoService := services.NewCryptoService("nam-secrets-salt-2025", []byte("nam-secrets-salt-2025"))
 	{ // REST
 		restV1group := App.Engine.Group("/api/rest/v1")
 		restV1group.Use(AuthMiddleware())
@@ -189,7 +188,7 @@ func InitWebServer(app *Application) {
 			userGroup.PUT("/:id/password", userHandler.UpdatePassword)
 		}
 		{ // Secrets
-			secretService := services.NewSecretsService(App.Database.Pool, log, cryptoService)
+			secretService := services.NewSecretsService(App.Database.Pool, log)
 			secretHandler := apiRestV1.NewSecretsHandler(secretService)
 			secretGroup := restV1group.Group("/secrets")
 			secretGroup.Use(RequireRole(dbPool, "Operator"))       // Only admin and operator can manage secrets
@@ -204,29 +203,29 @@ func InitWebServer(app *Application) {
 			profileGroup.PUT("/password", profileHandler.UpdatePassword)
 		}
 		{ // Actions
-			actionController := apiRestV1.NewActionController(App.Database)
 			actionGroup := restV1group.Group("/actions")
 
 			// Action Templates
+			actionTemplateController := apiRestV1.NewActionTemplateController(App.Database)
 			actionTemplatesGroup := actionGroup.Group("/templates")
-			actionTemplatesGroup.GET("/", actionController.GetAllActionTemplates)
-			actionTemplatesGroup.POST("/", RequireRole(dbPool, "Operator"), actionController.CreateActionTemplate)
+			actionTemplatesGroup.GET("/", actionTemplateController.GetAllActionTemplates)
+			actionTemplatesGroup.POST("/", RequireRole(dbPool, "Operator"), actionTemplateController.CreateActionTemplate)
 			actionTemplateIdGroup := actionTemplatesGroup.Group("/:templateId")
 			{
-				actionTemplateIdGroup.GET("/", actionController.GetActionTemplateById)
-				actionTemplateIdGroup.PUT("/", RequireRole(dbPool, "Operator"), actionController.UpdateActionTemplate)
-				actionTemplateIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), actionController.DeleteActionTemplate)
+				actionTemplateIdGroup.GET("/", actionTemplateController.GetActionTemplateById)
+				actionTemplateIdGroup.PUT("/", RequireRole(dbPool, "Operator"), actionTemplateController.UpdateActionTemplate)
+				actionTemplateIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), actionTemplateController.DeleteActionTemplate)
 			}
 
 			// Actions
+			actionController := apiRestV1.NewActionController(App.Database)
 			actionGroup.GET("/", actionController.GetAllActions)
-			actionGroup.POST("/", RequireRole(dbPool, "Operator"), actionController.CreateAction)
+			actionGroup.POST("/execute", RequireRole(dbPool, "Operator"), actionController.ExecuteAction)
 			actionGroup.POST("/preflight", actionController.PreflightCheck)
 
 			actionIdGroup := actionGroup.Group("/:actionId")
 			{
 				actionIdGroup.GET("/", actionController.GetActionById)
-				actionIdGroup.POST("/start", RequireRole(dbPool, "Operator"), actionController.StartAction)
 				actionIdGroup.POST("/cancel", RequireRole(dbPool, "Operator"), actionController.CancelAction)
 				actionIdGroup.GET("/status", actionController.GetActionStatus)
 			}
@@ -302,7 +301,7 @@ func InitWebServer(app *Application) {
 		routeGroup.GET("/users/:id/edit", psh.GetPageUserEdit)
 	}
 	{ // Secrets Management
-		psh := handlers.NewPageSecretsHandler(App.Database, cryptoService)
+		psh := handlers.NewPageSecretsHandler(App.Database)
 		secretGroup := rootGroup.Group("/secrets")
 		secretGroup.Use(RequireRole(dbPool, "Operator")) // Only admin and operator can manage secrets
 		secretGroup.GET("/", psh.GetPageSecrets)
@@ -327,6 +326,7 @@ func InitWebServer(app *Application) {
 
 		// Action Details
 		routeGroup.GET("/:id/details", av.GetPageActionDetails)
+		routeGroup.GET("/:id/view", av.GetPageActionView)
 	}
 
 	var err error

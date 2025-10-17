@@ -13,7 +13,7 @@ type Server struct {
 	Alias           string  `json:"alias" db:"server_alias"`
 	Hostname        string  `json:"hostname" db:"server_hostname"`
 	SshPort         *int    `json:"ssh_port" db:"ssh_port"`
-	SshAuthType     *string `json:"ssh_auth_type" db:"ssh_auth_type"`
+	SshAuthType     *string `json:"ssh_auth_type" db:"ssh_auth_type"` // password, private_key
 	SshAuthSecretId *uint64 `json:"ssh_auth_secret_id" db:"ssh_auth_secret_id"`
 	SshUser         *string `json:"ssh_user" db:"ssh_user"`
 }
@@ -128,7 +128,7 @@ func ParseHeadersFromString(headersStr string) (*http.Header, error) {
 type HealthcheckResult struct {
 	Id                    uint64    `json:"id" db:"id"`
 	HealthcheckID         uint      `json:"healthcheck_id" db:"healthcheck_id"`
-	ApplicationInstanceID uint      `json:"application_instance_id" db:"application_instance_id"`
+	ApplicationInstanceID uint64    `json:"application_instance_id" db:"application_instance_id"`
 	IsSuccessful          bool      `json:"is_successful" db:"is_successful"`
 	TimeStart             time.Time `json:"time_start" db:"time_start"`
 	TimeEnd               time.Time `json:"time_end" db:"time_end"`
@@ -182,17 +182,17 @@ type ApplicationInstance struct {
 	MaintenanceMode         bool   `json:"maintenance_mode" db:"maintenance_mode"`
 	TopologyNodeID          uint   `json:"topology_node_id" db:"topology_node_id"`
 	ApplicationDefinitionID uint   `json:"application_definition_id"`
-	ServerID                uint   `json:"server_id" db:"server_id"`
+	ServerID                uint64 `json:"server_id" db:"server_id"`
 }
 
 // ApplicationInstance represents an instance of an application
 // Joined with ApplicationDefinition and Server
 // This struct is used to return full information about the application instance
 type ApplicationInstanceFull struct {
-	Id              uint   `json:"id" db:"application_instance_id"`
+	Id              uint64 `json:"id" db:"application_instance_id"`
 	Name            string `json:"name" db:"application_instance_name"`
 	MaintenanceMode bool   `json:"maintenance_mode" db:"maintenance_mode"`
-	TopologyNodeID  uint   `json:"topology_node_id" db:"topology_node_id"`
+	TopologyNodeID  uint64 `json:"topology_node_id" db:"topology_node_id"`
 	ApplicationDefinition
 	Server
 }
@@ -256,7 +256,7 @@ type Role struct {
 
 // ActionTemplate represents a reusable script template
 type ActionTemplate struct {
-	Id          uint      `json:"id" db:"id"`
+	Id          uint64    `json:"id" db:"id"`
 	Name        string    `json:"name" db:"name"`
 	Description string    `json:"description" db:"description"`
 	BashScript  string    `json:"bash_script" db:"bash_script"`
@@ -264,10 +264,17 @@ type ActionTemplate struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// ActionTargets represents a set of targets for an action execution
+type ActionTargets struct {
+	ApplicationInstanceIds   []uint64 `json:"instances"`
+	ApplicationDefinitionIds []uint64 `json:"applications"`
+	ServerIds                []uint64 `json:"servers"`
+}
+
 // Action represents an execution of an action template
 type Action struct {
-	Id               uint       `json:"id" db:"id"`
-	ActionTemplateId uint       `json:"action_template_id" db:"action_template_id"`
+	Id               uint64     `json:"id" db:"id"`
+	ActionTemplateId uint64     `json:"action_template_id" db:"action_template_id"`
 	Name             string     `json:"name" db:"name"`
 	Status           string     `json:"status" db:"status"` // pending, running, completed, failed
 	CreatedAt        time.Time  `json:"created_at" db:"created_at"`
@@ -277,23 +284,24 @@ type Action struct {
 	CreatedByUserId  uint64     `json:"created_by_user_id" db:"created_by_user_id"`
 }
 
-// ActionExecution represents the execution of an action on a specific instance
-type ActionExecution struct {
-	Id                    uint       `json:"id" db:"id"`
-	ActionId              uint       `json:"action_id" db:"action_id"`
-	ApplicationInstanceId uint       `json:"application_instance_id" db:"application_instance_id"`
+// ActionInstanceExecution represents the execution of an action on a specific instance
+type ActionInstanceExecution struct {
+	Id                    uint64     `json:"id" db:"id"`
+	ActionId              uint64     `json:"action_id" db:"action_id"`
+	ApplicationInstanceId uint64     `json:"application_instance_id" db:"application_instance_id"`
 	Status                string     `json:"status" db:"status"` // pending, running, completed, failed
 	Output                string     `json:"output" db:"output"`
 	ErrorOutput           string     `json:"error_output" db:"error_output"`
 	ExitCode              *int       `json:"exit_code" db:"exit_code"`
 	StartedAt             *time.Time `json:"started_at" db:"started_at"`
 	CompletedAt           *time.Time `json:"completed_at" db:"completed_at"`
+	ServerId              uint64     `json:"server_id" db:"server_id"`
 }
 
 // ActionFull represents an action with its template and executions
 type ActionFull struct {
 	Action
-	Template   ActionTemplate    `json:"template"`
-	Executions []ActionExecution `json:"executions"`
-	CreatedBy  User              `json:"created_by"`
+	Template   ActionTemplate            `json:"template"`
+	Executions []ActionInstanceExecution `json:"executions"`
+	CreatedBy  User                      `json:"created_by"`
 }

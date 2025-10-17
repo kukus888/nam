@@ -43,12 +43,12 @@ func (h PageServerHandler) GetPageServerCreate(c *gin.Context) {
 
 func (h PageServerHandler) GetPageServerEdit(c *gin.Context) {
 	serverID := c.Param("id")
-	id, err := strconv.Atoi(serverID)
+	id, err := strconv.ParseUint(serverID, 10, 64)
 	if err != nil {
 		c.AbortWithStatusJSON(400, gin.H{"error": "Invalid server ID", "trace": err.Error()})
 		return
 	}
-	server, err := data.GetServerById(h.Database.Pool, uint(id))
+	server, err := data.GetServerById(h.Database.Pool, id)
 	if err != nil {
 		c.AbortWithStatusJSON(404, gin.H{"error": "Server not found", "trace": err.Error()})
 		return
@@ -67,12 +67,12 @@ func (h PageServerHandler) GetPageServerEdit(c *gin.Context) {
 
 func (h PageServerHandler) GetPageServerView(c *gin.Context) {
 	serverID := c.Param("id")
-	id, err := strconv.Atoi(serverID)
+	id, err := strconv.ParseUint(serverID, 10, 64)
 	if err != nil {
 		c.AbortWithStatusJSON(400, gin.H{"error": "Invalid server ID", "trace": err.Error()})
 		return
 	}
-	server, err := data.GetServerById(h.Database.Pool, uint(id))
+	server, err := data.GetServerById(h.Database.Pool, id)
 	if err != nil {
 		c.AbortWithStatusJSON(404, gin.H{"error": "Server not found", "trace": err.Error()})
 		return

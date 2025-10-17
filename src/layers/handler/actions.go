@@ -1,27 +1,28 @@
 package handlers
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"kukus/nam/v2/layers/data"
+	services "kukus/nam/v2/layers/service"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // ActionView handles action-related pages
 type ActionView struct {
-	Database *data.Database
+	Database      *data.Database
+	ActionService *services.ActionService
 }
 
 // NewActionView creates a new ActionView handler
 func NewActionView(db *data.Database) *ActionView {
 	return &ActionView{
-		Database: db,
+		Database:      db,
+		ActionService: services.GetActionService(),
 	}
 }
 
@@ -143,7 +144,7 @@ func (av *ActionView) GetPageActionDetails(ctx *gin.Context) {
 	}
 
 	// Get executions for this action
-	executions, err := data.GetActionExecutionsByActionId(av.Database.Pool, uint(id))
+	executions, err := data.GetActionExecutionsByActionId(av.Database.Pool, id)
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get executions", "trace": err.Error()})
 		return
@@ -152,6 +153,70 @@ func (av *ActionView) GetPageActionDetails(ctx *gin.Context) {
 	ctx.HTML(200, "pages/action_details", gin.H{
 		"Action":     action,
 		"Executions": executions,
+	})
+}
+
+// GetPageActionView renders the real-time action execution view page
+func (av *ActionView) GetPageActionView(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid action ID"})
+		return
+	}
+
+	action, err := data.GetActionById(av.Database.Pool, uint(id))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get action", "trace": err.Error()})
+		return
+	}
+
+	if action == nil {
+		ctx.AbortWithStatusJSON(404, gin.H{"error": "Action not found"})
+		return
+	}
+
+	// Get executions with enhanced data
+	executions, err := av.getActionExecutionsWithDetails(uint(id))
+	if err != nil {
+		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get executions", "trace": err.Error()})
+		return
+	}
+
+	// Get selected execution if specified
+	var selectedExecution *ActionExecutionDetail
+	selectedExecutionIdStr := ctx.Query("execution_id")
+	if selectedExecutionIdStr != "" {
+		selectedExecutionId, err := strconv.ParseUint(selectedExecutionIdStr, 10, 32)
+		if err == nil {
+			for _, exec := range executions {
+				if exec.Id == selectedExecutionId {
+					selectedExecution = &exec
+					break
+				}
+			}
+		}
+	}
+
+	// Calculate execution summary
+	summary := calculateExecutionSummary(executions)
+
+	// Check if any executions are running
+	hasRunningExecutions := false
+	for _, exec := range executions {
+		if exec.Status == "running" {
+			hasRunningExecutions = true
+			break
+		}
+	}
+
+	ctx.HTML(200, "pages/action_view", gin.H{
+		"Action":               action,
+		"Executions":           executions,
+		"SelectedExecution":    selectedExecution,
+		"SelectedExecutionId":  selectedExecutionIdStr,
+		"ExecutionSummary":     summary,
+		"HasRunningExecutions": hasRunningExecutions,
 	})
 }
 
@@ -183,7 +248,7 @@ func (av *ActionView) GetPageActionTemplateDetails(ctx *gin.Context) {
 		return
 	}
 
-	template, err := data.GetActionTemplateById(av.Database.Pool, uint(id))
+	template, err := data.GetActionTemplateById(av.Database.Pool, id)
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get template", "trace": err.Error()})
 		return
@@ -212,7 +277,7 @@ func (av *ActionView) GetPageActionTemplateEdit(ctx *gin.Context) {
 		return
 	}
 
-	template, err := data.GetActionTemplateById(av.Database.Pool, uint(id))
+	template, err := data.GetActionTemplateById(av.Database.Pool, id)
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get template", "trace": err.Error()})
 		return
@@ -242,7 +307,7 @@ func (av *ActionView) PostPageActionTemplateEdit(ctx *gin.Context) {
 	}
 
 	// Get existing template
-	existingTemplate, err := data.GetActionTemplateById(av.Database.Pool, uint(id))
+	existingTemplate, err := data.GetActionTemplateById(av.Database.Pool, id)
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get template", "trace": err.Error()})
 		return
@@ -277,72 +342,6 @@ func (av *ActionView) PostPageActionTemplateEdit(ctx *gin.Context) {
 }
 
 // Utility functions for data processing
-
-// GetInstanceVariables gets all variables for an instance including app definition variables
-func GetInstanceVariables(pool *pgxpool.Pool, instanceId uint) (map[string]string, error) {
-	variables := make(map[string]string)
-
-	// Get instance
-	instance, err := data.GetApplicationInstanceById(pool, uint64(instanceId))
-	if err != nil {
-		return nil, err
-	}
-
-	if instance == nil {
-		return nil, fmt.Errorf("instance not found")
-	}
-
-	// Get application definition variables
-	appVars, err := data.GetApplicationDefinitionVariablesByApplicationDefinitionId(pool, uint64(instance.ApplicationDefinitionID))
-	if err == nil && appVars != nil {
-		for _, v := range *appVars {
-			variables[v.Name] = v.Value
-		}
-	}
-
-	// Get instance-specific variables (these override app definition variables)
-	instanceVars, err := data.GetApplicationInstanceVariablesByApplicationInstanceId(pool, uint64(instanceId))
-	if err == nil && instanceVars != nil {
-		for _, v := range *instanceVars {
-			variables[v.Name] = v.Value
-		}
-	}
-
-	// Add built-in variables
-	variables["INSTANCE_NAME"] = instance.Name
-	// Note: Port information would need to be retrieved from application definition or instance data
-
-	// Get server hostname
-	server, err := data.GetServerById(pool, instance.ServerID)
-	if err == nil && server != nil {
-		variables["SERVER_HOSTNAME"] = server.Hostname
-	}
-
-	// Get application name
-	app, err := data.GetApplicationDefinitionById(pool, uint64(instance.ApplicationDefinitionID))
-	if err == nil && app != nil {
-		variables["APP_NAME"] = app.Name
-	}
-
-	return variables, nil
-}
-
-// RenderScriptPreview renders a script with variable substitution
-func RenderScriptPreview(script string, variables map[string]string) (string, error) {
-	// Try rendering the script with the provided variables using template package
-	// Configure template to error on missing keys instead of silently replacing with empty strings
-	tmpl, err := template.New("script").Option("missingkey=error").Parse(script)
-	if err != nil {
-		return "", fmt.Errorf("Error parsing script: %v", err)
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, variables); err != nil {
-		return "", fmt.Errorf("Error rendering script: %v", err)
-	}
-
-	return buf.String(), nil
-}
 
 // PreflightRequest represents the request structure for pre-flight checks
 type PreflightRequest struct {
@@ -391,6 +390,24 @@ type PreflightTemplateData struct {
 	Summary   PreflightSummary    `json:"summary,omitempty"`
 }
 
+// ActionExecutionDetail represents an execution with additional instance/server details
+type ActionExecutionDetail struct {
+	data.ActionInstanceExecution
+	InstanceName    string `json:"instance_name"`
+	ApplicationName string `json:"application_name"`
+	ServerHostname  string `json:"server_hostname"`
+	ServerAlias     string `json:"server_alias"`
+}
+
+// ExecutionSummary represents a summary of execution statuses
+type ExecutionSummary struct {
+	Total     int `json:"total"`
+	Pending   int `json:"pending"`
+	Running   int `json:"running"`
+	Completed int `json:"completed"`
+	Failed    int `json:"failed"`
+}
+
 // PostActionsPreflight handles the pre-flight check for actions
 func (av *ActionView) PostActionsPreflight(ctx *gin.Context) {
 	// Parse form data for HTMX request
@@ -410,7 +427,7 @@ func (av *ActionView) PostActionsPreflight(ctx *gin.Context) {
 		return
 	}
 
-	template, err := data.GetActionTemplateById(av.Database.Pool, uint(templateID))
+	template, err := data.GetActionTemplateById(av.Database.Pool, templateID)
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Failed to get action template", "trace": err.Error()})
 		return
@@ -441,13 +458,13 @@ func (av *ActionView) PostActionsPreflight(ctx *gin.Context) {
 		}
 
 		// Get variables for this instance
-		variables, err := GetInstanceVariables(av.Database.Pool, uint(instance.Id))
+		variables, err := av.ActionService.GetInstanceVariables(uint(instance.Id))
 		if err != nil {
 			preflightInstance.Status = "error"
 			preflightInstance.ErrorMessage = fmt.Sprintf("Failed to get instance variables: %v", err)
 		} else {
 			// Try to render the template
-			renderedScript, err := RenderScriptPreview(template.BashScript, variables)
+			renderedScript, err := av.ActionService.RenderScript(template.BashScript, variables)
 			if err != nil {
 				preflightInstance.Status = "error"
 				preflightInstance.ErrorMessage = fmt.Sprintf("Failed to render script: %v", err)
@@ -543,4 +560,63 @@ func (av *ActionView) collectTargetInstances(targets PreflightTargets) ([]data.A
 	}
 
 	return allInstances, nil
+}
+
+// getActionExecutionsWithDetails gets executions with enhanced instance/server details
+func (av *ActionView) getActionExecutionsWithDetails(actionId uint) ([]ActionExecutionDetail, error) {
+	query := `
+		SELECT ae.id, ae.action_id, ae.application_instance_id, ae.status, ae.output, ae.error_output, 
+		       ae.exit_code, ae.started_at, ae.completed_at,
+		       ai.name as instance_name, ad.name as application_name, s.hostname as server_hostname, s.server_alias as server_alias
+		FROM action_execution ae
+		JOIN application_instance ai ON ae.application_instance_id = ai.id
+		JOIN application_definition ad ON ai.application_definition_id = ad.id
+		JOIN server s ON ai.server_id = s.server_id
+		WHERE ae.action_id = $1
+		ORDER BY ai.name
+	`
+
+	rows, err := av.Database.Pool.Query(context.Background(), query, actionId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var executions []ActionExecutionDetail
+	for rows.Next() {
+		var exec ActionExecutionDetail
+
+		err := rows.Scan(&exec.Id, &exec.ActionId, &exec.ApplicationInstanceId, &exec.Status,
+			&exec.Output, &exec.ErrorOutput, &exec.ExitCode, &exec.StartedAt, &exec.CompletedAt,
+			&exec.InstanceName, &exec.ApplicationName, &exec.ServerHostname, &exec.ServerAlias)
+		if err != nil {
+			return nil, err
+		}
+
+		executions = append(executions, exec)
+	}
+
+	return executions, nil
+}
+
+// calculateExecutionSummary calculates summary statistics for executions
+func calculateExecutionSummary(executions []ActionExecutionDetail) ExecutionSummary {
+	summary := ExecutionSummary{
+		Total: len(executions),
+	}
+
+	for _, exec := range executions {
+		switch exec.Status {
+		case "pending":
+			summary.Pending++
+		case "running":
+			summary.Running++
+		case "completed":
+			summary.Completed++
+		case "failed":
+			summary.Failed++
+		}
+	}
+
+	return summary
 }

@@ -18,11 +18,11 @@ type SecretsService struct {
 }
 
 // NewSecretsService creates a new secrets service
-func NewSecretsService(db *pgxpool.Pool, logger *slog.Logger, crypto *CryptoService) *SecretsService {
+func NewSecretsService(db *pgxpool.Pool, logger *slog.Logger) *SecretsService {
 	return &SecretsService{
 		db:     db,
 		logger: logger,
-		crypto: crypto,
+		crypto: GetCryptoService(),
 	}
 }
 

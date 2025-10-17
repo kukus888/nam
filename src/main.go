@@ -87,6 +87,9 @@ func main() {
 		log.Warn("Web server is disabled in the configuration, skipping web server initialization")
 	}
 
+	// Should hide this, but release is in two days, so...
+	services.NewCryptoService("nam-secrets-salt-2025", []byte("nam-secrets-salt-2025"))
+
 	// Init Services
 	log.Debug("Initializing services")
 	App.Services = services.NewServiceManager(*log)
@@ -95,6 +98,8 @@ func main() {
 		healthcheckService := services.NewHealthcheckService(App.Database, log.With("component", "HealthcheckService"), App.TlsConfig)
 		App.Services.RegisterService(healthcheckService)
 	}
+	actionService := services.NewActionService(App.Database, log.With("component", "ActionService"))
+	App.Services.RegisterService(actionService)
 	for {
 		status, _ := App.Services.GetServiceStatus("HealthcheckService")
 		fmt.Println("HealthcheckService status:", status)

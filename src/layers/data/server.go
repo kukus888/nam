@@ -17,8 +17,8 @@ func (s Server) DbInsert(pool *pgxpool.Pool) (*uint, error) {
 		return nil, err
 	}
 	defer tx.Rollback(context.Background())
-	err = tx.QueryRow(context.Background(), 
-		"INSERT INTO server (alias, hostname, ssh_port, ssh_auth_type, ssh_auth_secret_id, ssh_user) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", 
+	err = tx.QueryRow(context.Background(),
+		"INSERT INTO server (alias, hostname, ssh_port, ssh_auth_type, ssh_auth_secret_id, ssh_user) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
 		s.Alias, s.Hostname, s.SshPort, s.SshAuthType, s.SshAuthSecretId, s.SshUser).Scan(&id)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func GetServerAll(pool *pgxpool.Pool) (*[]Server, error) {
 	return &res, tx.Commit(context.Background())
 }
 
-func GetServerById(pool *pgxpool.Pool, id uint) (*Server, error) {
+func GetServerById(pool *pgxpool.Pool, id uint64) (*Server, error) {
 	tx, err := pool.BeginTx(context.Background(), pgx.TxOptions{})
 	defer tx.Rollback(context.Background())
 	if err != nil {
@@ -126,7 +126,7 @@ func (server *Server) Update(pool *pgxpool.Pool) error {
 			ssh_auth_type = $5, 
 			ssh_auth_secret_id = $6, 
 			ssh_user = $7 
-		where id = $1`, 
+		where id = $1`,
 		server.Id, server.Alias, server.Hostname, server.SshPort, server.SshAuthType, server.SshAuthSecretId, server.SshUser)
 	if err != nil {
 		return err

@@ -1,8 +1,10 @@
 package v1
 
 import (
+	"context"
 	"fmt"
 	data "kukus/nam/v2/layers/data"
+	services "kukus/nam/v2/layers/service"
 	"strconv"
 	"strings"
 
@@ -10,121 +12,15 @@ import (
 )
 
 type ActionController struct {
-	Database *data.Database
+	ActionService *services.ActionService
+	Database      *data.Database
 }
 
 func NewActionController(db *data.Database) *ActionController {
 	return &ActionController{
-		Database: db,
+		ActionService: services.GetActionService(),
+		Database:      db,
 	}
-}
-
-// Action Template endpoints
-
-// GetAllActionTemplates returns all action templates
-func (ac *ActionController) GetAllActionTemplates(ctx *gin.Context) {
-	templates, err := data.GetActionTemplateAll(ac.Database.Pool)
-	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to get action templates", "trace": err.Error()})
-		return
-	}
-	ctx.JSON(200, templates)
-}
-
-// GetActionTemplateById returns a specific action template
-func (ac *ActionController) GetActionTemplateById(ctx *gin.Context) {
-	idParam := ctx.Param("templateId")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid template ID"})
-		return
-	}
-
-	template, err := data.GetActionTemplateById(ac.Database.Pool, uint(id))
-	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to get action template", "trace": err.Error()})
-		return
-	}
-
-	if template == nil {
-		ctx.JSON(404, gin.H{"error": "Action template not found"})
-		return
-	}
-
-	ctx.JSON(200, template)
-}
-
-// CreateActionTemplate creates a new action template
-func (ac *ActionController) CreateActionTemplate(ctx *gin.Context) {
-	var template data.ActionTemplate
-	if err := ctx.ShouldBindJSON(&template); err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid input", "trace": err.Error()})
-		return
-	}
-
-	// Validate the template
-	if err := data.ValidateActionTemplate(&template); err != nil {
-		ctx.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-
-	created, err := data.CreateActionTemplate(ac.Database.Pool, &template)
-	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to create action template", "trace": err.Error()})
-		return
-	}
-
-	ctx.JSON(201, created)
-}
-
-// UpdateActionTemplate updates an existing action template
-func (ac *ActionController) UpdateActionTemplate(ctx *gin.Context) {
-	idParam := ctx.Param("templateId")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid template ID"})
-		return
-	}
-
-	var template data.ActionTemplate
-	if err := ctx.ShouldBindJSON(&template); err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid input", "trace": err.Error()})
-		return
-	}
-
-	template.Id = uint(id)
-
-	// Validate the template
-	if err := data.ValidateActionTemplate(&template); err != nil {
-		ctx.JSON(400, gin.H{"error": err.Error()})
-		return
-	}
-
-	err = data.UpdateActionTemplate(ac.Database.Pool, &template)
-	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to update action template", "trace": err.Error()})
-		return
-	}
-
-	ctx.Status(204)
-}
-
-// DeleteActionTemplate deletes an action template
-func (ac *ActionController) DeleteActionTemplate(ctx *gin.Context) {
-	idParam := ctx.Param("templateId")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid template ID"})
-		return
-	}
-
-	err = data.DeleteActionTemplate(ac.Database.Pool, uint(id))
-	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to delete action template", "trace": err.Error()})
-		return
-	}
-
-	ctx.Status(204)
 }
 
 // Action endpoints
@@ -178,7 +74,7 @@ func (ac *ActionController) GetActionById(ctx *gin.Context) {
 func (ac *ActionController) PreflightCheck(ctx *gin.Context) {
 	var request struct {
 		ActionName        string `json:"action_name" binding:"required"`
-		ActionTemplateId  uint   `json:"action_template_id" binding:"required"`
+		ActionTemplateId  uint64 `json:"action_template_id" binding:"required"`
 		SelectedInstances []uint `json:"selected_instances" binding:"required"`
 	}
 
@@ -271,12 +167,12 @@ func (ac *ActionController) PreflightCheck(ctx *gin.Context) {
 	ctx.JSON(200, response)
 }
 
-// CreateAction creates a new action
-func (ac *ActionController) CreateAction(ctx *gin.Context) {
+// ExecuteAction creates and immediately starts executing an action
+func (ac *ActionController) ExecuteAction(ctx *gin.Context) {
 	var request struct {
-		Name             string `json:"name" binding:"required"`
-		ActionTemplateId uint   `json:"action_template_id" binding:"required"`
-		InstanceIds      []uint `json:"instance_ids" binding:"required"`
+		ActionName string         `json:"action_name" binding:"required"`
+		TemplateId uint64         `json:"template_id" binding:"required"`
+		Targets    map[string]any `json:"targets" binding:"required"`
 	}
 
 	if err := ctx.ShouldBindJSON(&request); err != nil {
@@ -284,7 +180,7 @@ func (ac *ActionController) CreateAction(ctx *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (you'd need to implement JWT middleware)
+	// Get user ID from context
 	userIdInterface, exists := ctx.Get("user_id")
 	if !exists {
 		ctx.JSON(401, gin.H{"error": "User not authenticated"})
@@ -296,88 +192,90 @@ func (ac *ActionController) CreateAction(ctx *gin.Context) {
 		return
 	}
 
-	// Create the action
-	action := &data.Action{
-		ActionTemplateId: request.ActionTemplateId,
-		Name:             request.Name,
-		Status:           "pending",
-		CreatedByUserId:  userId,
-	}
-
-	createdAction, err := data.CreateAction(ac.Database.Pool, action)
+	// Validate template exists
+	template, err := data.GetActionTemplateById(ac.Database.Pool, request.TemplateId)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to create action", "trace": err.Error()})
+		ctx.JSON(500, gin.H{"error": "Failed to get action template", "trace": err.Error()})
 		return
 	}
 
-	// Create action executions for each instance
-	for _, instanceId := range request.InstanceIds {
-		execution := &data.ActionExecution{
-			ActionId:              createdAction.Id,
-			ApplicationInstanceId: instanceId,
-			Status:                "pending",
+	if template == nil {
+		ctx.JSON(404, gin.H{"error": "Action template not found"})
+		return
+	}
+
+	// Parse targets
+	targetsMap := request.Targets
+
+	// Convert targets to ActionTarget structure
+	var targets data.ActionTargets
+	{
+		if instances, ok := targetsMap["instances"].([]interface{}); ok {
+			for _, instStr := range instances {
+				if instInt, err := strconv.ParseUint(instStr.(string), 10, 64); err == nil {
+					targets.ApplicationInstanceIds = append(targets.ApplicationInstanceIds, instInt)
+				} else {
+					// Invalid instance ID type
+					ctx.JSON(400, gin.H{"error": "Invalid instance ID in targets"})
+					return
+				}
+			}
 		}
 
-		_, err := data.CreateActionExecution(ac.Database.Pool, execution)
-		if err != nil {
-			// Log error but don't fail the entire operation
-			// In production, you might want to use transactions
-			fmt.Printf("Warning: Failed to create execution for instance %d: %v\n", instanceId, err)
+		if applications, ok := targetsMap["applications"].([]interface{}); ok {
+			for _, app := range applications {
+				if appInt, err := strconv.ParseUint(app.(string), 10, 64); err == nil {
+					targets.ApplicationDefinitionIds = append(targets.ApplicationDefinitionIds, appInt)
+				} else {
+					// Invalid application ID type
+					ctx.JSON(400, gin.H{"error": "Invalid application ID in targets"})
+					return
+				}
+			}
 		}
+
+		if servers, ok := targetsMap["servers"].([]interface{}); ok {
+			for _, server := range servers {
+				if serverInt, err := strconv.ParseUint(server.(string), 10, 64); err == nil {
+					targets.ServerIds = append(targets.ServerIds, serverInt)
+				} else {
+					// Invalid server ID type
+					ctx.JSON(400, gin.H{"error": "Invalid server ID in targets"})
+					return
+				}
+			}
+		}
+	}
+	// Let the service perform the template
+	funcCtx := context.WithValue(context.Background(), "user_id", userId)
+	exec, err := ac.ActionService.PerformTemplate(funcCtx, template, &targets)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": "Failed to perform template", "trace": err.Error()})
+		return
 	}
 
 	ctx.JSON(201, gin.H{
-		"id":     createdAction.Id,
-		"name":   createdAction.Name,
-		"status": createdAction.Status,
+		"action_id": exec.Action.Id,
+		"message":   "Action created and started successfully",
 	})
-}
-
-// StartAction starts an action execution
-func (ac *ActionController) StartAction(ctx *gin.Context) {
-	idParam := ctx.Param("actionId")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid action ID"})
-		return
-	}
-
-	// Update action status to running
-	err = data.UpdateActionStatus(ac.Database.Pool, uint(id), "running")
-	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to start action", "trace": err.Error()})
-		return
-	}
-
-	// TODO: Implement actual script execution
-	// This would involve:
-	// 1. Getting all executions for this action
-	// 2. For each execution, render the script with variables
-	// 3. Execute the script on the target server (via SSH or agent)
-	// 4. Update execution status and capture output
-
-	ctx.JSON(200, gin.H{"message": "Action started successfully"})
 }
 
 // CancelAction cancels a running action
 func (ac *ActionController) CancelAction(ctx *gin.Context) {
-	idParam := ctx.Param("actionId")
-	id, err := strconv.ParseUint(idParam, 10, 32)
-	if err != nil {
-		ctx.JSON(400, gin.H{"error": "Invalid action ID"})
-		return
-	}
+	ctx.JSON(501, gin.H{"error": "Not implemented", "trace": "Not implemented"})
+	return
+	/*
+		idParam := ctx.Param("actionId")
+		id, err := strconv.ParseUint(idParam, 10, 32)
+		if err != nil {
+			ctx.JSON(400, gin.H{"error": "Invalid action ID"})
+			return
+		}
 
-	// Update action status to failed (cancelled)
-	err = data.UpdateActionStatus(ac.Database.Pool, uint(id), "failed")
-	if err != nil {
-		ctx.JSON(500, gin.H{"error": "Unable to cancel action", "trace": err.Error()})
-		return
-	}
+		// Notify the service to cancel the action
 
-	// TODO: Actually stop running executions
-
-	ctx.JSON(200, gin.H{"message": "Action cancelled successfully"})
+		ctx.JSON(200, gin.H{"message": "Action cancelled successfully"})
+	*/
 }
 
 // GetActionStatus returns the current status of an action

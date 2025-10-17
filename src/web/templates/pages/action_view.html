@@ -1,0 +1,387 @@
+{{ define "pages/action_view" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ template "template/head.includes" }}
+    <title>Action Execution - {{ .Action.Name }}</title>
+    <style>
+        .execution-log {
+            font-family: 'Courier New', monospace;
+            background-color: #1a1a1a;
+            color: #f0f0f0;
+            border-radius: 6px;
+            padding: 16px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .sidebar-item.active {
+            background-color: #f3f4f6;
+            border-right: 3px solid #4f46e5;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-pending { background-color: #6b7280; }
+        .status-running { background-color: #f59e0b; animation: pulse 2s infinite; }
+        .status-completed { background-color: #10b981; }
+        .status-failed { background-color: #ef4444; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-full mx-auto">
+        <!-- Top Summary Bar -->
+        <div class="bg-indigo-600 text-white px-6 py-4 shadow">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-6">
+                        <div>
+                            <h1 class="text-xl font-semibold">{{ .Action.Name }}</h1>
+                            <p class="text-indigo-200 text-sm">Template: {{ .Action.Template.Name }}</p>
+                        </div>
+                        <div class="flex items-center space-x-4 text-sm">
+                            <div>
+                                <span class="text-indigo-200">Created by:</span>
+                                <span class="font-medium">{{ .Action.CreatedBy.Username }}</span>
+                            </div>
+                            <div>
+                                <span class="text-indigo-200">Started:</span>
+                                <span class="font-medium">{{ if .Action.StartedAt }}{{ .Action.StartedAt.Format "2006-01-02 15:04:05" }}{{ else }}Not started{{ end }}</span>
+                            </div>
+                            {{ if .Action.CompletedAt }}
+                            <div>
+                                <span class="text-indigo-200">Completed:</span>
+                                <span class="font-medium">{{ .Action.CompletedAt.Format "2006-01-02 15:04:05" }}</span>
+                            </div>
+                            {{ end }}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <!-- Action Status -->
+                        <div class="flex items-center">
+                            <span class="status-dot status-{{ .Action.Status }}"></span>
+                            <span class="font-medium capitalize">{{ .Action.Status }}</span>
+                        </div>
+                        
+                        <!-- Execution Summary -->
+                        <div class="text-right text-sm">
+                            <div class="font-medium">{{ .ExecutionSummary.Total }} Targets</div>
+                            <div class="text-indigo-200">
+                                {{ .ExecutionSummary.Completed }} completed, 
+                                {{ .ExecutionSummary.Running }} running, 
+                                {{ .ExecutionSummary.Failed }} failed
+                            </div>
+                        </div>
+                        
+                        <!-- Refresh Button -->
+                        <button type="button" 
+                                onclick="refreshPage()" 
+                                class="bg-indigo-500 hover:bg-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex max-w-7xl mx-auto">
+            <!-- Left Sidebar - Target List -->
+            <div class="w-80 bg-white shadow-r border-r border-gray-200 min-h-screen">
+                <div class="px-4 py-4 border-b border-gray-200">
+                    <h2 class="font-semibold text-gray-900">Execution Targets</h2>
+                    <p class="text-sm text-gray-500 mt-1">Click to view terminal output</p>
+                </div>
+                
+                <div class="divide-y divide-gray-200">
+                    {{ range .Action.Executions }}
+                    <div class="sidebar-item cursor-pointer hover:bg-gray-50 transition-colors {{ if eq .Id $.SelectedExecutionId }}active{{ end }}"
+                         onclick="selectExecution({{ .Id }})">
+                        <div class="px-4 py-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                        {{ .InstanceName }}
+                                    </p>
+                                    <p class="text-sm text-gray-500 truncate">
+                                        {{ .ApplicationName }} on {{ .ServerHostname }}
+                                    </p>
+                                </div>
+                                <div class="flex items-center ml-2">
+                                    <span class="status-dot status-{{ .Status }}"></span>
+                                    <span class="text-xs text-gray-500 capitalize">{{ .Status }}</span>
+                                </div>
+                            </div>
+                            
+                            {{ if .StartedAt }}
+                            <div class="mt-2 text-xs text-gray-500">
+                                Started: {{ .StartedAt.Format "15:04:05" }}
+                                {{ if .CompletedAt }}
+                                - Completed: {{ .CompletedAt.Format "15:04:05" }}
+                                {{ end }}
+                            </div>
+                            {{ end }}
+                            
+                            {{ if .ExitCode }}
+                            <div class="mt-1 text-xs {{ if eq .ExitCode 0 }}text-green-600{{ else }}text-red-600{{ end }}">
+                                Exit code: {{ .ExitCode }}
+                            </div>
+                            {{ end }}
+                        </div>
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+
+            <!-- Main Content Area - Terminal Output -->
+            <div class="flex-1 bg-white">
+                <div id="main-content" class="p-6">
+                    {{ if .SelectedExecution }}
+                    <!-- Selected Execution View -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ .SelectedExecution.InstanceName }}</h3>
+                                <p class="text-sm text-gray-500">{{ .SelectedExecution.ApplicationName }} on {{ .SelectedExecution.ServerHostname }}</p>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center">
+                                    <span class="status-dot status-{{ .SelectedExecution.Status }}"></span>
+                                    <span class="text-sm font-medium capitalize">{{ .SelectedExecution.Status }}</span>
+                                </div>
+                                {{ if ne .SelectedExecution.Status "running" }}
+                                <button type="button" 
+                                        onclick="refreshExecution({{ .SelectedExecution.Id }})"
+                                        class="bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded text-sm transition-colors">
+                                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    Refresh
+                                </button>
+                                {{ else }}
+                                <div class="text-sm text-gray-500 bg-yellow-50 px-2 py-1 rounded">
+                                    <span id="running-timer">Auto-refreshing...</span>
+                                </div>
+                                {{ end }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terminal Output -->
+                    <div class="space-y-4">
+                        <!-- Standard Output -->
+                        {{ if .SelectedExecution.Output }}
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Standard Output:</h4>
+                            <div class="execution-log">{{ .SelectedExecution.Output }}</div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Error Output -->
+                        {{ if .SelectedExecution.ErrorOutput }}
+                        <div>
+                            <h4 class="text-sm font-medium text-red-600 mb-2">Error Output:</h4>
+                            <div class="execution-log bg-red-900 text-red-100">{{ .SelectedExecution.ErrorOutput }}</div>
+                        </div>
+                        {{ end }}
+
+                        <!-- Execution Details -->
+                        <div>
+                            <h4 class="text-sm font-medium text-gray-700 mb-2">Execution Details:</h4>
+                            <div class="bg-gray-50 rounded-lg p-4 text-sm">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span class="font-medium text-gray-700">Status:</span>
+                                        <span class="ml-2 capitalize">{{ .SelectedExecution.Status }}</span>
+                                    </div>
+                                    {{ if .SelectedExecution.ExitCode }}
+                                    <div>
+                                        <span class="font-medium text-gray-700">Exit Code:</span>
+                                        <span class="ml-2 {{ if eq .SelectedExecution.ExitCode 0 }}text-green-600{{ else }}text-red-600{{ end }}">{{ .SelectedExecution.ExitCode }}</span>
+                                    </div>
+                                    {{ end }}
+                                    {{ if .SelectedExecution.StartedAt }}
+                                    <div>
+                                        <span class="font-medium text-gray-700">Started:</span>
+                                        <span class="ml-2">{{ .SelectedExecution.StartedAt.Format "2006-01-02 15:04:05" }}</span>
+                                    </div>
+                                    {{ end }}
+                                    {{ if .SelectedExecution.CompletedAt }}
+                                    <div>
+                                        <span class="font-medium text-gray-700">Completed:</span>
+                                        <span class="ml-2">{{ .SelectedExecution.CompletedAt.Format "2006-01-02 15:04:05" }}</span>
+                                    </div>
+                                    {{ end }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- No Output Message -->
+                        {{ if and (not .SelectedExecution.Output) (not .SelectedExecution.ErrorOutput) }}
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="mt-4 text-sm font-medium text-gray-900">No output yet</h3>
+                            <p class="mt-1 text-sm text-gray-500">
+                                {{ if eq .SelectedExecution.Status "pending" }}
+                                Execution is pending - waiting to start
+                                {{ else if eq .SelectedExecution.Status "running" }}
+                                Execution is running - output will appear here
+                                {{ else }}
+                                No output was generated during execution
+                                {{ end }}
+                            </p>
+                        </div>
+                        {{ end }}
+                    </div>
+                    {{ else }}
+                    <!-- No Selection View -->
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        <h3 class="mt-4 text-lg font-medium text-gray-900">Select an execution target</h3>
+                        <p class="mt-1 text-sm text-gray-500">Choose a target from the sidebar to view its terminal output and execution details.</p>
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+        let lastRefresh = Date.now();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start auto-refresh for running executions
+            {{ if .HasRunningExecutions }}
+            startAutoRefresh();
+            {{ end }}
+            
+            // Auto-select first execution if none selected and executions exist
+            {{ if and (not .SelectedExecution) .Action.Executions }}
+                {{ $firstExecution := index .Action.Executions 0 }}
+                selectExecution({{ $firstExecution.Id }});
+            {{ end }}
+        });
+
+        function selectExecution(executionId) {
+            // Update URL and reload with selected execution
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('execution_id', executionId);
+            window.location.href = currentUrl.toString();
+        }
+
+        function refreshExecution(executionId) {
+            // Use HTMX to refresh the main content area
+            const mainContent = document.getElementById('main-content');
+            const actionId = {{ .Action.Id }};
+            
+            // Show loading indicator
+            const originalContent = mainContent.innerHTML;
+            mainContent.innerHTML = `
+                <div class="flex items-center justify-center py-12">
+                    <svg class="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="ml-3 text-gray-600">Refreshing execution data...</span>
+                </div>
+            `;
+
+            // Make HTMX request to get updated execution content
+            fetch(`/htmx/actions/${actionId}/execution/${executionId}`, {
+                headers: {
+                    'HX-Request': 'true'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                mainContent.innerHTML = html;
+                lastRefresh = Date.now();
+            })
+            .catch(error => {
+                console.error('Failed to refresh execution:', error);
+                mainContent.innerHTML = originalContent;
+                showErrorMessage({ error: 'Failed to refresh execution data' });
+            });
+        }
+
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        function startAutoRefresh() {
+            // Refresh every 3 seconds for running executions
+            autoRefreshInterval = setInterval(() => {
+                const hasRunning = {{ .HasRunningExecutions }};
+                if (hasRunning) {
+                    updateTimer();
+                    // Auto-refresh current execution if it's running
+                    {{ if and .SelectedExecution (eq .SelectedExecution.Status "running") }}
+                    refreshExecution({{ .SelectedExecution.Id }});
+                    {{ else }}
+                    // If no specific execution selected, refresh the whole page
+                    refreshPage();
+                    {{ end }}
+                } else {
+                    stopAutoRefresh();
+                }
+            }, 3000);
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        function updateTimer() {
+            const timerEl = document.getElementById('running-timer');
+            if (timerEl) {
+                const secondsAgo = Math.floor((Date.now() - lastRefresh) / 1000);
+                timerEl.textContent = `Last updated ${secondsAgo}s ago`;
+            }
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>
+{{ end }}
