@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type Application struct {
@@ -58,7 +59,14 @@ func main() {
 	}
 
 	// Init logging
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	rotlog := &lumberjack.Logger{
+		Filename:   App.Configuration.Logging.FilePath,
+		MaxSize:    App.Configuration.Logging.MaxSize,
+		MaxBackups: App.Configuration.Logging.MaxBackups,
+		MaxAge:     App.Configuration.Logging.MaxAge,
+		Compress:   App.Configuration.Logging.Compress,
+	}
+	log := slog.New(slog.NewJSONHandler(rotlog, &slog.HandlerOptions{
 		Level: App.Configuration.Logging.SlogLevel,
 	}))
 	log.Info("Successfully initialised configuration and logging")

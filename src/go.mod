@@ -17,6 +17,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lib/pq v1.10.9 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 )
 
 require (

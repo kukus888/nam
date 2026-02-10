@@ -3,6 +3,11 @@ postgres:
 
 logging:
   level: info # Log level. Available levels are: debug, info, error
+  filepath: "application.log" # Path to log file
+  maxsize: 10 # Maximum size in megabytes of the log file
+  maxbackups: 5 # Maximum number of old log files to retain
+  maxage: 30 # Maximum number of days to retain old log files
+  compress: true # Whether to compress old log files or not
 
 webserver:
   enabled: true # Whether to enable webserver (with APIs) or not

@@ -50,8 +50,13 @@ type ApplicationConfiguration struct {
 		Dsn string `yaml:"dsn"`
 	} `yaml:"postgres"`
 	Logging struct {
-		Level     string     `yaml:"level" default:"info"` // Log level, e.g. "debug", "info", "warn", "error"
-		SlogLevel slog.Level `yaml:"-"`                    // Internal representation of log level, e.g. 0 for debug, 1 for info, etc.
+		Level      string     `yaml:"level" default:"info"` // Log level, e.g. "debug", "info", "warn", "error"
+		SlogLevel  slog.Level `yaml:"-"`                    // Internal representation of log level, e.g. 0 for debug, 1 for info, etc.
+		FilePath   string     `yaml:"filepath"`             // Path to log file
+		MaxSize    int        `yaml:"maxsize"`              // Maximum size in megabytes of the log file
+		MaxBackups int        `yaml:"maxbackups"`           // Maximum number of old log files to retain
+		MaxAge     int        `yaml:"maxage"`               // Maximum number of days to retain old log files
+		Compress   bool       `yaml:"compress"`             // Whether to compress old log files
 	} `yaml:"logging"`
 	Services map[string]bool `yaml:"services"` // Map of service names to their enabled status
 	Keys     struct {
