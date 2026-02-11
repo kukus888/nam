@@ -61,7 +61,7 @@ type HealthcheckDTO struct {
 
 	// Response validation
 	ExpectedStatus       int     `json:"expected_status" binding:"required"`
-	ExpectedResponseBody *string `json:"expected_response_body"` // Expected response content
+	ExpectedResponseBody string  `json:"expected_response_body"` // Expected response content
 	ResponseValidation   *string `json:"response_validation"`    // contains, exact, regex
 
 	// SSL/TLS
@@ -94,7 +94,7 @@ func (dto HealthcheckDTO) ToHealthcheck() (*Healthcheck, error) {
 		CheckInterval:        reqInterval,
 		RetryCount:           dto.RetryCount,
 		ExpectedStatus:       dto.ExpectedStatus,
-		ExpectedResponseBody: *dto.ExpectedResponseBody,
+		ExpectedResponseBody: dto.ExpectedResponseBody,
 		ResponseValidation:   *dto.ResponseValidation,
 		AuthType:             dto.AuthType,
 		AuthCredentials:      dto.AuthCredentials,
