@@ -90,7 +90,7 @@ func main() {
 
 	if App.Configuration.WebServer.Enabled {
 		// Start web server
-		go InitWebServer(&App)
+		go InitWebServer(&App, rotlog)
 	} else {
 		log.Warn("Web server is disabled in the configuration, skipping web server initialization")
 	}
@@ -103,6 +103,7 @@ func main() {
 		healthcheckService := services.NewHealthcheckService(App.Database, log.With("component", "HealthcheckService"), App.TlsConfig)
 		App.Services.RegisterService(healthcheckService)
 	}
+	services.NewTimerService(App.Database.Pool, log.With("component", "TimerService"))
 	for {
 		status, _ := App.Services.GetServiceStatus("HealthcheckService")
 		fmt.Println("HealthcheckService status:", status)

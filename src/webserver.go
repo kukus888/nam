@@ -22,6 +22,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 //go:embed web
@@ -31,7 +32,7 @@ var webResources embed.FS
 var staticResources embed.FS
 
 // Initialize and start the web server
-func InitWebServer(app *Application) {
+func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 	slogLevel := slog.LevelInfo
 	switch App.Configuration.WebServer.Mode {
 	case "debug", "test":
@@ -70,7 +71,7 @@ func InitWebServer(app *Application) {
 			enc.Encode(log)
 			return buf.String()
 		},
-		Output: os.Stdout,
+		Output: loggerWriter,
 	}))
 	app.Engine.NoRoute(handlers.NotFound)
 	// Set up resources
@@ -298,8 +299,9 @@ func InitWebServer(app *Application) {
 		routeGroup.Use(RequireRole(dbPool, "Admin"))
 		routeGroup.GET("/", psh.GetPageSettings)
 		routeGroup.GET("/database", psh.GetPageDatabaseSettings)
+		routeGroup.GET("/timers", psh.GetPageTimerSettings)
 		routeGroup.GET("/users", psh.GetPageUsers)
-		routeGroup.GET("/users/create", psh.GetPageUserCreate) // Placeholder for user creation page
+		routeGroup.GET("/users/create", psh.GetPageUserCreate)
 		routeGroup.GET("/users/:id/edit", psh.GetPageUserEdit)
 	}
 	{ // Secrets Management

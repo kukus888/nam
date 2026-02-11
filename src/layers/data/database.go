@@ -76,3 +76,14 @@ func GetTableSizes(pool *pgxpool.Pool) (*[]TableSize, error) {
 	}
 	return &tableSizes, nil
 }
+
+// CleanUpDatabase performs routine cleanup tasks on the database, squashing the healthcheck_results table. It returns a message indicating the result of the cleanup operation or an error if one occurred.
+func CleanUpDatabase(pool *pgxpool.Pool) (string, error) {
+	res := pool.QueryRow(context.Background(), "SELECT * FROM cleanup_healthcheck_results();")
+	var result string
+	err := res.Scan(&result)
+	if err != nil {
+		return "", err
+	}
+	return result, nil
+}

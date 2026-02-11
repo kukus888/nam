@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"kukus/nam/v2/layers/data"
+	services "kukus/nam/v2/layers/service"
 	"strconv"
 	"strings"
 
@@ -20,6 +21,31 @@ func NewPageSettingsHandler(database *data.Database) PageSettingsHandler {
 
 func (pc PageSettingsHandler) GetPageSettings(ctx *gin.Context) {
 	ctx.HTML(200, "pages/settings", gin.H{})
+}
+
+// TimerJobView is a simplified representation of a TimerJob, designed for display purposes in the settings page. It includes human-readable fields for the timer's name, description, enabled status, and interval.
+type TimerJobView struct {
+	Name        string
+	Description string
+	Enabled     bool
+	Interval    string
+}
+
+// GetPageTimerSettings handles the GET request for the timer settings page. It retrieves the list of timer jobs from the TimerService, converts them into a view-friendly format, and renders the HTML template with the timer data.
+func (pc PageSettingsHandler) GetPageTimerSettings(ctx *gin.Context) {
+	ts := services.GetTimerService()
+	timerViews := make([]TimerJobView, len(ts.Jobs))
+	for i, job := range ts.Jobs {
+		timerViews[i] = TimerJobView{
+			Name:        job.GetName(),
+			Description: job.GetDescription(),
+			Enabled:     job.IsEnabled(),
+			Interval:    job.GetInterval().String(),
+		}
+	}
+	ctx.HTML(200, "pages/settings/timers", gin.H{
+		"Timers": timerViews,
+	})
 }
 
 func (pc PageSettingsHandler) GetPageDatabaseSettings(ctx *gin.Context) {
