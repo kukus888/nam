@@ -25,9 +25,15 @@ func (pc PageSettingsHandler) GetPageSettings(ctx *gin.Context) {
 func (pc PageSettingsHandler) GetPageDatabaseSettings(ctx *gin.Context) {
 	connConfig := pc.Database.Pool.Config().ConnConfig
 	connStrSafe := strings.ReplaceAll(connConfig.ConnString(), connConfig.Password, "****")
+	tableSizes, err := data.GetTableSizes(pc.Database.Pool)
+	if err != nil {
+		ctx.HTML(500, "pages/settings/database", gin.H{"error": "Unable to get table sizes", "trace": err.Error()})
+		return
+	}
 	ctx.HTML(200, "pages/settings/database", gin.H{
 		"DbConfigConnString":    connStrSafe,
 		"DbConfigRuntimeParams": connConfig.RuntimeParams,
+		"TableSizes":            tableSizes,
 	})
 }
 

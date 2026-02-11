@@ -24,19 +24,133 @@
                 When a sidebar button is clicked, HTMX will replace this content.
             -->
             <div class="bg-white shadow rounded-xl py-4 px-6">
-                <h1 class="text-2xl font-bold text-gray-900 mb-2">Database settings</h1>
-                <div class="flex flex-row mb-2">
-                    <div class="w-1/4 p-1">Connection string</div>
-                    <div class="w-3/4 font-mono bg-gray-50 rounded-sm p-1">{{ .DbConfigConnString }}</div>
-                </div>
-                <div class="flex flex-row mb-2">
-                    <div class="w-1/4 p-1">Runtime parameters</div>
-                    <div class="w-3/4 font-mono bg-gray-50 rounded-sm p-1 flex flex-col">
-                        {{ range $key, $value := .DbConfigRuntimeParams }}
-                        <div>{{ $key }} -> {{ $value }}</div>
-                        {{ end }}
+                <h1 class="text-2xl font-bold text-gray-900 mb-6">Database settings</h1>
+                
+                <!-- Connection Info Section -->
+                <div class="mb-8">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Connection Information</h2>
+                    <div class="flex flex-row mb-2">
+                        <div class="w-1/4 p-1">Connection string</div>
+                        <div class="w-3/4 font-mono bg-gray-50 rounded-sm p-1">{{ .DbConfigConnString }}</div>
+                    </div>
+                    <div class="flex flex-row mb-2">
+                        <div class="w-1/4 p-1">Runtime parameters</div>
+                        <div class="w-3/4 font-mono bg-gray-50 rounded-sm p-1 flex flex-col">
+                            {{ range $key, $value := .DbConfigRuntimeParams }}
+                            <div>{{ $key }} -> {{ $value }}</div>
+                            {{ end }}
+                        </div>
                     </div>
                 </div>
+
+                <!-- Table Sizes Section -->
+                {{ if .TableSizes }}
+                <div class="mb-8">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Table Sizes</h2>
+                    
+                    <!-- Search and Filter Controls -->
+                    <div class="mb-4 flex gap-4 items-center">
+                        <div class="flex-1">
+                            <input type="text" id="tableSearch" placeholder="Search tables..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="hidePgCatalog" checked class="mr-2">
+                            <label for="hidePgCatalog" class="text-sm text-gray-700">Hide pg_catalog tables</label>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="overflow-x-auto">
+                        <table id="tableSizesTable" class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Table Name
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Table Size
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Index Size
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Total Size
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {{ range $table := .TableSizes }}
+                                <tr class="table-row {{ if contains $table.TableName "pg_catalog" }}pg-catalog-row{{ end }}" 
+                                    data-table-name="{{ $table.TableName | lower }}">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                                        {{ $table.TableName }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ $table.TableSize }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ $table.IndexesSize }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {{ $table.TotalSize }}
+                                    </td>
+                                </tr>
+                                {{ end }}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Row Count Display -->
+                    <div class="mt-4 text-sm text-gray-600">
+                        Showing <span id="visibleRowCount">0</span> of <span id="totalRowCount">0</span> tables
+                    </div>
+                </div>
+
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const searchInput = document.getElementById('tableSearch');
+                    const hidePgCatalogCheckbox = document.getElementById('hidePgCatalog');
+                    const tableRows = document.querySelectorAll('.table-row');
+                    const visibleRowCountEl = document.getElementById('visibleRowCount');
+                    const totalRowCountEl = document.getElementById('totalRowCount');
+
+                    // Set total row count
+                    totalRowCountEl.textContent = tableRows.length;
+
+                    function filterTables() {
+                        const searchTerm = searchInput.value.toLowerCase().trim();
+                        const hidePgCatalog = hidePgCatalogCheckbox.checked;
+                        let visibleCount = 0;
+
+                        tableRows.forEach(row => {
+                            const tableName = row.getAttribute('data-table-name');
+                            const isPgCatalog = row.classList.contains('pg-catalog-row');
+                            
+                            // Check if row should be visible based on search and filter
+                            const matchesSearch = tableName.includes(searchTerm);
+                            const shouldHide = hidePgCatalog && isPgCatalog;
+                            
+                            if (matchesSearch && !shouldHide) {
+                                row.style.display = '';
+                                visibleCount++;
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+
+                        visibleRowCountEl.textContent = visibleCount;
+                    }
+
+                    // Event listeners
+                    searchInput.addEventListener('input', filterTables);
+                    hidePgCatalogCheckbox.addEventListener('change', filterTables);
+
+                    // Initial filter (hide pg_catalog by default)
+                    filterTables();
+                });
+                </script>
+                {{ end }}
             </div>
         </main>
     </div>

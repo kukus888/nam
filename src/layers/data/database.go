@@ -10,8 +10,6 @@ type Database struct {
 	Pool *pgxpool.Pool
 }
 
-// TODO: Impl DB context
-
 // Initializes new pgx database connection with provided connection string
 func NewDatabase(dsn string) (*Database, error) {
 	p, err := pgxpool.New(context.Background(), dsn)
@@ -32,12 +30,49 @@ func (db *Database) GetDatabaseSize() (*int64, error) {
 	return &dbSize, nil
 }
 
-// Returns size of table, in bytes, or an error if there was one
-func (db *Database) GetTableSize(tableName string) (*int64, error) {
-	var tableSize int64
-	err := db.Pool.QueryRow(context.Background(), "SELECT pg_relation_size('$1')", tableName).Scan(&tableSize)
+// TableSize represents the size of a table, including the size of the table itself, its indexes, and the total size (table + indexes)
+type TableSize struct {
+	TableName   string `db:"table_name"`
+	TableSize   string `db:"table_size"`
+	IndexesSize string `db:"indexes_size"`
+	TotalSize   string `db:"total_size"`
+}
+
+// Gets the table sizes
+func GetTableSizes(pool *pgxpool.Pool) (*[]TableSize, error) {
+	// Source - https://stackoverflow.com/a/2596678
+	// Posted by aib, modified by community. See post 'Timeline' for change history
+	// Retrieved 2026-02-10, License - CC BY-SA 3.0
+	rows, err := pool.Query(context.Background(), `
+	SELECT
+    	table_name,
+    	pg_size_pretty(table_size) AS table_size,
+	    pg_size_pretty(indexes_size) AS indexes_size,
+	    pg_size_pretty(total_size) AS total_size
+	FROM (
+	    SELECT
+	        table_name,
+	        pg_table_size(table_name) AS table_size,
+	        pg_indexes_size(table_name) AS indexes_size,
+	        pg_total_relation_size(table_name) AS total_size
+	    FROM (
+	        SELECT (table_schema || '.' || table_name) AS table_name
+	        FROM information_schema.tables
+	    ) AS all_tables
+	    ORDER BY total_size DESC
+	) AS pretty_sizes;
+	`)
 	if err != nil {
 		return nil, err
 	}
-	return &tableSize, nil
+	defer rows.Close()
+	tableSizes := make([]TableSize, 0)
+	for rows.Next() {
+		var ts TableSize
+		if err := rows.Scan(&ts.TableName, &ts.TableSize, &ts.IndexesSize, &ts.TotalSize); err != nil {
+			return nil, err
+		}
+		tableSizes = append(tableSizes, ts)
+	}
+	return &tableSizes, nil
 }

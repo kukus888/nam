@@ -79,6 +79,7 @@ func InitWebServer(app *Application) {
 	app.Engine.FuncMap["formatTimeRFC3339Nano"] = formatTimeRFC3339Nano
 	app.Engine.FuncMap["sub1"] = sub1
 	app.Engine.FuncMap["add"] = func(a, b int) int { return a + b }
+	app.Engine.FuncMap["contains"] = contains
 	app.Engine.FuncMap["derefBool"] = derefBool
 	app.Engine.FuncMap["derefInt"] = derefInt
 	app.Engine.FuncMap["derefInt64"] = derefInt64
@@ -483,6 +484,10 @@ func formatTimeRFC3339Nano(t time.Time) string {
 
 func sub1(x int) int {
 	return x - 1
+}
+
+func contains(source string, substr string) bool {
+	return strings.Contains(source, substr)
 }
 
 // Dereference a pointer to a boolean value
