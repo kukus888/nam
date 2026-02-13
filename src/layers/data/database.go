@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -79,11 +80,34 @@ func GetTableSizes(pool *pgxpool.Pool) (*[]TableSize, error) {
 
 // CleanUpDatabase performs routine cleanup tasks on the database, squashing the healthcheck_results table. It returns a message indicating the result of the cleanup operation or an error if one occurred.
 func CleanUpDatabase(pool *pgxpool.Pool) (string, error) {
-	res := pool.QueryRow(context.Background(), "SELECT * FROM cleanup_healthcheck_results();")
-	var result string
-	err := res.Scan(&result)
+	var recordsBefore, recordsAfter, recordsDeleted int64
+
+	err := pool.QueryRow(context.Background(), "SELECT * FROM cleanup_healthcheck_results();").Scan(&recordsBefore, &recordsAfter, &recordsDeleted)
 	if err != nil {
 		return "", err
 	}
+
+	result := fmt.Sprintf("Database cleanup completed: %d records before, %d records after, %d records deleted",
+		recordsBefore, recordsAfter, recordsDeleted)
+
+	return result, nil
+}
+
+// FlushHealthCheckResults deletes all records from the healthcheck_results table and returns a message indicating how many records were deleted, or an error if one occurred.
+func FlushHealthCheckResults(pool *pgxpool.Pool) (string, error) {
+	var recordsDeleted int64
+
+	err := pool.QueryRow(context.Background(), `
+	WITH deleted AS (
+		DELETE FROM healthcheck_results
+		RETURNING 1
+	)
+	SELECT COUNT(*) FROM deleted;
+	`).Scan(&recordsDeleted)
+	if err != nil {
+		return "", err
+	}
+
+	result := fmt.Sprintf("Flushed healthcheck_results table: %d records deleted", recordsDeleted)
 	return result, nil
 }

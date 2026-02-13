@@ -25,12 +25,12 @@
             -->
             <div class="bg-white shadow rounded-xl py-4 px-6">
                 <h1 class="text-2xl font-bold text-gray-900 mb-6">Timer settings</h1>
-
+                <p class="text-sm text-gray-600 mb-6">
+                    This page allows users to configure and manage timers for their application. Timers can be used to schedule recurring tasks, automate maintenance, or perform any time-based operations. You can enable, disable, or run timers on demand. Use the search box below to quickly find specific timers by name. Some timers are not meant to run, and are supposed to be used only for single run maintanence purposes.
+                </p>
                 <!-- Timer Settings Section -->
                 {{ if .Timers }}
                 <div class="mb-8">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Timer Settings</h2>
-                    
                     <!-- Search and Filter Controls -->
                     <div class="mb-4 flex gap-4 items-center">
                         <div class="flex-1">
@@ -64,6 +64,7 @@
                                     data-table-name="{{ $job.Name | lower }}">
                                     <td class="px-6 py-4 text-sm">
                                         <div class="font-mono font-medium text-gray-900">
+                                            <span class="px-1 py-1 bg-indigo-300 text-white-900 rounded">ID: {{ $job.Id }}</span>
                                             {{ $job.Name }}
                                         </div>
                                         <div class="text-xs text-gray-500 mt-1 break-words max-w-md">
@@ -88,7 +89,9 @@
                                         <div class="flex space-x-2">
                                             <button type="button" 
                                                     class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                                                    onclick="startTimer('{{ $job.Name }}')">
+                                                    hx-post="/settings/timers/{{ $job.Id }}/run"
+                                                    hx-swap="none"
+                                                    hx-confirm="Are you sure you want to run this timer now?">
                                                 <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
                                                 </svg>
@@ -97,7 +100,9 @@
                                             {{ if eq $job.Enabled true }}
                                                 <button type="button" 
                                                         class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
-                                                        onclick="toggleTimer('{{ $job.Name }}', false)">
+                                                        hx-post="/settings/timers/{{ $job.Id }}/disable"
+                                                        hx-swap="none"
+                                                        hx-confirm="Are you sure you want to disable this timer?">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clip-rule="evenodd"/>
                                                     </svg>
@@ -106,7 +111,9 @@
                                             {{ else }}
                                                 <button type="button" 
                                                         class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
-                                                        onclick="toggleTimer('{{ $job.Name }}', true)">
+                                                        hx-post="/settings/timers/{{ $job.Id }}/enable"
+                                                        hx-swap="none"
+                                                        hx-confirm="Are you sure you want to enable this timer?">
                                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                                                     </svg>
@@ -164,26 +171,6 @@
                     // Initial filter
                     filterTables();
                 });
-
-                // Timer action functions
-                function startTimer(timerName) {
-                    if (confirm(`Are you sure you want to start the timer "${timerName}"?`)) {
-                        // Add your timer start logic here
-                        console.log('Starting timer:', timerName);
-                        // You can make an HTMX request or fetch call here
-                        // Example: fetch('/api/timers/' + timerName + '/start', { method: 'POST' })
-                    }
-                }
-
-                function toggleTimer(timerName, enable) {
-                    const action = enable ? 'enable' : 'disable';
-                    if (confirm(`Are you sure you want to ${action} the timer "${timerName}"?`)) {
-                        // Add your timer toggle logic here
-                        console.log(`${action} timer:`, timerName);
-                        // You can make an HTMX request or fetch call here
-                        // Example: fetch('/api/timers/' + timerName + '/toggle', { method: 'POST', body: JSON.stringify({enabled: enable}) })
-                    }
-                }
                 </script>
                 {{ end }}
             </div>

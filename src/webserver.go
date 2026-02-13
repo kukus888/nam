@@ -62,7 +62,7 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 			log["status_code"] = params.StatusCode
 			log["method"] = params.Method
 			log["path"] = fmt.Sprintf("%s", params.Path) // Needed to format u/xxxx chars to readable chars
-			log["start_time"] = params.TimeStamp.Format(time.RFC3339)
+			log["time"] = params.TimeStamp.Format(time.RFC3339)
 			log["remote_addr"] = params.ClientIP
 			log["response_time"] = params.Latency.String()
 			var buf bytes.Buffer
@@ -300,6 +300,9 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 		routeGroup.GET("/", psh.GetPageSettings)
 		routeGroup.GET("/database", psh.GetPageDatabaseSettings)
 		routeGroup.GET("/timers", psh.GetPageTimerSettings)
+		routeGroup.POST("/timers/:id/enable", psh.PostTimerEnable)
+		routeGroup.POST("/timers/:id/disable", psh.PostTimerDisable)
+		routeGroup.POST("/timers/:id/run", psh.PostTimerRun)
 		routeGroup.GET("/users", psh.GetPageUsers)
 		routeGroup.GET("/users/create", psh.GetPageUserCreate)
 		routeGroup.GET("/users/:id/edit", psh.GetPageUserEdit)

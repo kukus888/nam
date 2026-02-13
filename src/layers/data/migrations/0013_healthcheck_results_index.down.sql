@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS idx_healthcheck_results_id ON healthcheck_results;

@@ -13,7 +13,7 @@ import (
 type TimerService struct {
 	Logger *slog.Logger
 	DbPool *pgxpool.Pool
-	Jobs   []TimerJob
+	Jobs   map[int]TimerJob
 }
 
 var TimerSvc *TimerService
@@ -26,8 +26,9 @@ func NewTimerService(pool *pgxpool.Pool, logger *slog.Logger) {
 	ts := &TimerService{
 		Logger: logger.With("service", "TimerService"),
 		DbPool: pool,
-		Jobs: []TimerJob{
-			NewDatabaseCleanupTimer(24*time.Hour, logger, pool),
+		Jobs: map[int]TimerJob{
+			0: NewDatabaseCleanupTimer(24*time.Hour, logger, pool),
+			1: NewDatabaseHealthCheckResultFlusher(logger, pool),
 		},
 	}
 	TimerSvc = ts

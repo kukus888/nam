@@ -25,6 +25,7 @@ func (pc PageSettingsHandler) GetPageSettings(ctx *gin.Context) {
 
 // TimerJobView is a simplified representation of a TimerJob, designed for display purposes in the settings page. It includes human-readable fields for the timer's name, description, enabled status, and interval.
 type TimerJobView struct {
+	Id          int
 	Name        string
 	Description string
 	Enabled     bool
@@ -37,6 +38,7 @@ func (pc PageSettingsHandler) GetPageTimerSettings(ctx *gin.Context) {
 	timerViews := make([]TimerJobView, len(ts.Jobs))
 	for i, job := range ts.Jobs {
 		timerViews[i] = TimerJobView{
+			Id:          i,
 			Name:        job.GetName(),
 			Description: job.GetDescription(),
 			Enabled:     job.IsEnabled(),
@@ -46,6 +48,59 @@ func (pc PageSettingsHandler) GetPageTimerSettings(ctx *gin.Context) {
 	ctx.HTML(200, "pages/settings/timers", gin.H{
 		"Timers": timerViews,
 	})
+}
+
+func (pc PageSettingsHandler) PostTimerEnable(ctx *gin.Context) {
+	id := ctx.Param("id")
+	timerId, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.HTML(400, "pages/settings/timers", gin.H{"error": "Invalid timer ID", "trace": err.Error()})
+		return
+	}
+	ts := services.GetTimerService()
+	job, found := ts.Jobs[timerId]
+	if !found {
+		ctx.HTML(400, "pages/settings/timers", gin.H{"error": "Timer not found"})
+		return
+	}
+	job.Enable()
+	ctx.Header("HX-Redirect", "/settings/timers")
+	ctx.Status(200)
+}
+
+func (pc PageSettingsHandler) PostTimerDisable(ctx *gin.Context) {
+	id := ctx.Param("id")
+	timerId, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.HTML(400, "pages/settings/timers", gin.H{"error": "Invalid timer ID", "trace": err.Error()})
+		return
+	}
+	ts := services.GetTimerService()
+	job, found := ts.Jobs[timerId]
+	if !found {
+		ctx.HTML(400, "pages/settings/timers", gin.H{"error": "Timer not found"})
+		return
+	}
+	job.Disable()
+	ctx.Header("HX-Redirect", "/settings/timers")
+	ctx.Status(200)
+}
+
+func (pc PageSettingsHandler) PostTimerRun(ctx *gin.Context) {
+	id := ctx.Param("id")
+	timerId, err := strconv.Atoi(id)
+	if err != nil {
+		ctx.HTML(400, "pages/settings/timers", gin.H{"error": "Invalid timer ID", "trace": err.Error()})
+		return
+	}
+	ts := services.GetTimerService()
+	job, found := ts.Jobs[timerId]
+	if !found {
+		ctx.HTML(400, "pages/settings/timers", gin.H{"error": "Timer not found"})
+		return
+	}
+	job.Run()
+	ctx.Status(200)
 }
 
 func (pc PageSettingsHandler) GetPageDatabaseSettings(ctx *gin.Context) {
