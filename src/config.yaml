@@ -2,7 +2,7 @@ postgres:
   dsn: "postgres://postgres:heslo123@localhost:5432/postgres?application_name=nam&sslmode=disable"
 
 logging:
-  level: info # debug, info, error
+  level: debug # debug, info, error
   filepath: "application.log" # Path to log file
   maxsize: 10 # Maximum size in megabytes of the log file
   maxbackups: 5 # Maximum number of old log files to retain
