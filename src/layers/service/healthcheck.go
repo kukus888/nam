@@ -30,7 +30,7 @@ func NewHealthcheckService(database *data.Database, logger *slog.Logger, tlsConf
 	hcs := HealthcheckService{
 		Database:  database,
 		Observers: make(map[uint]*HealthcheckObserver),
-		Logger:    logger,
+		Logger:    logger.With("service", "HealthcheckService"),
 		TlsConfig: tlsConfig,
 	}
 	go hcs.Start()

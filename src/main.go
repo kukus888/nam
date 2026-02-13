@@ -100,10 +100,11 @@ func main() {
 	App.Services = services.NewServiceManager(*log)
 	if enabled, found := App.Configuration.Services["HealthcheckService"]; enabled && found {
 		log.Info("HealthcheckService is enabled, initializing")
-		healthcheckService := services.NewHealthcheckService(App.Database, log.With("component", "HealthcheckService"), App.TlsConfig)
+		healthcheckService := services.NewHealthcheckService(App.Database, log, App.TlsConfig)
 		App.Services.RegisterService(healthcheckService)
 	}
-	services.NewTimerService(App.Database.Pool, log.With("component", "TimerService"))
+	services.NewDashboardCacheService(App.Database.Pool, log)
+	services.NewTimerService(App.Database.Pool, log)
 	for {
 		status, _ := App.Services.GetServiceStatus("HealthcheckService")
 		fmt.Println("HealthcheckService status:", status)

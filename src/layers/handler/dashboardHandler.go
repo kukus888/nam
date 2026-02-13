@@ -31,7 +31,7 @@ func (pc PageHandler) GetDashboardDataAPI(ctx *gin.Context) {
 	appNameFilter := strings.ToLower(ctx.DefaultQuery("app_name", ""))
 	appTypeFilter := ctx.DefaultQuery("app_type", "")
 
-	dashboardData, err := services.GetDashboardData(pc.Database.Pool)
+	dashboardData, err := services.GetDashboardData()
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get dashboard data", "trace": err.Error()})
 		return
@@ -90,7 +90,7 @@ func (pc PageHandler) GetDashboardComponent(ctx *gin.Context) {
 	appNameFilter := strings.ToLower(ctx.DefaultQuery("app_name", ""))
 	appTypeFilter := ctx.DefaultQuery("app_type", "")
 
-	dashboardData, err := services.GetDashboardData(pc.Database.Pool)
+	dashboardData, err := services.GetDashboardData()
 	if err != nil {
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get dashboard data", "trace": err.Error()})
 		return
