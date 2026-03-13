@@ -5,6 +5,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"html/template"
 	"io/fs"
 	data "kukus/nam/v2/layers/data"
@@ -65,6 +66,18 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 			log["time"] = params.TimeStamp.Format(time.RFC3339)
 			log["remote_addr"] = params.ClientIP
 			log["response_time"] = params.Latency.String()
+			cookies := params.Request.Cookies()
+			if len(cookies) > 0 {
+				// Find token cookie, hash it and log the hash instead of the actual token value for security
+				for _, cookie := range cookies {
+					if cookie.Name == "token" {
+						h := fnv.New64()
+						h.Write([]byte(cookie.Value))
+						log["session"] = fmt.Sprintf("%x", h.Sum64())
+						break
+					}
+				}
+			}
 			var buf bytes.Buffer
 			enc := json.NewEncoder(&buf)
 			enc.SetEscapeHTML(false)
@@ -244,7 +257,7 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 	}
 
 	// Pages
-	handlers.NewLoginPageHandler(App.Database).Init(App.Engine.Group("/login"))
+	handlers.NewLoginPageHandler(App.Database, log).Init(App.Engine.Group("/login"))
 	// Handlers for the main pages, protected by authentication middleware
 	rootGroup := App.Engine.Group("/")
 	rootGroup.Use(AuthMiddleware())

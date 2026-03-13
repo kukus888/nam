@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"fmt"
+	"hash/fnv"
 	"kukus/nam/v2/layers/data"
 	services "kukus/nam/v2/layers/service"
+	"log/slog"
 	"slices"
 
 	"github.com/gin-gonic/gin"
@@ -10,11 +13,13 @@ import (
 
 type LoginPageHandler struct {
 	Database *data.Database
+	Logger   *slog.Logger
 }
 
-func NewLoginPageHandler(database *data.Database) LoginPageHandler {
+func NewLoginPageHandler(database *data.Database, logger *slog.Logger) LoginPageHandler {
 	return LoginPageHandler{
 		Database: database,
+		Logger:   logger,
 	}
 }
 
@@ -34,6 +39,7 @@ func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 		}
 		userDao, err := data.GetUserByUsername(pc.Database.Pool, *User.Username)
 		if err != nil {
+			pc.Logger.Error("Database error during login", "error", err, "username", *User.Username)
 			ctx.JSON(500, gin.H{"error": "Database error", "trace": err.Error()})
 			return
 		}
@@ -48,9 +54,13 @@ func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 		// Set JWT token
 		token, err := services.GenerateToken(*userDao)
 		if err != nil {
+			pc.Logger.Error("Error generating token", "error", err, "username", *User.Username)
 			ctx.JSON(500, gin.H{"error": "Error generating token", "trace": err.Error()})
 			return
 		}
+		h := fnv.New64()
+		h.Write([]byte(token))
+		pc.Logger.Info("User logged in successfully", "username", *User.Username, "session", fmt.Sprintf("%x", h.Sum64()))
 		// Store the token in a cookie or return it in the response
 		ctx.Header("Set-Cookie", "token="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict")
 		// Redirect to dashboard
