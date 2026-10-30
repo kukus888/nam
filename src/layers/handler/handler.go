@@ -11,6 +11,7 @@ func Unauthorized(ctx *gin.Context) {
 		// User is not authenticated
 		ctx.Header("HX-Redirect", "/login")
 		ctx.Redirect(302, "/login")
+		ctx.Abort()
 	} else {
 		// User is authenticated but not authorized
 		ctx.HTML(403, "pages/403", gin.H{})
