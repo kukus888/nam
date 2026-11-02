@@ -237,3 +237,9 @@ func ToggleApplicationInstanceMaintenance(pool *pgxpool.Pool, id uint64, mainten
 	}
 	return tx.Commit(context.Background())
 }
+
+// Toggles maintenance mode for all instances of the specified application definition
+func ToggleApplicationDefinitionMaintenance(pool *pgxpool.Pool, id uint64, maintenanceMode bool) error {
+	_, err := pool.Exec(context.Background(), "UPDATE application_instance SET maintenance_mode = $1 WHERE application_definition_id = $2", maintenanceMode, id)
+	return err
+}

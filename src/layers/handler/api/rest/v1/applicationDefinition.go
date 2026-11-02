@@ -58,6 +58,28 @@ func (ac *RestApiApplicationController) GetById(ctx *gin.Context) {
 	}
 }
 
+// Toggle maintenance mode for all instances of an application definition
+func (ac *RestApiApplicationController) ToggleMaintenance(ctx *gin.Context) {
+	appId, err := strconv.ParseUint(ctx.Param("appId"), 10, 64)
+	if err != nil || appId == 0 {
+		ctx.JSON(400, gin.H{"error": "Must include ID of application"})
+		return
+	}
+
+	var req struct {
+		MaintenanceMode *bool `json:"maintenance_mode"`
+	}
+	if err := ctx.ShouldBindJSON(&req); err != nil || req.MaintenanceMode == nil {
+		ctx.JSON(400, gin.H{"error": "Invalid maintenance mode"})
+		return
+	}
+	if err := data.ToggleApplicationDefinitionMaintenance(ac.Database.Pool, appId, *req.MaintenanceMode); err != nil {
+		ctx.JSON(500, gin.H{"error": "Unable to toggle maintenance mode", "trace": err.Error()})
+		return
+	}
+	ctx.Status(204)
+}
+
 // Create ApplicationDefinition
 func (ac *RestApiApplicationController) NewApplication(ctx *gin.Context) {
 	var appDef data.ApplicationDefinitionDAO

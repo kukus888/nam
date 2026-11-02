@@ -124,11 +124,24 @@ func (av ApplicationView) GetPageApplicationDetails(ctx *gin.Context) {
 		return
 	}
 	ctx.HTML(200, "pages/applications/details", gin.H{
-		"Application": app,
-		"Healthcheck": hc,
-		"Instances":   instances,
-		"Variables":   variables,
+		"Application":               app,
+		"Healthcheck":               hc,
+		"Instances":                 instances,
+		"Variables":                 variables,
+		"AllInstancesInMaintenance": allInstancesInMaintenance(*instances),
 	})
+}
+
+func allInstancesInMaintenance(instances []data.ApplicationInstanceFull) bool {
+	if len(instances) == 0 {
+		return false
+	}
+	for _, instance := range instances {
+		if !instance.MaintenanceMode {
+			return false
+		}
+	}
+	return true
 }
 
 // Render the page to edit an application definition
