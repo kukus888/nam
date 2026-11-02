@@ -1,14 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"hash/fnv"
 	"kukus/nam/v2/layers/data"
 	services "kukus/nam/v2/layers/service"
 	"log/slog"
-	"slices"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 type LoginPageHandler struct {
@@ -93,33 +94,74 @@ func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 	})
 	// One time only setup route, to generate admin user
 	routeGroup.POST("/setup", func(ctx *gin.Context) {
-		// This route should only be used once to create the initial admin user
-		if count, err := data.GetUserCount(pc.Database.Pool); count > 0 || err != nil {
-			pc.Logger.Warn("Attempt to access setup route when users already exist", "error", err, "trace", err.Error())
-			ctx.JSON(400, gin.H{"error": "Admin user already exists"})
-			return
-		}
 		var User data.UserDTO
 		if err := ctx.ShouldBindJSON(&User); err != nil {
 			pc.Logger.Warn("Invalid input for admin user setup", "error", err, "trace", err.Error())
 			ctx.JSON(400, gin.H{"error": "Invalid input"})
 			return
 		}
-		roles, err := data.GetAllRoles(pc.Database.Pool)
+
+		tx, err := pc.Database.Pool.BeginTx(context.Background(), pgx.TxOptions{})
 		if err != nil {
-			pc.Logger.Error("Error fetching roles for admin user setup", "error", err, "trace", err.Error())
-			ctx.JSON(500, gin.H{"error": "Unable to get role list", "trace": err.Error()})
+			pc.Logger.Error("Error starting transaction for admin user setup", "error", err, "trace", err.Error())
+			ctx.JSON(500, gin.H{"error": "Unable to initialize setup", "trace": err.Error()})
 			return
 		}
-		adminRoleId := slices.IndexFunc(roles, func(r data.Role) bool {
-			return r.Name == "Admin"
-		})
-		id, err := data.CreateUser(pc.Database.Pool, User, uint64(roles[adminRoleId].Id))
+		defer tx.Rollback(context.Background())
+
+		_, err = tx.Exec(context.Background(), `SELECT pg_advisory_xact_lock($1);`, int64(273451))
+		if err != nil {
+			pc.Logger.Error("Error locking setup route", "error", err, "trace", err.Error())
+			ctx.JSON(500, gin.H{"error": "Unable to initialize setup", "trace": err.Error()})
+			return
+		}
+
+		var userCount int
+		err = tx.QueryRow(context.Background(), `SELECT COUNT(*) FROM "user";`).Scan(&userCount)
+		if err != nil {
+			pc.Logger.Error("Error checking existing users during setup", "error", err, "trace", err.Error())
+			ctx.JSON(500, gin.H{"error": "Unable to initialize setup", "trace": err.Error()})
+			return
+		}
+		if userCount > 0 {
+			pc.Logger.Warn("Attempt to access setup route when users already exist")
+			ctx.JSON(400, gin.H{"error": "Admin user already exists"})
+			return
+		}
+
+		var adminRoleId uint64
+		err = tx.QueryRow(context.Background(), `SELECT id FROM "role" WHERE name = 'Admin' LIMIT 1;`).Scan(&adminRoleId)
+		if err != nil {
+			pc.Logger.Error("Error fetching admin role for setup", "error", err, "trace", err.Error())
+			ctx.JSON(500, gin.H{"error": "Unable to get admin role", "trace": err.Error()})
+			return
+		}
+
+		hash, err := data.HashPassword(User.Password)
+		if err != nil {
+			pc.Logger.Error("Error hashing password for admin user setup", "error", err, "trace", err.Error())
+			ctx.JSON(500, gin.H{"error": "Unable to create user", "trace": err.Error()})
+			return
+		}
+
+		var id uint64
+		err = tx.QueryRow(context.Background(), `
+			INSERT INTO "user" (username, password_hash, email, role_id)
+			VALUES ($1, $2, $3, $4)
+			RETURNING id;
+		`, User.Username, hash, User.Email, adminRoleId).Scan(&id)
 		if err != nil {
 			pc.Logger.Error("Error creating admin user", "error", err, "trace", err.Error())
 			ctx.JSON(500, gin.H{"error": "Unable to create user", "trace": err.Error()})
 			return
 		}
+
+		if err := tx.Commit(context.Background()); err != nil {
+			pc.Logger.Error("Error committing admin user setup", "error", err, "trace", err.Error())
+			ctx.JSON(500, gin.H{"error": "Unable to finalize setup", "trace": err.Error()})
+			return
+		}
+
 		ctx.JSON(200, gin.H{"message": "Admin user created successfully", "user_id": id})
 	})
 }

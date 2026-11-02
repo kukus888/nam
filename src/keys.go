@@ -17,7 +17,10 @@ func ParseSecrets(AppConfig ApplicationConfiguration, logger *slog.Logger) (*tls
 	tlsConfig := &tls.Config{
 		RootCAs:            x509.NewCertPool(),
 		Certificates:       make([]tls.Certificate, 0),
-		InsecureSkipVerify: true, // TODO: Properly control
+		InsecureSkipVerify: AppConfig.Security.AllowInsecureTLS,
+	}
+	if tlsConfig.InsecureSkipVerify {
+		logger.Warn("Outbound TLS certificate verification is disabled via configuration", "testing_only", true)
 	}
 	// Parse keys
 	if AppConfig.Keys.CaCertsPath != "" {

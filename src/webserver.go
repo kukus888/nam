@@ -39,13 +39,18 @@ func InitWebServer(app *Application, logger *slog.Logger, loggerWriter io.Writer
 	}
 	webLog := logger.With("component", "webserver")
 
+	if app.Configuration.Security.JWTKey != "" {
+		services.SetJWTKey([]byte(app.Configuration.Security.JWTKey))
+		webLog.Info("Using configured JWT signing key")
+	} else {
+		webLog.Warn("No JWT signing key configured; using ephemeral runtime key")
+	}
+
 	switch App.Configuration.WebServer.Mode {
 	case "debug", "test":
 		gin.SetMode(gin.DebugMode)
 		app.Engine = gin.New()
 		app.Engine.Use(ErrorHandler())
-		// Set default jwt key for debugging
-		services.SetJWTKey([]byte("nam-debug-jwt-key-2025"))
 	case "release":
 		gin.SetMode(gin.ReleaseMode)
 		app.Engine = gin.New()
@@ -131,7 +136,18 @@ func InitWebServer(app *Application, logger *slog.Logger, loggerWriter io.Writer
 	}
 	// Alias to shorten code
 	dbPool := App.Database.Pool
-	cryptoService := services.NewCryptoService("nam-secrets-salt-2025", []byte("nam-secrets-salt-2025"))
+	cryptoMasterPassword := app.Configuration.Security.SecretsMasterPassword
+	cryptoSalt := app.Configuration.Security.SecretsSalt
+	if cryptoMasterPassword == "" || cryptoSalt == "" {
+		webLog.Warn("Secrets crypto settings are not configured; using legacy defaults", "testing_only", true)
+		if cryptoMasterPassword == "" {
+			cryptoMasterPassword = "nam-secrets-salt-2025"
+		}
+		if cryptoSalt == "" {
+			cryptoSalt = "nam-secrets-salt-2025"
+		}
+	}
+	cryptoService := services.NewCryptoService(cryptoMasterPassword, []byte(cryptoSalt))
 	{ // REST
 		restV1group := App.Engine.Group("/api/rest/v1")
 		restV1group.Use(AuthMiddleware())
@@ -493,8 +509,16 @@ func AuthMiddleware() gin.HandlerFunc {
 		if time.Until(claims.ExpiresAt.Time) < 5*time.Minute {
 			newTokenString, err := services.RegenerateToken(claims)
 			if err == nil {
-				// Set the new token in the cookie
-				c.SetCookie("token", newTokenString, 3600, "/", "", false, true)
+				// Keep refreshed cookie attributes aligned with login cookie policy.
+				http.SetCookie(c.Writer, &http.Cookie{
+					Name:     "token",
+					Value:    newTokenString,
+					Path:     "/",
+					MaxAge:   3600,
+					HttpOnly: true,
+					Secure:   true,
+					SameSite: http.SameSiteStrictMode,
+				})
 			} else {
 				slog.Warn("Failed to regenerate JWT token", "username", claims.Username, "user_id", claims.UserID, "error", err)
 			}

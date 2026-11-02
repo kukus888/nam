@@ -23,5 +23,11 @@ keys: # used for calling healthchecks
   clientcert: ""
   clientkey: ""
 
+security:
+  allow_insecure_tls: false # testing only: skip outbound TLS certificate validation
+  jwt_key: "" # if empty, an ephemeral runtime JWT key is generated
+  secrets_master_password: "nam-secrets-salt-2025" # change in non-dev environments
+  secrets_salt: "nam-secrets-salt-2025" # change in non-dev environments
+
 services:
   HealthcheckService: true # Whether to enable calling health checks or not on this instance

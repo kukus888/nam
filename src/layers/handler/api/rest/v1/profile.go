@@ -41,9 +41,21 @@ func (h *ProfileHandler) UpdateUser(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": "Unable to get user from context"})
 		return
 	}
-	if userFromContext != user.Id && role.Name != "admin" {
-		ctx.JSON(403, gin.H{"error": "You are not allowed to change other users' profiles"})
+	userFromContextID, ok := userFromContext.(uint64)
+	if !ok {
+		ctx.JSON(500, gin.H{"error": "Invalid user context"})
 		return
+	}
+	if userFromContextID != user.Id {
+		actingUser, err := data.GetUserById(h.Database, userFromContextID)
+		if err != nil || actingUser == nil {
+			ctx.JSON(500, gin.H{"error": "Unable to get current user"})
+			return
+		}
+		if !actingUser.HasRole("Admin") {
+			ctx.JSON(403, gin.H{"error": "You are not allowed to change other users' profiles"})
+			return
+		}
 	}
 	// Check, if he isnt trying to change other things
 	existingUser, err := data.GetUserById(h.Database, user.Id)

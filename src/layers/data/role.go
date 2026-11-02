@@ -79,7 +79,7 @@ func (role Role) DbInsert(pool *pgxpool.Pool) (*uint64, error) {
 	defer tx.Rollback(context.Background())
 
 	err = tx.QueryRow(context.Background(), `
-		INSERT INTO " " (name, description) 
+		INSERT INTO "role" (name, description) 
 		VALUES ($1, $2) RETURNING id;
 	`, role.Name, role.Description).Scan(&role.Id)
 	if err != nil {

@@ -49,6 +49,12 @@ type ApplicationConfiguration struct {
 	Database struct {
 		Dsn string `yaml:"dsn"`
 	} `yaml:"postgres"`
+	Security struct {
+		AllowInsecureTLS      bool   `yaml:"allow_insecure_tls"`      // For testing only: allows skipping TLS cert validation for outbound HTTPS clients.
+		JWTKey                string `yaml:"jwt_key"`                 // JWT signing key. If empty, an ephemeral runtime key is used.
+		SecretsMasterPassword string `yaml:"secrets_master_password"` // Master password for secret encryption key derivation.
+		SecretsSalt           string `yaml:"secrets_salt"`            // Salt for secret encryption key derivation.
+	} `yaml:"security"`
 	Logging struct {
 		Level      string     `yaml:"level" default:"info"` // Log level, e.g. "debug", "info", "warn", "error"
 		SlogLevel  slog.Level `yaml:"-"`                    // Internal representation of log level, e.g. 0 for debug, 1 for info, etc.
