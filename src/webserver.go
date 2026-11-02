@@ -186,6 +186,7 @@ func InitWebServer(app *Application, logger *slog.Logger, loggerWriter io.Writer
 				appDefIdGroup.GET("/", appDefController.GetById)
 				appDefIdGroup.PUT("/", RequireRole(dbPool, "Operator"), appDefController.UpdateApplicationDefinition)
 				appDefIdGroup.DELETE("/", RequireRole(dbPool, "Operator"), appDefController.DeleteById)
+				appDefIdGroup.POST("/maintenance", RequireRole(dbPool, "Operator"), appDefController.ToggleMaintenance)
 				{ // Application Definition Variables
 					appDefVarController := apiRestV1.NewAppDefVariablesController(App.Database)
 					appDefVarGroup := appDefIdGroup.Group("/variables")
