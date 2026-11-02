@@ -25,51 +25,71 @@ func NewLoginPageHandler(database *data.Database, logger *slog.Logger) LoginPage
 
 func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 	routeGroup.GET("/", func(ctx *gin.Context) {
-		ctx.HTML(200, "pages/login", gin.H{})
+		errCode := ctx.Query("err")
+		errorMessage := ""
+		switch errCode {
+		case "missing_credentials":
+			errorMessage = "Please enter both username and password."
+		case "invalid_credentials":
+			errorMessage = "We couldn't sign you in. Check your username and password, then try again."
+		case "temporary_issue":
+			errorMessage = "We couldn't sign you in right now. Please try again in a moment."
+		}
+
+		ctx.HTML(200, "pages/login", gin.H{"Error": errorMessage})
 	})
 	routeGroup.POST("/", func(ctx *gin.Context) {
-		var User data.UserLoginDTO
-		if err := ctx.ShouldBindJSON(&User); err != nil {
-			pc.Logger.Warn("Invalid login attempt", "error", err, "trace", err.Error())
-			ctx.JSON(400, gin.H{"error": "Invalid input"})
-			return
+		username := ctx.PostForm("username")
+		password := ctx.PostForm("password")
+
+		// Keep JSON support for API-like callers while preferring standard form posts.
+		if username == "" && password == "" {
+			var user data.UserLoginDTO
+			if err := ctx.ShouldBindJSON(&user); err == nil {
+				if user.Username != nil {
+					username = *user.Username
+				}
+				if user.Password != nil {
+					password = *user.Password
+				}
+			}
 		}
-		if *User.Username == "" || *User.Password == "" {
+
+		if username == "" || password == "" {
 			pc.Logger.Warn("Login attempt with missing username or password")
-			ctx.JSON(400, gin.H{"error": "Username and password are required"})
+			ctx.Redirect(303, "/login?err=missing_credentials")
 			return
 		}
-		userDao, err := data.GetUserByUsername(pc.Database.Pool, *User.Username)
+
+		userDao, err := data.GetUserByUsername(pc.Database.Pool, username)
 		if err != nil {
-			pc.Logger.Error("Database error during login", "error", err, "trace", err.Error(), "username", *User.Username)
-			ctx.JSON(500, gin.H{"error": "Database error", "trace": err.Error()})
+			pc.Logger.Error("Database error during login", "error", err, "trace", err.Error(), "username", username)
+			ctx.Redirect(303, "/login?err=temporary_issue")
 			return
 		}
 		if userDao == nil {
-			pc.Logger.Warn("User not found", "username", *User.Username)
-			ctx.JSON(401, gin.H{"error": "Invalid credentials"})
+			pc.Logger.Warn("User not found", "username", username)
+			ctx.Redirect(303, "/login?err=invalid_credentials")
 			return
 		}
-		if err := data.VerifyPassword(userDao.PasswordHash, *User.Password); err != nil {
-			pc.Logger.Warn("Invalid login attempt", "username", *User.Username)
-			ctx.JSON(401, gin.H{"error": "Invalid credentials"})
+		if err := data.VerifyPassword(userDao.PasswordHash, password); err != nil {
+			pc.Logger.Warn("Invalid login attempt", "username", username)
+			ctx.Redirect(303, "/login?err=invalid_credentials")
 			return
 		}
 		// Set JWT token
 		token, err := services.GenerateToken(*userDao)
 		if err != nil {
-			pc.Logger.Error("Error generating token", "error", err, "trace", err.Error(), "username", *User.Username)
-			ctx.JSON(500, gin.H{"error": "Error generating token", "trace": err.Error()})
+			pc.Logger.Error("Error generating token", "error", err, "trace", err.Error(), "username", username)
+			ctx.Redirect(303, "/login?err=temporary_issue")
 			return
 		}
 		h := fnv.New64()
 		h.Write([]byte(token))
-		pc.Logger.Info("User logged in successfully", "username", *User.Username, "session", fmt.Sprintf("%x", h.Sum64()))
+		pc.Logger.Info("User logged in successfully", "username", username, "session", fmt.Sprintf("%x", h.Sum64()))
 		// Store the token in a cookie or return it in the response
 		ctx.Header("Set-Cookie", "token="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict")
-		// Redirect to dashboard
-		ctx.Header("HX-Redirect", "/dashboard")
-		ctx.String(200, "Login successful, redirecting to dashboard")
+		ctx.Redirect(303, "/dashboard")
 	})
 	// One time only setup route, to generate admin user
 	routeGroup.POST("/setup", func(ctx *gin.Context) {
