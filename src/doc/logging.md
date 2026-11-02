@@ -52,11 +52,25 @@ Use stable snake_case field names where possible:
 - `response_time`
 - entity IDs such as `action_id`, `instance_id`, `user_id`
 
+For consistency, prefer full entity prefixes for ambiguous identifiers:
+
+- `application_instance_id` instead of `instance_id`
+- `service_name` instead of generic `name` in service management logs
+- `secret_id`, `secret_name`, `secret_type` in secrets logs
+
 ## Gin-Specific Guidance
 
 - Access logging should use `gin.LoggerWithConfig` and write to the same configured writer.
 - Panic recovery should use custom Gin recovery that logs with slog and includes request metadata and stack trace.
 - Avoid default recovery output streams if they bypass configured sink policy.
+- Middleware that rejects requests (auth/rbac) should log at `warn` with `method`, `path`, and `client_ip`.
+- Unhandled request errors should be logged at `error` before returning a 500 response.
+
+## Service-Level Guidance
+
+- Service constructors should accept a logger and default to `slog.Default()` when nil.
+- Long-running goroutines (cache refreshers, listeners, timers) should log startup and repeated failure conditions.
+- Panic paths should emit an `error` log entry before panicking.
 
 ## Examples
 

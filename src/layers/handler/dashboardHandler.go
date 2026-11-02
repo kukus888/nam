@@ -3,6 +3,7 @@ package handlers
 import (
 	"kukus/nam/v2/layers/data"
 	services "kukus/nam/v2/layers/service"
+	"log/slog"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,7 @@ import (
 func (pc PageHandler) GetPageDashboard(ctx *gin.Context) {
 	dashboardData, err := data.GetDashboardData(pc.Database.Pool)
 	if err != nil {
+		slog.Error("Failed to render dashboard page", "error", err, "path", ctx.Request.URL.Path)
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get dashboard data", "trace": err.Error()})
 		return
 	}
@@ -33,6 +35,7 @@ func (pc PageHandler) GetDashboardDataAPI(ctx *gin.Context) {
 
 	dashboardData, err := services.GetDashboardData()
 	if err != nil {
+		slog.Error("Failed to fetch dashboard API data", "error", err, "path", ctx.Request.URL.Path)
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get dashboard data", "trace": err.Error()})
 		return
 	}
@@ -92,6 +95,7 @@ func (pc PageHandler) GetDashboardComponent(ctx *gin.Context) {
 
 	dashboardData, err := services.GetDashboardData()
 	if err != nil {
+		slog.Error("Failed to render dashboard component", "error", err, "path", ctx.Request.URL.Path)
 		ctx.AbortWithStatusJSON(500, gin.H{"error": "Unable to get dashboard data", "trace": err.Error()})
 		return
 	}

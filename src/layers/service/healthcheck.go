@@ -159,21 +159,21 @@ func (hcs *HealthcheckService) ListenForApplicationInstanceChanges() {
 				// Inserted new application instance. Create observer if it has a healthcheck
 				ai, err := data.GetApplicationInstanceFullById(hcs.Database.Pool, uint64(id))
 				if err != nil {
-					log.Error("Failed to get new application instance from database", "application instance_id", id, "error", err)
+					log.Error("Failed to get new application instance from database", "application_instance_id", id, "error", err)
 					continue
 				}
 				if ai == nil {
-					log.Warn("New application instance not found in database", "application instance_id", id)
+					log.Warn("New application instance not found in database", "application_instance_id", id)
 					continue
 				}
 				if ai.ApplicationDefinition.HealthcheckId != nil || ai.MaintenanceMode {
 					hc, err := data.GetHealthCheckById(hcs.Database.Pool, *ai.ApplicationDefinition.HealthcheckId)
 					if err != nil {
-						log.Error("Failed to get healthcheck for new application instance from database", "application instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId, "error", err)
+						log.Error("Failed to get healthcheck for new application instance from database", "application_instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId, "error", err)
 						continue
 					}
 					if hc == nil {
-						log.Warn("Healthcheck for new application instance not found in database", "application instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId)
+						log.Warn("Healthcheck for new application instance not found in database", "application_instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId)
 						continue
 					}
 					hcs.NewObserver(ai, hc)
@@ -185,11 +185,11 @@ func (hcs *HealthcheckService) ListenForApplicationInstanceChanges() {
 				// Updated existing application instance. Need to update the observer for this application instance
 				ai, err := data.GetApplicationInstanceFullById(hcs.Database.Pool, uint64(id))
 				if err != nil {
-					log.Error("Failed to get updated application instance", "application instance_id", id, "error", err)
+					log.Error("Failed to get updated application instance", "application_instance_id", id, "error", err)
 					continue
 				}
 				if ai == nil {
-					log.Warn("Updated application instance not found in database", "application instance_id", id)
+					log.Warn("Updated application instance not found in database", "application_instance_id", id)
 					continue
 				}
 				if ai.ApplicationDefinition.HealthcheckId == nil {
@@ -202,11 +202,11 @@ func (hcs *HealthcheckService) ListenForApplicationInstanceChanges() {
 				}
 				hc, err := data.GetHealthCheckById(hcs.Database.Pool, *ai.ApplicationDefinition.HealthcheckId)
 				if err != nil {
-					log.Error("Failed to get healthcheck for updated application instance from database", "application instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId, "error", err)
+					log.Error("Failed to get healthcheck for updated application instance from database", "application_instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId, "error", err)
 					continue
 				}
 				if hc == nil {
-					log.Warn("Healthcheck for updated application instance not found in database", "application instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId)
+					log.Warn("Healthcheck for updated application instance not found in database", "application_instance_id", id, "healthcheck_id", *ai.ApplicationDefinition.HealthcheckId)
 					// Just remove existing observer if exists
 					if observer, exists := hcs.Observers[uint(id)]; exists {
 						observer.TimerCancel()
@@ -362,7 +362,7 @@ func (hcs *HealthcheckService) NewObserver(ai *data.ApplicationInstanceFull, hc 
 	// Start the observer
 	observer.Start(hcs.Database.Pool)
 	hcs.Observers[ai.Id] = &observer
-	hcs.Logger.Debug("Healthcheck observer started", "id", *hc.Id, "name", hc.Name, "for_application_instance_id", ai.Id, "for_application_instance_name", ai.Name)
+	hcs.Logger.Debug("Healthcheck observer started", "healthcheck_id", *hc.Id, "healthcheck_name", hc.Name, "application_instance_id", ai.Id, "application_instance_name", ai.Name)
 	return &observer
 }
 
@@ -385,9 +385,9 @@ func (hco *HealthcheckObserver) Start(pool *pgxpool.Pool) {
 		result.ApplicationInstanceID = hco.ApplicationInstance.Id
 		if err != nil {
 			// Happens only if there is something wrong on the network layer
-			hco.Logger.Debug("Healthcheck failed", "instance_id", hco.ApplicationInstance.Id, "url", hco.TargetUrl, "error", err.Error())
+			hco.Logger.Debug("Healthcheck failed", "application_instance_id", hco.ApplicationInstance.Id, "url", hco.TargetUrl, "error", err)
 		}
-		hco.Logger.Debug("Healthcheck result", "instance_id", hco.ApplicationInstance.Id, "is_successful", result.IsSuccessful, "status", result.ResStatus, "response_time", result.ResTime)
+		hco.Logger.Debug("Healthcheck result", "application_instance_id", hco.ApplicationInstance.Id, "is_successful", result.IsSuccessful, "status", result.ResStatus, "response_time", result.ResTime)
 		// Insert the result into the database
 		_, err = result.DbInsert(hco.DbPool)
 		if err != nil {

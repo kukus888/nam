@@ -29,16 +29,16 @@ func NewServiceManager(logger slog.Logger) *ServiceManager {
 }
 func (sm *ServiceManager) RegisterService(svc Service) {
 	sm.services[svc.GetName()] = svc
-	sm.logger.Debug("Service registered", "name", svc.GetName())
+	sm.logger.Debug("Service registered", "service_name", svc.GetName())
 }
 func (sm *ServiceManager) StartService(name string) error {
 	svc, exists := sm.services[name]
 	if !exists {
-		sm.logger.Warn("Error starting service: Service not found", "name", name)
+		sm.logger.Warn("Cannot start service: service not found", "service_name", name)
 		return nil
 	}
 	if svc.IsRunning() {
-		sm.logger.Debug("Error starting service: Service already running", "name", name)
+		sm.logger.Debug("Cannot start service: already running", "service_name", name)
 		return nil
 	}
 	return svc.Start()
@@ -46,11 +46,11 @@ func (sm *ServiceManager) StartService(name string) error {
 func (sm *ServiceManager) StopService(name string) error {
 	svc, exists := sm.services[name]
 	if !exists {
-		sm.logger.Debug("Error stopping service: Wanted to stop service, but it does not exist", "name", name)
+		sm.logger.Debug("Cannot stop service: service not found", "service_name", name)
 		return nil
 	}
 	if !svc.IsRunning() {
-		sm.logger.Debug("Error stopping service: Service is not running, nothing to stop", "name", name)
+		sm.logger.Debug("Cannot stop service: not running", "service_name", name)
 		return nil
 	}
 	return svc.Stop()

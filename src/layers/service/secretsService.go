@@ -47,7 +47,7 @@ func (s *SecretsService) CreateSecret(dto *data.SecretDTO, userId *uint64) (*uin
 		return nil, fmt.Errorf("failed to store secret: %w", err)
 	}
 
-	s.logger.Info("Secret created", "id", *id, "name", dto.Name, "type", dto.Type)
+	s.logger.Info("Secret created", "secret_id", *id, "secret_name", dto.Name, "secret_type", dto.Type)
 	return id, nil
 }
 
@@ -93,7 +93,7 @@ func (s *SecretsService) DeleteSecret(id uint64) error {
 		return fmt.Errorf("failed to delete secret: %w", err)
 	}
 
-	s.logger.Info("Secret deleted", "id", id)
+	s.logger.Info("Secret deleted", "secret_id", id)
 	return nil
 }
 
@@ -126,6 +126,6 @@ func (s *SecretsService) UpdateSecret(id uint64, dto *data.SecretDTO, userId *ui
 		return fmt.Errorf("failed to update secret: %w", err)
 	}
 
-	s.logger.Info("Secret updated", "id", id, "name", dto.Name, "type", dto.Type)
+	s.logger.Info("Secret updated", "secret_id", id, "secret_name", dto.Name, "secret_type", dto.Type)
 	return nil
 }

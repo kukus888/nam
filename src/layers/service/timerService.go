@@ -19,6 +19,9 @@ type TimerService struct {
 var TimerSvc *TimerService
 
 func NewTimerService(pool *pgxpool.Pool, logger *slog.Logger) {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	if TimerSvc != nil {
 		logger.Warn("TimerService already initialized, skipping re-initialization")
 		return
@@ -32,10 +35,12 @@ func NewTimerService(pool *pgxpool.Pool, logger *slog.Logger) {
 		},
 	}
 	TimerSvc = ts
+	ts.Logger.Info("Timer service initialized", "job_count", len(ts.Jobs))
 }
 
 func GetTimerService() *TimerService {
 	if TimerSvc == nil {
+		slog.Error("TimerService not initialized before use")
 		panic("TimerService not initialized! Call NewTimerService first.")
 	}
 	return TimerSvc

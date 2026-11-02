@@ -407,6 +407,13 @@ func ErrorHandler() gin.HandlerFunc {
 		if len(c.Errors) > 0 {
 			// Step3: Use the last error
 			err := c.Errors.Last().Err
+			slog.Error(
+				"Unhandled request error",
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+				"client_ip", c.ClientIP(),
+				"error", err,
+			)
 
 			// Step4: Respond with a generic error message
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -430,6 +437,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			if err == nil {
 				tokenString = cookie
 			} else {
+				slog.Warn("Unauthorized request: missing JWT token", "method", c.Request.Method, "path", c.Request.URL.Path, "client_ip", c.ClientIP())
 				handlers.Unauthorized(c) // No token provided
 				return
 			}
@@ -441,6 +449,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
+			slog.Warn("Unauthorized request: invalid JWT token", "method", c.Request.Method, "path", c.Request.URL.Path, "client_ip", c.ClientIP(), "error", err)
 			handlers.Unauthorized(c) // Invalid token
 			return
 		}
@@ -451,6 +460,8 @@ func AuthMiddleware() gin.HandlerFunc {
 			if err == nil {
 				// Set the new token in the cookie
 				c.SetCookie("token", newTokenString, 3600, "/", "", false, true)
+			} else {
+				slog.Warn("Failed to regenerate JWT token", "username", claims.Username, "user_id", claims.UserID, "error", err)
 			}
 		}
 
@@ -470,17 +481,25 @@ func RequireRole(db *pgxpool.Pool, requiredRole string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		username, exists := c.Get("username")
 		if !exists {
+			slog.Warn("Unauthorized request in RBAC middleware: missing username in context", "required_role", requiredRole, "method", c.Request.Method, "path", c.Request.URL.Path, "client_ip", c.ClientIP())
 			handlers.Unauthorized(c)
 			return
 		}
 
 		user, err := data.GetUserByUsername(db, username.(string))
-		if err != nil || user == nil {
+		if err != nil {
+			slog.Error("Failed to fetch user for RBAC middleware", "username", username.(string), "required_role", requiredRole, "error", err)
+			handlers.Unauthorized(c)
+			return
+		}
+		if user == nil {
+			slog.Warn("Unauthorized request in RBAC middleware: user not found", "username", username.(string), "required_role", requiredRole)
 			handlers.Unauthorized(c)
 			return
 		}
 
 		if !user.HasRole(requiredRole) {
+			slog.Warn("Forbidden request: insufficient role", "username", username.(string), "required_role", requiredRole, "method", c.Request.Method, "path", c.Request.URL.Path, "client_ip", c.ClientIP())
 			handlers.Forbidden(c)
 			return
 		}
