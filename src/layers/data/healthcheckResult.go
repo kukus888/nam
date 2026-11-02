@@ -325,3 +325,32 @@ func GetHealthcheckResultById(pool *pgxpool.Pool, id uint) (*HealthcheckResult, 
 
 	return &res, tx.Commit(context.Background())
 }
+
+// DeleteOldestHealthcheckResultsBatch removes up to batchSize oldest healthcheck_results rows.
+// It returns the number of deleted rows.
+func DeleteOldestHealthcheckResultsBatch(pool *pgxpool.Pool, batchSize int64) (*int64, error) {
+	if batchSize <= 0 {
+		deleted := int64(0)
+		return &deleted, nil
+	}
+
+	var deleted int64
+	err := pool.QueryRow(context.Background(), `
+		WITH to_delete AS (
+			SELECT id
+			FROM healthcheck_results
+			ORDER BY time_end ASC, id ASC
+			LIMIT $1
+		), deleted AS (
+			DELETE FROM healthcheck_results h
+			USING to_delete td
+			WHERE h.id = td.id
+			RETURNING 1
+		)
+		SELECT COUNT(*) FROM deleted;
+	`, batchSize).Scan(&deleted)
+	if err != nil {
+		return nil, err
+	}
+	return &deleted, nil
+}

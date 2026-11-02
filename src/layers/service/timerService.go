@@ -1,6 +1,7 @@
 package services
 
 import (
+	"kukus/nam/v2/layers/data"
 	"log/slog"
 	"time"
 
@@ -32,9 +33,16 @@ func NewTimerService(pool *pgxpool.Pool, logger *slog.Logger) {
 		Jobs: map[int]TimerJob{
 			0: NewDatabaseCleanupTimer(24*time.Hour, logger, pool),
 			1: NewDatabaseHealthCheckResultFlusher(logger, pool),
+			2: NewDatabaseCapacityGuardTimer(15*time.Minute, logger, pool),
 		},
 	}
+	if guardCfg, err := data.GetDatabaseCapacityGuardConfig(pool); err == nil {
+		ts.Jobs[2] = NewDatabaseCapacityGuardTimer(guardCfg.CheckInterval, logger, pool)
+	}
 	TimerSvc = ts
+	for _, job := range ts.Jobs {
+		job.Start()
+	}
 	ts.Logger.Info("Timer service initialized", "job_count", len(ts.Jobs))
 }
 

@@ -21,7 +21,7 @@ services:
       - USER_PASSWORD=password
       - USER_NAME=admin
     volumes:
-      - /path/to/openssh-server/config:/config
+      - openssh-config:/config
     ports:
       - 2222:2222
     restart: unless-stopped
@@ -31,10 +31,11 @@ services:
     environment:
       POSTGRES_PASSWORD: heslo123
     volumes:
-      - pgdata:/var/lib/postgresql/data 
+      - pgdata:/var/lib/postgresql
     ports:
       - 5432:5432
 
 volumes:
   logdata:
   pgdata:
+  openssh-config:

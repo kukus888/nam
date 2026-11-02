@@ -24,11 +24,31 @@ func NewDatabase(dsn string) (*Database, error) {
 // Returns size of database, in bytes, or an error if there was one
 func (db *Database) GetDatabaseSize() (*int64, error) {
 	var dbSize int64
-	err := db.Pool.QueryRow(context.Background(), "SELECT pg_database_size('$1')", db.Pool.Config().ConnConfig.Database).Scan(&dbSize)
+	err := db.Pool.QueryRow(context.Background(), "SELECT pg_database_size(current_database())").Scan(&dbSize)
 	if err != nil {
 		return nil, err
 	}
 	return &dbSize, nil
+}
+
+// Returns current database size in bytes.
+func GetDatabaseSize(pool *pgxpool.Pool) (*int64, error) {
+	var dbSize int64
+	err := pool.QueryRow(context.Background(), "SELECT pg_database_size(current_database())").Scan(&dbSize)
+	if err != nil {
+		return nil, err
+	}
+	return &dbSize, nil
+}
+
+// Returns row count for healthcheck_results table.
+func GetHealthcheckResultsCount(pool *pgxpool.Pool) (*int64, error) {
+	var rowCount int64
+	err := pool.QueryRow(context.Background(), "SELECT COUNT(*) FROM healthcheck_results").Scan(&rowCount)
+	if err != nil {
+		return nil, err
+	}
+	return &rowCount, nil
 }
 
 // TableSize represents the size of a table, including the size of the table itself, its indexes, and the total size (table + indexes)
