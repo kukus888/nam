@@ -92,15 +92,15 @@ func GetHealthcheckLatestResultByApplicationDefinitionId(pool *pgxpool.Pool, id 
 		  ai.name AS instance_name,
 		  ai.maintenance_mode AS is_maintenance,
 		  s.hostname AS server_hostname,
-		  hcr.id AS id,
-		  hcr.healthcheck_id AS healthcheck_id,
-		  hcr.is_successful AS is_successful,
-		  hcr.time_start AS time_start,
-		  hcr.time_end AS time_end,
-		  hcr.res_status AS res_status,
-		  hcr.res_body AS res_body,
-		  hcr.res_time AS res_time,
-		  hcr.error_message AS error_message
+		  COALESCE(hcr.id, 0) AS id,
+		  COALESCE(hcr.healthcheck_id, 0) AS healthcheck_id,
+		  COALESCE(hcr.is_successful, FALSE) AS is_successful,
+		  COALESCE(hcr.time_start, 'epoch'::timestamptz) AS time_start,
+		  COALESCE(hcr.time_end, 'epoch'::timestamptz) AS time_end,
+		  COALESCE(hcr.res_status, 0) AS res_status,
+		  COALESCE(hcr.res_body, '') AS res_body,
+		  COALESCE(hcr.res_time, 0) AS res_time,
+		  COALESCE(hcr.error_message, '') AS error_message
 		FROM application_instance ai
 		JOIN "server" s ON ai.server_id = s.id
 		LEFT JOIN LATERAL (
