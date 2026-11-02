@@ -89,7 +89,7 @@ func (pc LoginPageHandler) Init(routeGroup *gin.RouterGroup) {
 		pc.Logger.Info("User logged in successfully", "username", username, "session", fmt.Sprintf("%x", h.Sum64()))
 		// Store the token in a cookie or return it in the response
 		ctx.Header("Set-Cookie", "token="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict")
-		ctx.Redirect(303, "/dashboard")
+		ctx.Redirect(303, "/dashboards")
 	})
 	// One time only setup route, to generate admin user
 	routeGroup.POST("/setup", func(ctx *gin.Context) {

@@ -1,0 +1,216 @@
+{{ define "pages/offerings/edit" }}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Service Offering</title>
+    {{ template "template/head.includes" }}
+</head>
+
+<body class="bg-gray-50">
+    {{ template "templates/navbar" }}
+    {{ template "template/components/error-notification" . }}
+
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+        <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-gray-900">Edit Offering: {{ .Offering.Name }}</h1>
+            <div class="flex gap-2">
+                <a href="/offerings/{{ .Offering.Id }}/details" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">Details</a>
+                <a href="/offerings" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">Back</a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white shadow rounded-lg p-6 space-y-6">
+                <form id="offering-edit-form" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Offering Name</label>
+                        <input id="name" name="name" type="text" required value="{{ .Offering.Name }}" class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                    </div>
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="description" name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md">{{ if .Offering.Description }}{{ .Offering.Description }}{{ end }}</textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save Offering</button>
+                    </div>
+                </form>
+
+                <div class="pt-6 border-t border-gray-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-xl font-semibold text-gray-900">Member Definitions</h2>
+                        <button id="save-members" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700">Save Members</button>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-4">Definitions can exist in multiple offerings. Selecting here replaces this offering membership set.</p>
+                    <input type="text" id="member-filter" placeholder="Filter applications by name"
+                        class="w-full md:w-96 px-3 py-2 border border-gray-300 rounded-md mb-3"
+                        oninput="filterMembers(this.value)" />
+                    <div class="max-h-96 overflow-y-auto border border-gray-200 rounded-md p-3 space-y-2" id="member-list">
+                        {{ range .ApplicationDefinitions }}
+                        <label class="member-row flex items-center gap-2 text-sm text-gray-700" data-name="{{ .Name }}">
+                            <input type="checkbox" class="member-checkbox" value="{{ .Id }}" {{ if index $.MemberMap .Id }}checked{{ end }} />
+                            <span class="font-medium">{{ .Name }}</span>
+                            <span class="text-gray-500">({{ .Type }})</span>
+                        </label>
+                        {{ end }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow rounded-lg p-6 space-y-4">
+                <h2 class="text-xl font-semibold text-gray-900">Auto-Group Preview</h2>
+                <p class="text-sm text-gray-500">Find definitions by naming rule and optionally add them to this offering.</p>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Rule Type</label>
+                    <select id="rule-type" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <option value="prefix">Prefix</option>
+                        <option value="regex">Regex</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pattern</label>
+                    <input id="rule-pattern" type="text" placeholder="e.g. app_ or ^app_[a-z]+$"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md" />
+                </div>
+                <div class="flex gap-2">
+                    <button id="preview-auto-group" class="px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800">Preview</button>
+                    <button id="apply-auto-group" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700">Apply To Selection</button>
+                </div>
+                <div id="auto-group-preview" class="border border-gray-200 rounded-md p-3 max-h-80 overflow-y-auto text-sm text-gray-700">
+                    No preview yet.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const offeringId = {{ .Offering.Id }};
+        let previewMatches = [];
+
+        function selectedMemberIDs() {
+            return Array.from(document.querySelectorAll('.member-checkbox:checked')).map((el) => Number(el.value));
+        }
+
+        function filterMembers(query) {
+            const q = query.toLowerCase();
+            document.querySelectorAll('.member-row').forEach((row) => {
+                const name = (row.dataset.name || '').toLowerCase();
+                row.style.display = name.includes(q) ? '' : 'none';
+            });
+        }
+
+        document.getElementById('offering-edit-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value.trim();
+            const descriptionRaw = document.getElementById('description').value.trim();
+            const description = descriptionRaw === '' ? null : descriptionRaw;
+
+            try {
+                const resp = await fetch(`/api/rest/v1/offerings/${offeringId}/`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description })
+                });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    throw new Error(text || 'Failed to update offering');
+                }
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage('Offering updated', true);
+                }
+            } catch (error) {
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage(error.message || 'Failed to update offering');
+                }
+            }
+        });
+
+        document.getElementById('save-members').addEventListener('click', async function () {
+            try {
+                const resp = await fetch(`/api/rest/v1/offerings/${offeringId}/members`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ application_definition_ids: selectedMemberIDs() })
+                });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    throw new Error(text || 'Failed to save members');
+                }
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage('Members updated', true);
+                }
+            } catch (error) {
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage(error.message || 'Failed to save members');
+                }
+            }
+        });
+
+        document.getElementById('preview-auto-group').addEventListener('click', async function () {
+            const ruleType = document.getElementById('rule-type').value;
+            const pattern = document.getElementById('rule-pattern').value.trim();
+            if (!pattern) {
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage('Pattern is required for preview');
+                }
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/rest/v1/offerings/auto-group/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rule_type: ruleType, pattern })
+                });
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    throw new Error(text || 'Preview failed');
+                }
+                const body = await resp.json();
+                previewMatches = body.matches || [];
+
+                const target = document.getElementById('auto-group-preview');
+                if (previewMatches.length === 0) {
+                    target.innerHTML = 'No matches found.';
+                    return;
+                }
+
+                target.innerHTML = previewMatches.map((m) => {
+                    const warn = (m.existing_offerings && m.existing_offerings.length > 0)
+                        ? `<div class="text-xs text-amber-700">Already in: ${m.existing_offerings.join(', ')}</div>`
+                        : '';
+                    return `<div class="py-2 border-b border-gray-100"><div class="font-medium">${m.application_name}</div>${warn}</div>`;
+                }).join('');
+            } catch (error) {
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage(error.message || 'Preview failed');
+                }
+            }
+        });
+
+        document.getElementById('apply-auto-group').addEventListener('click', function () {
+            if (previewMatches.length === 0) {
+                if (typeof showErrorMessage === 'function') {
+                    showErrorMessage('Run preview first');
+                }
+                return;
+            }
+
+            const previewIDs = new Set(previewMatches.map((m) => Number(m.application_definition_id)));
+            document.querySelectorAll('.member-checkbox').forEach((cb) => {
+                if (previewIDs.has(Number(cb.value))) {
+                    cb.checked = true;
+                }
+            });
+
+            if (typeof showErrorMessage === 'function') {
+                showErrorMessage('Preview results applied to selection. Click Save Members to persist.', true);
+            }
+        });
+    </script>
+</body>
+
+</html>
+{{ end }}

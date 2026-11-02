@@ -1,0 +1,38 @@
+{{ define "pages/dashboards" }}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboards</title>
+    {{ template "template/head.includes" }}
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Dashboards</h1>
+            <p class="mt-2 text-sm text-gray-500">Choose the dashboard focused on either application-level or offering-level health.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <a href="/dashboards/applications" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all duration-150 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 group-hover:text-indigo-700">Applications Dashboard</h2>
+                <p class="mt-2 text-sm text-gray-600">Detailed status across all applications and instances.</p>
+                <p class="mt-4 text-xs font-medium uppercase tracking-wide text-indigo-600">Open dashboard</p>
+            </a>
+
+            <a href="/dashboards/offerings" class="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all duration-150 p-6">
+                <h2 class="text-xl font-semibold text-gray-900 group-hover:text-indigo-700">Offerings Dashboard</h2>
+                <p class="mt-2 text-sm text-gray-600">Simplified health view grouped by service offerings.</p>
+                <p class="mt-4 text-xs font-medium uppercase tracking-wide text-indigo-600">Open dashboard</p>
+            </a>
+        </div>
+    </div>
+</body>
+
+</html>
+{{ end }}

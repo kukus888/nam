@@ -5,7 +5,7 @@ This tool is targeted at Level 2 Application Support Specialists.
  - Application, server, and healthcheck template management
  - Secret management
  - Health check functionality 
- - Dashboard
+ - Dashboards (applications and offerings views)
 
 ## Planned features
  - Remote control (servers via SSH) - Actions

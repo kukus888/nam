@@ -141,8 +141,10 @@ src/
 // Authentication
 /login (GET/POST) - Login page and authentication
 
-// Main Pages (requires auth + admin role)
-/ or /dashboard - Main dashboard
+// Main Pages (requires auth)
+/ or /dashboards - Dashboard selector
+/dashboards/applications - Applications dashboard
+/dashboards/offerings - Offerings dashboard
 /servers - Server management
 /applications - Application management
 /healthchecks - Health check templates

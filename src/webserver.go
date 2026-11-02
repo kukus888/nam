@@ -203,6 +203,24 @@ func InitWebServer(app *Application, logger *slog.Logger, loggerWriter io.Writer
 				}
 			}
 		}
+		{ // Service Offerings
+			offeringController := apiRestV1.NewServiceOfferingController(App.Database)
+			offeringGroup := restV1group.Group("/offerings")
+			offeringGroup.POST("/", RequireRole(dbPool, "Operator"), offeringController.Create)
+			offeringGroup.GET("/", offeringController.GetAll)
+			offeringGroup.POST("/auto-group/preview", RequireRole(dbPool, "Operator"), offeringController.AutoGroupPreview)
+
+			offeringIDGroup := offeringGroup.Group("/:offeringId")
+			{
+				offeringIDGroup.GET("/", offeringController.GetById)
+				offeringIDGroup.PUT("/", RequireRole(dbPool, "Operator"), offeringController.Update)
+				offeringIDGroup.DELETE("/", RequireRole(dbPool, "Operator"), offeringController.Delete)
+				offeringIDGroup.GET("/members", offeringController.GetMembers)
+				offeringIDGroup.PUT("/members", RequireRole(dbPool, "Operator"), offeringController.ReplaceMembers)
+				offeringIDGroup.POST("/members/:appId", RequireRole(dbPool, "Operator"), offeringController.AddMember)
+				offeringIDGroup.DELETE("/members/:appId", RequireRole(dbPool, "Operator"), offeringController.RemoveMember)
+			}
+		}
 		{ // Users
 			userHandler := apiRestV1.NewUserHandler(dbPool)
 			userGroup := restV1group.Group("/users")
@@ -272,11 +290,17 @@ func InitWebServer(app *Application, logger *slog.Logger, loggerWriter io.Writer
 	rootGroup.Use(AuthMiddleware())
 
 	ph := handlers.NewPageHandler(App.Database)
-	// Dashboard - accessible to all authenticated users (Viewer and above)
-	rootGroup.GET("/", RequireRole(dbPool, "Viewer"), ph.GetPageDashboard)
-	rootGroup.GET("/dashboard", RequireRole(dbPool, "Viewer"), ph.GetPageDashboard)
-	rootGroup.GET("/dashboard/component", RequireRole(dbPool, "Viewer"), ph.GetDashboardComponent)
-	rootGroup.GET("/dashboard/data", RequireRole(dbPool, "Viewer"), ph.GetDashboardDataAPI)
+	// Dashboards - accessible to all authenticated users (Viewer and above)
+	rootGroup.GET("/", RequireRole(dbPool, "Viewer"), func(ctx *gin.Context) {
+		ctx.Redirect(http.StatusTemporaryRedirect, "/dashboards")
+	})
+	rootGroup.GET("/dashboards", RequireRole(dbPool, "Viewer"), ph.GetPageDashboards)
+	rootGroup.GET("/dashboards/applications", RequireRole(dbPool, "Viewer"), ph.GetPageDashboard)
+	rootGroup.GET("/dashboards/applications/component", RequireRole(dbPool, "Viewer"), ph.GetDashboardComponent)
+	rootGroup.GET("/dashboards/applications/data", RequireRole(dbPool, "Viewer"), ph.GetDashboardDataAPI)
+	rootGroup.GET("/dashboards/offerings", RequireRole(dbPool, "Viewer"), ph.GetPageOfferingsDashboard)
+	rootGroup.GET("/dashboards/offerings/component", RequireRole(dbPool, "Viewer"), ph.GetOfferingsDashboardComponent)
+	rootGroup.GET("/dashboards/offerings/data", RequireRole(dbPool, "Viewer"), ph.GetOfferingsDashboardDataAPI)
 	rootGroup.GET("/profile", ph.GetProfilePage)
 	{ // Servers
 		psh := handlers.NewPageServerHandler(App.Database)
@@ -314,6 +338,13 @@ func InitWebServer(app *Application, logger *slog.Logger, loggerWriter io.Writer
 		// Healthcheck management - accessible to Operators and above
 		rootGroup.GET("/healthchecks/create", RequireRole(dbPool, "Operator"), hcv.GetPageHealthcheckCreate)
 		rootGroup.GET("/healthchecks/:id/edit", RequireRole(dbPool, "Operator"), hcv.GetPageHealthcheckEdit)
+	}
+	{ // Service Offerings
+		ov := handlers.NewServiceOfferingView(App.Database)
+		rootGroup.GET("/offerings", RequireRole(dbPool, "Viewer"), ov.GetPageOfferings)
+		rootGroup.GET("/offerings/:id/details", RequireRole(dbPool, "Viewer"), ov.GetPageOfferingDetails)
+		rootGroup.GET("/offerings/create", RequireRole(dbPool, "Operator"), ov.GetPageOfferingCreate)
+		rootGroup.GET("/offerings/:id/edit", RequireRole(dbPool, "Operator"), ov.GetPageOfferingEdit)
 	}
 	{ // Settings
 		psh := handlers.NewPageSettingsHandler(App.Database)

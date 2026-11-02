@@ -1,0 +1,100 @@
+{{ define "pages/offerings/details" }}
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offering Details</title>
+    {{ template "template/head.includes" }}
+</head>
+
+<body class="bg-gray-50">
+    {{ template "templates/navbar" }}
+    {{ template "template/components/error-notification" . }}
+
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+        <div class="flex items-start justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ .Offering.Name }}</h1>
+                <p class="text-sm text-gray-500 mt-1">Service offering details and member application definitions.</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="/offerings/{{ .Offering.Id }}/edit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Edit</a>
+                <a href="/offerings" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100">Back</a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Members</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Application</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Health</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {{ range .Members }}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ .ApplicationName }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ .ApplicationType }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    <span
+                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+                                        hx-get="/htmx/health/application/definition?size=tiny&id={{ .ApplicationDefinitionID }}"
+                                        hx-swap="outerHTML" hx-trigger="load">
+                                        Loading...
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                    <a href="/applications/{{ .ApplicationDefinitionID }}/details" class="text-indigo-600 hover:text-indigo-900">View Application</a>
+                                </td>
+                            </tr>
+                            {{ else }}
+                            <tr>
+                                <td colspan="4" class="px-6 py-10 text-center text-sm text-gray-500">No members assigned yet.</td>
+                            </tr>
+                            {{ end }}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow p-6 space-y-4">
+                <h2 class="text-lg font-semibold text-gray-900">Metadata</h2>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Offering Status</div>
+                    <div class="mt-1 flex items-center gap-2">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold
+                            {{ if eq .OfferingStatus "healthy" }}bg-emerald-100 text-emerald-700{{ else if eq .OfferingStatus "problematic" }}bg-amber-100 text-amber-700{{ else if eq .OfferingStatus "down" }}bg-rose-100 text-rose-700{{ else }}bg-slate-100 text-slate-700{{ end }}">
+                            {{ title .OfferingStatus }}
+                        </span>
+                        <span class="text-xs text-gray-500">{{ .OfferingStatusSummary }}</span>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Offering ID</div>
+                    <div class="text-sm text-gray-800 font-mono">{{ .Offering.Id }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Description</div>
+                    <div class="text-sm text-gray-800">{{ if .Offering.Description }}{{ .Offering.Description }}{{ else }}<span class="text-gray-400">No description</span>{{ end }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-500 uppercase tracking-wide">Members</div>
+                    <div class="text-sm text-gray-800">{{ len .Members }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+{{ end }}

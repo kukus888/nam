@@ -1,0 +1,250 @@
+{{ define "pages/dashboard-offerings" }}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ template "template/head.includes" }}
+    <title>Offerings Dashboard</title>
+    <style>
+        .dashboard-shell {
+            background: radial-gradient(circle at top left, #f8fafc, #eef2ff 35%, #f8fafc 70%);
+        }
+
+        .surface-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .control-input {
+            border: 1px solid #cbd5e1;
+            border-radius: 0.65rem;
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: #0f172a;
+            box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.15);
+        }
+
+        .refresh-dot {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 9999px;
+            background: #10b981;
+            display: inline-block;
+        }
+
+        .refresh-dot.is-refreshing {
+            animation: pulse-dot 0.9s ease-in-out infinite;
+            background: #0f172a;
+        }
+
+        .offerings-pulse {
+            animation: pulse-surface 0.6s ease-out;
+        }
+
+        @keyframes pulse-dot {
+            0% { transform: scale(1); opacity: 0.75; }
+            50% { transform: scale(1.65); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.75; }
+        }
+
+        @keyframes pulse-surface {
+            0% { box-shadow: 0 0 0 0 rgba(15, 23, 42, 0.18); }
+            100% { box-shadow: 0 0 0 10px rgba(15, 23, 42, 0); }
+        }
+    </style>
+</head>
+
+<body class="dashboard-shell">
+    {{ template "template/components/error-notification" . }}
+    {{ template "templates/navbar" }}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+            <div class="md:flex md:items-center md:justify-between mb-6">
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl">Offerings Dashboard</h1>
+                    <p class="mt-1 text-sm text-gray-500">Semaphore view for grouped service offerings.</p>
+                </div>
+                <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3 items-center flex-wrap justify-start md:justify-end">
+                    <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white border border-slate-200 shadow-sm">
+                        <span id="refresh-dot" class="refresh-dot" aria-hidden="true"></span>
+                        <span id="refresh-state" class="text-xs font-semibold text-slate-800">Idle</span>
+                        <span id="last-updated" class="text-xs text-slate-500">Never updated</span>
+                    </div>
+                    <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm">
+                        <label for="refresh-interval" class="text-xs font-semibold tracking-wide uppercase text-slate-600">Refresh</label>
+                        <select id="refresh-interval" class="control-input px-2 py-1.5 text-sm font-medium">
+                            <option value="0">Off</option>
+                            <option value="5000">5s</option>
+                            <option value="15000">15s</option>
+                            <option value="30000" selected>30s</option>
+                            <option value="60000">60s</option>
+                        </select>
+                    </div>
+                    <button id="refresh-now" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 transition-colors duration-150">
+                        Refresh now
+                    </button>
+                    <a href="/dashboards/applications" class="inline-flex items-center px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium bg-white text-slate-700 hover:bg-slate-100">Applications Dashboard</a>
+                    <a href="/offerings" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Manage Offerings</a>
+                </div>
+            </div>
+
+            <div class="surface-card rounded-xl shadow-sm p-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <input type="text" name="offering_name" placeholder="Offering name"
+                        oninput="refreshOfferingsDashboardDebounced()"
+                        class="control-input px-3 py-2" />
+
+                    <input type="text" name="hostname" placeholder="Server hostname"
+                        oninput="refreshOfferingsDashboardDebounced()"
+                        class="control-input px-3 py-2" />
+
+                    <select name="sort"
+                        onchange="refreshOfferingsDashboard()"
+                        class="control-input px-3 py-2 bg-white">
+                        <option value="name">Sort: Name</option>
+                        <option value="severity">Sort: Severity</option>
+                    </select>
+
+                    <div class="lg:col-span-2 flex flex-wrap gap-3 items-center text-sm text-slate-700">
+                        <label class="inline-flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-md border border-slate-200">
+                            <input type="checkbox" name="healthy" value="true" checked onchange="refreshOfferingsDashboard()" />
+                            <span>Healthy</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-md border border-slate-200">
+                            <input type="checkbox" name="problematic" value="true" checked onchange="refreshOfferingsDashboard()" />
+                            <span>Problematic</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-md border border-slate-200">
+                            <input type="checkbox" name="down" value="true" checked onchange="refreshOfferingsDashboard()" />
+                            <span>Down</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-md border border-slate-200">
+                            <input type="checkbox" name="maintenance" value="true" checked onchange="refreshOfferingsDashboard()" />
+                            <span>Maintenance</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-md border border-slate-200">
+                            <input type="checkbox" name="no_data" value="true" checked onchange="refreshOfferingsDashboard()" />
+                            <span>No Data</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="offerings-container" class="transition-all duration-300">
+            {{ template "components/dashboard-offerings" .Dashboard.Offerings }}
+        </div>
+    </div>
+
+    <script>
+        let refreshTimer = null;
+        let debounceTimer = null;
+
+        function setRefreshState(isRefreshing) {
+            const dot = document.getElementById('refresh-dot');
+            const state = document.getElementById('refresh-state');
+            if (isRefreshing) {
+                dot.classList.add('is-refreshing');
+                state.textContent = 'Refreshing';
+                return;
+            }
+            dot.classList.remove('is-refreshing');
+            state.textContent = 'Idle';
+        }
+
+        function updateLastUpdated() {
+            const label = document.getElementById('last-updated');
+            const now = new Date();
+            label.textContent = `Updated ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+        }
+
+        function pulseOfferingsContent() {
+            const container = document.getElementById('offerings-container');
+            container.classList.remove('offerings-pulse');
+            void container.offsetWidth;
+            container.classList.add('offerings-pulse');
+        }
+
+        function buildOfferingsQuery() {
+            const qs = new URLSearchParams();
+            const offeringName = document.querySelector('[name="offering_name"]').value || '';
+            const hostname = document.querySelector('[name="hostname"]').value || '';
+            const sort = document.querySelector('[name="sort"]').value || 'name';
+            const healthy = document.querySelector('[name="healthy"]').checked;
+            const problematic = document.querySelector('[name="problematic"]').checked;
+            const down = document.querySelector('[name="down"]').checked;
+            const maintenance = document.querySelector('[name="maintenance"]').checked;
+            const noData = document.querySelector('[name="no_data"]').checked;
+
+            qs.set('offering_name', offeringName);
+            qs.set('hostname', hostname);
+            qs.set('sort', sort);
+            qs.set('healthy', healthy ? 'true' : 'false');
+            qs.set('problematic', problematic ? 'true' : 'false');
+            qs.set('down', down ? 'true' : 'false');
+            qs.set('maintenance', maintenance ? 'true' : 'false');
+            qs.set('no_data', noData ? 'true' : 'false');
+            return qs.toString();
+        }
+
+        async function refreshOfferingsDashboard() {
+            setRefreshState(true);
+            const query = buildOfferingsQuery();
+            try {
+                const resp = await fetch(`/dashboards/offerings/component?${query}`, {
+                    headers: { 'HX-Request': 'true' }
+                });
+                if (!resp.ok) {
+                    if (typeof showErrorMessage === 'function') {
+                        showErrorMessage('Failed to refresh offerings dashboard.');
+                    }
+                    return;
+                }
+
+                const html = await resp.text();
+                document.getElementById('offerings-container').innerHTML = html;
+                pulseOfferingsContent();
+                updateLastUpdated();
+            } finally {
+                setRefreshState(false);
+            }
+        }
+
+        function refreshOfferingsDashboardDebounced() {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(refreshOfferingsDashboard, 300);
+        }
+
+        function applyRefreshInterval() {
+            const selector = document.getElementById('refresh-interval');
+            const intervalMs = parseInt(selector.value, 10);
+
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+            }
+
+            if (intervalMs > 0) {
+                refreshTimer = setInterval(refreshOfferingsDashboard, intervalMs);
+            }
+        }
+
+        document.getElementById('refresh-now').addEventListener('click', refreshOfferingsDashboard);
+        document.getElementById('refresh-interval').addEventListener('change', applyRefreshInterval);
+        applyRefreshInterval();
+        updateLastUpdated();
+    </script>
+</body>
+
+</html>
+{{ end }}

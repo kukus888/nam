@@ -35,7 +35,7 @@
                     </div>
                     <!-- Refresh Button -->
                     <button 
-                        hx-get="/dashboard/component" 
+                        hx-get="/dashboards/applications/component" 
                         hx-target="#applications-container"
                         hx-swap="innerHTML"
                         hx-include="[name='healthy'],[name='unhealthy'],[name='maintenance'],[name='unknown'],[name='app_name'],[name='app_type']"
@@ -162,7 +162,7 @@
                                 id="app-name-filter" 
                                 name="app_name"
                                 placeholder="Search applications..."
-                                hx-get="/dashboard/component"
+                                hx-get="/dashboards/applications/component"
                                 hx-target="#applications-container"
                                 hx-swap="innerHTML"
                                 hx-trigger="keyup changed delay:300ms"
@@ -179,7 +179,7 @@
                             <select 
                                 id="app-type-filter" 
                                 name="app_type"
-                                hx-get="/dashboard/component"
+                                hx-get="/dashboards/applications/component"
                                 hx-target="#applications-container"
                                 hx-swap="innerHTML"
                                 hx-trigger="change"
@@ -209,7 +209,7 @@
                                     name="healthy" 
                                     value="true" 
                                     checked
-                                    hx-get="/dashboard/component"
+                                    hx-get="/dashboards/applications/component"
                                     hx-target="#applications-container"
                                     hx-swap="innerHTML"
                                     hx-trigger="change"
@@ -224,7 +224,7 @@
                                     name="unhealthy" 
                                     value="true" 
                                     checked
-                                    hx-get="/dashboard/component"
+                                    hx-get="/dashboards/applications/component"
                                     hx-target="#applications-container"
                                     hx-swap="innerHTML"
                                     hx-trigger="change"
@@ -239,7 +239,7 @@
                                     name="maintenance" 
                                     value="true" 
                                     checked
-                                    hx-get="/dashboard/component"
+                                    hx-get="/dashboards/applications/component"
                                     hx-target="#applications-container"
                                     hx-swap="innerHTML"
                                     hx-trigger="change"
@@ -254,7 +254,7 @@
                                     name="unknown" 
                                     value="true" 
                                     checked
-                                    hx-get="/dashboard/component"
+                                    hx-get="/dashboards/applications/component"
                                     hx-target="#applications-container"
                                     hx-swap="innerHTML"
                                     hx-trigger="change"
@@ -360,7 +360,7 @@
         
         // Auto-refresh every 30 seconds
         setInterval(function() {
-            htmx.ajax('GET', '/dashboard/component', {
+            htmx.ajax('GET', '/dashboards/applications/component', {
                 target: '#applications-container',
                 swap: 'innerHTML',
                 values: {

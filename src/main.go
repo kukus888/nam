@@ -103,6 +103,7 @@ func main() {
 		App.Services.RegisterService(healthcheckService)
 	}
 	services.NewDashboardCacheService(App.Database.Pool, log)
+	services.NewOfferingDashboardCacheService(App.Database.Pool, log)
 	services.NewTimerService(App.Database.Pool, log)
 	for {
 		status, statusErr := App.Services.GetServiceStatus("HealthcheckService")

@@ -156,6 +156,34 @@ type ApplicationDefinitionDAO struct {
 	HealthcheckId *uint  `json:"healthcheck_id" db:"healthcheck_id"`
 }
 
+type ServiceOfferingDAO struct {
+	Id              uint64    `json:"id" db:"id"`
+	Name            string    `json:"name" db:"name"`
+	Description     *string   `json:"description" db:"description"`
+	CreatedByUserID *uint64   `json:"created_by_user_id" db:"created_by_user_id"`
+	UpdatedByUserID *uint64   `json:"updated_by_user_id" db:"updated_by_user_id"`
+	CreatedAt       time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type ServiceOfferingListItem struct {
+	ServiceOfferingDAO
+	MemberCount int `json:"member_count" db:"member_count"`
+}
+
+type ServiceOfferingMember struct {
+	ServiceOfferingID       uint64 `json:"service_offering_id" db:"service_offering_id"`
+	ApplicationDefinitionID uint64 `json:"application_definition_id" db:"application_definition_id"`
+	ApplicationName         string `json:"application_name" db:"application_name"`
+	ApplicationType         string `json:"application_type" db:"application_type"`
+}
+
+type ServiceOfferingAutoGroupMatch struct {
+	ApplicationDefinitionID uint64   `json:"application_definition_id" db:"application_definition_id"`
+	ApplicationName         string   `json:"application_name" db:"application_name"`
+	ExistingOfferings       []string `json:"existing_offerings"`
+}
+
 // ApplicationDefinitionVariableDAO represents a variable associated with an application definition
 type ApplicationDefinitionVariableDAO struct {
 	Id                      uint   `json:"id" db:"id"`
