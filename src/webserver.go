@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"html/template"
+	"io"
 	"io/fs"
 	data "kukus/nam/v2/layers/data"
 	handlers "kukus/nam/v2/layers/handler"
@@ -15,15 +16,14 @@ import (
 	services "kukus/nam/v2/layers/service"
 	"log/slog"
 	"net/http"
-	"os"
 	"regexp"
+	"runtime/debug"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 //go:embed web
@@ -33,13 +33,16 @@ var webResources embed.FS
 var staticResources embed.FS
 
 // Initialize and start the web server
-func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
-	slogLevel := slog.LevelInfo
+func InitWebServer(app *Application, logger *slog.Logger, loggerWriter io.Writer) {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	webLog := logger.With("component", "webserver")
+
 	switch App.Configuration.WebServer.Mode {
 	case "debug", "test":
 		gin.SetMode(gin.DebugMode)
 		app.Engine = gin.New()
-		slogLevel = slog.LevelDebug
 		app.Engine.Use(ErrorHandler())
 		// Set default jwt key for debugging
 		services.SetJWTKey([]byte("nam-debug-jwt-key-2025"))
@@ -49,23 +52,29 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 	default:
 		panic("Invalid web server mode: " + App.Configuration.WebServer.Mode + ". Allowed values are: debug, release, test")
 	}
-	// Initialize the Gin engine with the specified mode and logging level
-	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slogLevel,
+	webLog.Info("Starting web server", "mode", App.Configuration.WebServer.Mode, "address", App.Configuration.WebServer.Address)
+	app.Engine.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		webLog.Error(
+			"Recovered from panic in HTTP handler",
+			"error", recovered,
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"client_ip", c.ClientIP(),
+			"stack", string(debug.Stack()),
+		)
+		c.AbortWithStatus(http.StatusInternalServerError)
 	}))
-	log.Info("Starting web server", "mode", App.Configuration.WebServer.Mode, "address", App.Configuration.WebServer.Address)
-	app.Engine.Use(gin.Recovery())
 	// Set up logging middleware
 	app.Engine.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		Formatter: func(params gin.LogFormatterParams) string {
-			log := make(map[string]interface{})
+			entry := make(map[string]interface{})
 
-			log["status_code"] = params.StatusCode
-			log["method"] = params.Method
-			log["path"] = fmt.Sprintf("%s", params.Path) // Needed to format u/xxxx chars to readable chars
-			log["time"] = params.TimeStamp.Format(time.RFC3339)
-			log["remote_addr"] = params.ClientIP
-			log["response_time"] = params.Latency.String()
+			entry["status_code"] = params.StatusCode
+			entry["method"] = params.Method
+			entry["path"] = fmt.Sprintf("%s", params.Path) // Needed to format u/xxxx chars to readable chars
+			entry["time"] = params.TimeStamp.Format(time.RFC3339)
+			entry["remote_addr"] = params.ClientIP
+			entry["response_time"] = params.Latency.String()
 			cookies := params.Request.Cookies()
 			if len(cookies) > 0 {
 				// Find token cookie, hash it and log the hash instead of the actual token value for security
@@ -73,7 +82,7 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 					if cookie.Name == "token" {
 						h := fnv.New64()
 						h.Write([]byte(cookie.Value))
-						log["session"] = fmt.Sprintf("%x", h.Sum64())
+						entry["session"] = fmt.Sprintf("%x", h.Sum64())
 						break
 					}
 				}
@@ -81,7 +90,7 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 			var buf bytes.Buffer
 			enc := json.NewEncoder(&buf)
 			enc.SetEscapeHTML(false)
-			enc.Encode(log)
+			enc.Encode(entry)
 			return buf.String()
 		},
 		Output: loggerWriter,
@@ -204,7 +213,7 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 			userGroup.PUT("/:id/password", userHandler.UpdatePassword)
 		}
 		{ // Secrets
-			secretService := services.NewSecretsService(App.Database.Pool, log, cryptoService)
+			secretService := services.NewSecretsService(App.Database.Pool, webLog, cryptoService)
 			secretHandler := apiRestV1.NewSecretsHandler(secretService)
 			secretGroup := restV1group.Group("/secrets")
 			secretGroup.Use(RequireRole(dbPool, "Operator"))       // Only admin and operator can manage secrets
@@ -219,7 +228,7 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 			profileGroup.PUT("/password", profileHandler.UpdatePassword)
 		}
 		{ // Actions
-			actionController := apiRestV1.NewActionController(App.Database)
+			actionController := apiRestV1.NewActionController(App.Database, webLog)
 			actionGroup := restV1group.Group("/actions")
 
 			// Action Templates
@@ -257,7 +266,7 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 	}
 
 	// Pages
-	handlers.NewLoginPageHandler(App.Database, log).Init(App.Engine.Group("/login"))
+	handlers.NewLoginPageHandler(App.Database, webLog).Init(App.Engine.Group("/login"))
 	// Handlers for the main pages, protected by authentication middleware
 	rootGroup := App.Engine.Group("/")
 	rootGroup.Use(AuthMiddleware())
@@ -350,11 +359,12 @@ func InitWebServer(app *Application, loggerWriter *lumberjack.Logger) {
 
 	var err error
 	if app.Configuration.WebServer.TLS.Enabled {
-		slog.Debug("Starting web server with TLS")
+		webLog.Debug("Starting web server with TLS")
 		err = app.Engine.RunTLS(app.Configuration.WebServer.Address, app.Configuration.WebServer.TLS.CertPath, app.Configuration.WebServer.TLS.KeyPath)
 	} else {
 		err = app.Engine.Run(app.Configuration.WebServer.Address)
 	}
+	webLog.Error("Web server stopped unexpectedly", "error", err)
 	panic(err.Error())
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
-	"fmt"
 	data "kukus/nam/v2/layers/data"
 	services "kukus/nam/v2/layers/service"
 	"log/slog"
@@ -35,11 +34,24 @@ func main() {
 	appCfg, err := LoadAndParseConfiguration(*configFile)
 	if err != nil {
 		panic("Unable to load configuration: " + err.Error())
-	} else {
-		App.Configuration = *appCfg
-		fmt.Println("Configuration loaded successfully")
 	}
-	tlsConfig, err := ParseSecrets(App.Configuration)
+	App.Configuration = *appCfg
+
+	// Init logging early so all startup diagnostics use the same sink.
+	rotlog := &lumberjack.Logger{
+		Filename:   App.Configuration.Logging.FilePath,
+		MaxSize:    App.Configuration.Logging.MaxSize,
+		MaxBackups: App.Configuration.Logging.MaxBackups,
+		MaxAge:     App.Configuration.Logging.MaxAge,
+		Compress:   App.Configuration.Logging.Compress,
+	}
+	log := slog.New(slog.NewJSONHandler(rotlog, &slog.HandlerOptions{
+		Level: App.Configuration.Logging.SlogLevel,
+	}))
+	slog.SetDefault(log)
+	log.Info("Successfully initialised configuration and logging")
+
+	tlsConfig, err := ParseSecrets(App.Configuration, log)
 	if err != nil {
 		panic("Unable to parse secrets! " + err.Error())
 	}
@@ -57,19 +69,6 @@ func main() {
 		}
 		os.Exit(0) // Exit after running the migration tool
 	}
-
-	// Init logging
-	rotlog := &lumberjack.Logger{
-		Filename:   App.Configuration.Logging.FilePath,
-		MaxSize:    App.Configuration.Logging.MaxSize,
-		MaxBackups: App.Configuration.Logging.MaxBackups,
-		MaxAge:     App.Configuration.Logging.MaxAge,
-		Compress:   App.Configuration.Logging.Compress,
-	}
-	log := slog.New(slog.NewJSONHandler(rotlog, &slog.HandlerOptions{
-		Level: App.Configuration.Logging.SlogLevel,
-	}))
-	log.Info("Successfully initialised configuration and logging")
 
 	log.Debug("Initializing postgres database connection")
 	// Initialise database connection
@@ -90,7 +89,7 @@ func main() {
 
 	if App.Configuration.WebServer.Enabled {
 		// Start web server
-		go InitWebServer(&App, rotlog)
+		go InitWebServer(&App, log, rotlog)
 	} else {
 		log.Warn("Web server is disabled in the configuration, skipping web server initialization")
 	}
@@ -106,8 +105,12 @@ func main() {
 	services.NewDashboardCacheService(App.Database.Pool, log)
 	services.NewTimerService(App.Database.Pool, log)
 	for {
-		status, _ := App.Services.GetServiceStatus("HealthcheckService")
-		fmt.Println("HealthcheckService status:", status)
+		status, statusErr := App.Services.GetServiceStatus("HealthcheckService")
+		if statusErr != nil {
+			log.Warn("Unable to read HealthcheckService status", "error", statusErr)
+		} else {
+			log.Debug("HealthcheckService status", "status", status)
+		}
 		time.Sleep(1 * time.Minute)
 	}
 }

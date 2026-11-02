@@ -3,6 +3,7 @@ package v1
 import (
 	"fmt"
 	data "kukus/nam/v2/layers/data"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -11,11 +12,16 @@ import (
 
 type ActionController struct {
 	Database *data.Database
+	Logger   *slog.Logger
 }
 
-func NewActionController(db *data.Database) *ActionController {
+func NewActionController(db *data.Database, logger *slog.Logger) *ActionController {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	return &ActionController{
 		Database: db,
+		Logger:   logger,
 	}
 }
 
@@ -322,7 +328,7 @@ func (ac *ActionController) CreateAction(ctx *gin.Context) {
 		if err != nil {
 			// Log error but don't fail the entire operation
 			// In production, you might want to use transactions
-			fmt.Printf("Warning: Failed to create execution for instance %d: %v\n", instanceId, err)
+			ac.Logger.Warn("Failed to create action execution", "instance_id", instanceId, "action_id", createdAction.Id, "error", err)
 		}
 	}
 

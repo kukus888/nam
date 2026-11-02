@@ -4,12 +4,15 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
+	"log/slog"
 	"os"
 )
 
 // Loads secrets based on the configuration, returning the secrets
-func ParseSecrets(AppConfig ApplicationConfiguration) (*tls.Config, error) {
+func ParseSecrets(AppConfig ApplicationConfiguration, logger *slog.Logger) (*tls.Config, error) {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	// Setup
 	tlsConfig := &tls.Config{
 		RootCAs:            x509.NewCertPool(),
@@ -28,10 +31,10 @@ func ParseSecrets(AppConfig ApplicationConfiguration) (*tls.Config, error) {
 			if pemB == nil {
 				break
 			}
-			fmt.Printf("Parsing CA: %s\n", pemB.Type)
+			logger.Debug("Parsing CA certificate", "pem_type", pemB.Type)
 			cert, err := x509.ParseCertificate(pemB.Bytes)
 			if err != nil {
-				fmt.Println("unable to parse CA chain")
+				logger.Error("Unable to parse CA certificate", "pem_type", pemB.Type, "error", err)
 				return nil, err
 			}
 			tlsConfig.RootCAs.AddCert(cert)
@@ -40,7 +43,7 @@ func ParseSecrets(AppConfig ApplicationConfiguration) (*tls.Config, error) {
 	if AppConfig.Keys.ClientCertPath != "" && AppConfig.Keys.ClientKeyPath != "" {
 		cert, err := tls.LoadX509KeyPair(AppConfig.Keys.ClientCertPath, AppConfig.Keys.ClientKeyPath)
 		if err != nil {
-			fmt.Println("unable to parse client X509 key pair")
+			logger.Error("Unable to parse client X509 key pair", "error", err)
 			return nil, err
 		}
 		tlsConfig.Certificates = append(tlsConfig.Certificates, cert)

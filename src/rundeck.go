@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 
 	"resty.dev/v3"
 )
@@ -26,7 +26,7 @@ func (rundeckClient *RundeckClient) GetSystemInfo() (*RundeckSystemInfo, error) 
 		SetResult(&RundeckSystemInfo{}).
 		Get("/api/21/system/info")
 	if err != nil {
-		fmt.Printf("Rundeck System Info: %+v\n", res)
+		slog.Error("Rundeck system info request failed", "error", err, "response", res)
 	}
 	dto := res.Result().(*RundeckSystemInfo)
 	return dto, err
